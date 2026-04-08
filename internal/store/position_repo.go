@@ -27,7 +27,9 @@ ORDER BY ticker ASC;
 	if err != nil {
 		return nil, fmt.Errorf("query positions: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+	}()
 
 	positions := make([]domain.Position, 0)
 	for rows.Next() {

@@ -12,8 +12,8 @@ build:
 install:
 	go install ./cmd/tick
 
-tidy:
-	go mod tidy
-
 test:
-	go test ./...
+	go test -short ./...
+
+lint:
+	golangci-lint version && golangci-lint run --verbose  -E  misspell    
