@@ -19,6 +19,10 @@ func (w *writer) printf(format string, args ...any) {
 	_, w.err = fmt.Fprintf(w.w, format, args...)
 }
 
+func (w *writer) println(s string) {
+	w.printf("%s\n", s)
+}
+
 func RenderGetPortfolioSummary(w io.Writer, s usecase.GetPortfolioSummaryUsecaseOutput) error {
 	out := &writer{w: w}
 
@@ -27,11 +31,11 @@ func RenderGetPortfolioSummary(w io.Writer, s usecase.GetPortfolioSummaryUsecase
 	out.printf("Total value: %.2f\n\n", s.TotalValue)
 
 	if len(s.Positions) == 0 {
-		_, _ = fmt.Fprintln(w, "No positions")
+		out.println("No positions")
 		return nil
 	}
 
-	out.printf("Positions:")
+	out.println("Positions:")
 
 	for _, p := range s.Positions {
 		out.printf(
@@ -52,6 +56,7 @@ func RenderGetPortfolioSummary(w io.Writer, s usecase.GetPortfolioSummaryUsecase
 
 func RenderCreatePortfolio(w io.Writer, s usecase.CreatePortfolioUsecaseOutout) error {
 	out := &writer{w: w}
+
 	out.printf(
 		"Portfolio %q saved (base currency: %s)\n",
 		s.Name,
