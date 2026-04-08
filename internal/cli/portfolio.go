@@ -1,60 +1,48 @@
-package cmd
+package cli
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/squeakycheese75/tick/internal/adapters/market"
+	"github.com/squeakycheese75/tick/cmd/usecase"
 	"github.com/squeakycheese75/tick/internal/app"
-	"github.com/squeakycheese75/tick/internal/cli"
-	"github.com/squeakycheese75/tick/internal/domain"
-	"github.com/squeakycheese75/tick/internal/store"
 )
 
-func newPortfolioCmd() *cobra.Command {
+func newPortfolioCmd(app *app.Runtime) *cobra.Command {
 	portfolioCmd := &cobra.Command{
 		Use:   "portfolio",
 		Short: "Portfolio commands",
 	}
 
 	portfolioCmd.AddCommand(
-		newPortfolioCreateCmd(),
-		newPortfolioSummaryCmd(),
+		newPortfolioCreateCmd(app),
+		newPortfolioSummaryCmd(app),
 		newPortfolioRiskCmd(),
-		newPortfolioAddPositionCmd(),
+		newPortfolioAddPositionCmd(app),
 	)
 
 	return portfolioCmd
 }
 
-func newPortfolioSummaryCmd() *cobra.Command {
+func newPortfolioSummaryCmd(app *app.Runtime) *cobra.Command {
 	var portfolioName string
 
 	cmd := &cobra.Command{
 		Use:   "summary",
-		Short: "Show current portfolio positions and allocation summary",
+		Short: "Show portfolio summary",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			db, err := store.Open("tick.db")
-			if err != nil {
-				return err
-			}
-			defer db.Close()
-
-			portfolioRepo := store.NewPortfolioRepository(db)
-			positionRepo := store.NewPositionRepository(db)
-			priceProvider := market.NewStaticPriceProvider()
-			fxProvider := market.NewStaticFXProvider()
-
-			service := app.NewPortfolioService(portfolioRepo, positionRepo, priceProvider, fxProvider)
-
-			summary, err := service.GetSummary(cmd.Context(), portfolioName)
+			out, err := app.GetPortfolioSummary.Execute(
+				cmd.Context(),
+				usecase.GetPortfolioSummaryUsecaseInput{
+					PortfolioName: portfolioName,
+				},
+			)
 			if err != nil {
 				return err
 			}
 
-			return cli.RenderPortfolioSummary(cmd.OutOrStdout(), summary)
+			return RenderGetPortfolioSummary(cmd.OutOrStdout(), out)
 		},
 	}
 
@@ -73,7 +61,7 @@ func newPortfolioRiskCmd() *cobra.Command {
 	}
 }
 
-func newPortfolioAddPositionCmd() *cobra.Command {
+func newPortfolioAddPositionCmd(app *app.Runtime) *cobra.Command {
 	var qty float64
 	var avgCost float64
 	var currency string
@@ -102,28 +90,21 @@ func newPortfolioAddPositionCmd() *cobra.Command {
 				currency = "USD"
 			}
 
-			db, err := store.Open("tick.db")
+			out, err := app.AddPosition.Execute(
+				cmd.Context(),
+				usecase.AddPositionToPortfolioUseCaseInput{
+					PortfolioName: portfolioName,
+					Ticker:        ticker,
+					Currency:      currency,
+					AvgCost:       avgCost,
+					Qty:           qty,
+				},
+			)
 			if err != nil {
 				return err
 			}
-			defer db.Close()
 
-			repo := store.NewPositionRepository(db)
-
-			position := domain.Position{
-				PortfolioName:      portfolioName,
-				Ticker:             ticker,
-				Quantity:           qty,
-				AvgCost:            avgCost,
-				InstrumentCurrency: currency,
-			}
-
-			if err := repo.Create(context.Background(), position); err != nil {
-				return err
-			}
-
-			fmt.Printf("Saved %s in portfolio %s: qty=%.4f avg_cost=%.2f %s\n", ticker, portfolioName, qty, avgCost, currency)
-			return nil
+			return RenderAddPortfolioPosition(cmd.OutOrStdout(), *out)
 		},
 	}
 
@@ -135,7 +116,7 @@ func newPortfolioAddPositionCmd() *cobra.Command {
 	return cmd
 }
 
-func newPortfolioCreateCmd() *cobra.Command {
+func newPortfolioCreateCmd(app *app.Runtime) *cobra.Command {
 	var baseCurrency string
 
 	cmd := &cobra.Command{
@@ -153,31 +134,18 @@ func newPortfolioCreateCmd() *cobra.Command {
 				return fmt.Errorf("base-currency is required")
 			}
 
-			db, err := store.Open("tick.db")
+			out, err := app.CreatePortfolio.Execute(
+				cmd.Context(),
+				usecase.CreatePortfolioUsecaseInput{
+					Name:         name,
+					BaseCurrency: baseCurrency,
+				},
+			)
 			if err != nil {
 				return err
 			}
-			defer db.Close()
 
-			repo := store.NewPortfolioRepository(db)
-
-			p := domain.Portfolio{
-				Name:         name,
-				BaseCurrency: baseCurrency,
-			}
-
-			if err := repo.Create(cmd.Context(), p); err != nil {
-				return err
-			}
-
-			fmt.Fprintf(
-				cmd.OutOrStdout(),
-				"Portfolio %q saved (base currency: %s)\n",
-				name,
-				baseCurrency,
-			)
-
-			return nil
+			return RenderCreatePortfolio(cmd.OutOrStdout(), *out)
 		},
 	}
 

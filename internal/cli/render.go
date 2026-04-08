@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/squeakycheese75/tick/internal/domain"
+	"github.com/squeakycheese75/tick/cmd/usecase"
 )
 
-func RenderPortfolioSummary(w io.Writer, s domain.Summary) error {
+func RenderGetPortfolioSummary(w io.Writer, s usecase.GetPortfolioSummaryUsecaseOutput) error {
 	fmt.Fprintf(w, "Portfolio: %s\n\n", s.PortfolioName)
 	fmt.Fprintf(w, "Base currency: %s\n", s.BaseCurrency)
 	fmt.Fprintf(w, "Total value: %.2f\n\n", s.TotalValue)
@@ -33,6 +33,22 @@ func RenderPortfolioSummary(w io.Writer, s domain.Summary) error {
 			p.Weight*100,
 		)
 	}
+
+	return nil
+}
+
+func RenderCreatePortfolio(w io.Writer, s usecase.CreatePortfolioUsecaseOutout) error {
+	fmt.Fprintf(
+		w,
+		"Portfolio %q saved (base currency: %s)\n",
+		s.Name,
+		s.BaseCurrency,
+	)
+	return nil
+}
+
+func RenderAddPortfolioPosition(w io.Writer, s usecase.AddPositionToPortfolioUseCaseOutput) error {
+	fmt.Fprintf(w, "Saved %s in portfolio %s: qty=%.4f avg_cost=%.2f %s\n", s.Ticker, s.PortfolioName, s.Qty, s.AvgCost, s.Currency)
 
 	return nil
 }

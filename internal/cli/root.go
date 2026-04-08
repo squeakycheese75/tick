@@ -1,8 +1,11 @@
-package cmd
+package cli
 
-import "github.com/spf13/cobra"
+import (
+	"github.com/spf13/cobra"
+	"github.com/squeakycheese75/tick/internal/app"
+)
 
-func NewRootCmd() *cobra.Command {
+func NewRootCmd(app *app.Runtime) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "tick",
 		Short: "Terminal-native portfolio and market intelligence tool",
@@ -16,7 +19,7 @@ It is designed around a simple daily workflow:
 	}
 
 	rootCmd.AddCommand(
-		newPortfolioCmd(),
+		newPortfolioCmd(app),
 		newInfoCmd(),
 		newNewsCmd(),
 	)
