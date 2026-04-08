@@ -8,8 +8,13 @@ import (
 	"github.com/squeakycheese75/tick/internal/domain"
 )
 
+const (
+	basePortfolioCcy = "EUR"
+)
+
 type PortfolioRepository interface {
 	GetByName(ctx context.Context, name string) (domain.Portfolio, error)
+	Create(ctx context.Context, p domain.Portfolio) error
 }
 
 type PositionRepository interface {
@@ -48,7 +53,14 @@ func NewPortfolioService(
 func (s *PortfolioService) GetSummary(ctx context.Context, portfolioName string) (domain.Summary, error) {
 	pf, err := s.portfolios.GetByName(ctx, portfolioName)
 	if err != nil {
-		return domain.Summary{}, fmt.Errorf("get portfolio: %w", err)
+		pf = domain.Portfolio{
+			Name:         portfolioName,
+			BaseCurrency: basePortfolioCcy,
+		}
+
+		if err := s.portfolios.Create(ctx, pf); err != nil {
+			return domain.Summary{}, fmt.Errorf("create default portfolio: %w", err)
+		}
 	}
 
 	positions, err := s.positions.ListByPortfolio(ctx, portfolioName)

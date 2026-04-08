@@ -45,7 +45,7 @@ ORDER BY ticker ASC;
 	return positions, nil
 }
 
-func (r *PositionRepository) Upsert(ctx context.Context, p domain.Position) error {
+func (r *PositionRepository) Create(ctx context.Context, p domain.Position) error {
 	const query = `
 INSERT INTO positions (portfolio_name, ticker, quantity, avg_cost, currency)
 VALUES (?, ?, ?, ?, ?)
