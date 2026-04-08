@@ -38,7 +38,7 @@ WHERE name = ?;
 	return p, nil
 }
 
-func (r *PortfolioRepository) Upsert(ctx context.Context, p domain.Portfolio) error {
+func (r *PortfolioRepository) Create(ctx context.Context, p domain.Portfolio) error {
 	const query = `
 INSERT INTO portfolios (name, base_currency)
 VALUES (?, ?)

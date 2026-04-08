@@ -118,7 +118,7 @@ func newPortfolioAddPositionCmd() *cobra.Command {
 				InstrumentCurrency: currency,
 			}
 
-			if err := repo.Upsert(context.Background(), position); err != nil {
+			if err := repo.Create(context.Background(), position); err != nil {
 				return err
 			}
 
@@ -166,7 +166,7 @@ func newPortfolioCreateCmd() *cobra.Command {
 				BaseCurrency: baseCurrency,
 			}
 
-			if err := repo.Upsert(cmd.Context(), p); err != nil {
+			if err := repo.Create(cmd.Context(), p); err != nil {
 				return err
 			}
 
