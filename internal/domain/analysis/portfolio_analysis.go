@@ -9,23 +9,18 @@ import (
 )
 
 type (
-	PriceProvider interface {
-		GetPrice(ctx context.Context, ticker string) (price float64, currency string, err error)
-	}
-	FXProvider interface {
-		GetRate(ctx context.Context, from string, to string) (float64, error)
+	PricingSvc interface {
+		GetValuationQuote(ctx context.Context, ticker string, targetCurrency string, instrumentCurrency string) (domain.ValuationQuote, error)
 	}
 )
 
 type PortfolioAnalyzer struct {
-	prices PriceProvider
-	fx     FXProvider
+	pricingSvc PricingSvc
 }
 
-func NewPortfolioAnalyzer(prices PriceProvider, fx FXProvider) *PortfolioAnalyzer {
+func NewPortfolioAnalyzer(pricingSvc PricingSvc) *PortfolioAnalyzer {
 	return &PortfolioAnalyzer{
-		prices: prices,
-		fx:     fx,
+		pricingSvc: pricingSvc,
 	}
 }
 
@@ -39,11 +34,13 @@ type AnalyzedPosition struct {
 	Quantity           float64
 	AvgCost            float64
 	InstrumentCurrency string
-	CurrentPrice       float64
+	QuotedPrice        float64
+	QuoteCurrency      string
 	FXRate             float64
+	ConvertedPrice     float64
+	BaseCurrency       string
 	MarketValueBase    float64
 	Weight             float64
-	PriceCurrency      string
 }
 
 type PortfolioAnalysis struct {
@@ -61,21 +58,12 @@ func (a *PortfolioAnalyzer) Analyze(ctx context.Context, in AnalyzePortfolioInpu
 	}
 
 	for _, pos := range in.Positions {
-		currentPrice, priceCurrency, err := a.prices.GetPrice(ctx, pos.Ticker)
+		valuationQuote, err := a.pricingSvc.GetValuationQuote(ctx, pos.Ticker, in.Portfolio.BaseCurrency, pos.InstrumentCurrency)
 		if err != nil {
-			return PortfolioAnalysis{}, fmt.Errorf("get price for %s: %w", pos.Ticker, err)
+			return PortfolioAnalysis{}, fmt.Errorf("get valuation quote for %s: %w", pos.Ticker, err)
 		}
 
-		if priceCurrency == "" {
-			priceCurrency = pos.InstrumentCurrency
-		}
-
-		fxRate, err := a.fx.GetRate(ctx, priceCurrency, in.Portfolio.BaseCurrency)
-		if err != nil {
-			return PortfolioAnalysis{}, fmt.Errorf("get fx rate %s/%s: %w", priceCurrency, in.Portfolio.BaseCurrency, err)
-		}
-
-		marketValueBase := pos.Quantity * currentPrice * fxRate
+		marketValueBase := pos.Quantity * valuationQuote.ConvertedPrice
 		result.TotalValue += marketValueBase
 
 		result.AnalyzedPositions = append(result.AnalyzedPositions, AnalyzedPosition{
@@ -83,9 +71,11 @@ func (a *PortfolioAnalyzer) Analyze(ctx context.Context, in AnalyzePortfolioInpu
 			Quantity:           pos.Quantity,
 			AvgCost:            pos.AvgCost,
 			InstrumentCurrency: pos.InstrumentCurrency,
-			PriceCurrency:      priceCurrency,
-			CurrentPrice:       currentPrice,
-			FXRate:             fxRate,
+			QuotedPrice:        valuationQuote.Quote.Price,
+			QuoteCurrency:      valuationQuote.Quote.PriceCurrency,
+			FXRate:             valuationQuote.FXRate,
+			ConvertedPrice:     valuationQuote.ConvertedPrice,
+			BaseCurrency:       valuationQuote.TargetCurrency,
 			MarketValueBase:    marketValueBase,
 		})
 	}

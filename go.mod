@@ -3,6 +3,7 @@ module github.com/squeakycheese75/tick
 go 1.25.1
 
 require (
+	github.com/joho/godotenv v1.5.1
 	github.com/spf13/cobra v1.10.2
 	modernc.org/sqlite v1.48.1
 )
