@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/squeakycheese75/tick/cmd/usecase"
 	"github.com/squeakycheese75/tick/internal/app"
+	"github.com/squeakycheese75/tick/internal/usecase"
 )
 
 func newPortfolioCmd(app *app.Runtime) *cobra.Command {
@@ -18,7 +18,7 @@ func newPortfolioCmd(app *app.Runtime) *cobra.Command {
 	portfolioCmd.AddCommand(
 		newPortfolioCreateCmd(app),
 		newPortfolioSummaryCmd(app),
-		newPortfolioRiskCmd(),
+		newPortfolioRiskCmd(app),
 		newPortfolioAddPositionCmd(app),
 	)
 
@@ -48,17 +48,6 @@ func newPortfolioSummaryCmd(app *app.Runtime) *cobra.Command {
 
 	cmd.Flags().StringVar(&portfolioName, "portfolio", "main", "Portfolio name")
 	return cmd
-}
-
-func newPortfolioRiskCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "risk",
-		Short: "Show basic portfolio concentration and risk summary",
-		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("Risk summary:")
-			fmt.Println("- No portfolio data available yet")
-		},
-	}
 }
 
 func newPortfolioAddPositionCmd(app *app.Runtime) *cobra.Command {
@@ -104,7 +93,7 @@ func newPortfolioAddPositionCmd(app *app.Runtime) *cobra.Command {
 				return err
 			}
 
-			return RenderAddPortfolioPosition(cmd.OutOrStdout(), *out)
+			return RenderAddPortfolioPosition(cmd.OutOrStdout(), out)
 		},
 	}
 
@@ -137,8 +126,8 @@ func newPortfolioCreateCmd(app *app.Runtime) *cobra.Command {
 			out, err := app.CreatePortfolio.Execute(
 				cmd.Context(),
 				usecase.CreatePortfolioUsecaseInput{
-					Name:         name,
-					BaseCurrency: baseCurrency,
+					PortfolioName: name,
+					BaseCurrency:  baseCurrency,
 				},
 			)
 			if err != nil {
@@ -156,5 +145,30 @@ func newPortfolioCreateCmd(app *app.Runtime) *cobra.Command {
 		"Base currency for the portfolio (e.g. EUR, USD, GBP)",
 	)
 
+	return cmd
+}
+
+func newPortfolioRiskCmd(rt *app.Runtime) *cobra.Command {
+	var portfolioName string
+
+	cmd := &cobra.Command{
+		Use:   "risk",
+		Short: "Show portfolio concentration and basic risk summary",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			out, err := rt.GetPortfolioRisk.Execute(
+				cmd.Context(),
+				usecase.GetPortfolioRiskInput{
+					PortfolioName: portfolioName,
+				},
+			)
+			if err != nil {
+				return err
+			}
+
+			return RenderGetPortfolioRisk(cmd.OutOrStdout(), out)
+		},
+	}
+
+	cmd.Flags().StringVar(&portfolioName, "portfolio", "main", "Portfolio name")
 	return cmd
 }

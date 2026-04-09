@@ -30,7 +30,7 @@ WHERE name = ?;
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return domain.Portfolio{}, fmt.Errorf("portfolio %q not found", name)
+			return domain.Portfolio{}, domain.ErrPortfolioNotFound
 		}
 		return domain.Portfolio{}, fmt.Errorf("query portfolio: %w", err)
 	}
