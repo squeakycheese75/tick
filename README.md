@@ -2,114 +2,159 @@
 
 Terminal-native portfolio and market intelligence tool.
 
-`tick` is a Bloomberg-style CLI for developers and investors.  
-It helps you track your portfolio, understand exposure, and analyse assets — directly from your terminal.
+`tick` is a Bloomberg-style CLI for developers and investors.\
+It provides real-time portfolio valuation, risk insights, and market
+context --- directly from your terminal.
 
----
+------------------------------------------------------------------------
 
 ## Features
 
-- Portfolio tracking (multi-currency aware)
-- Position management
-- Portfolio summaries and weighting
-- Currency-normalised valuation (base currency per portfolio)
-- Clean CLI interface
+### Portfolio Management
 
----
+-   Create and manage portfolios
+-   Add/update positions
+-   Multi-currency support per position
+
+### Valuation & Pricing
+
+-   Live price data (via Finnhub)
+-   FX conversion (via Frankfurter)
+-   Portfolio base currency normalization
+-   Cached pricing and FX (configurable TTLs)
+
+### Analysis
+
+-   Portfolio summary (weights, values)
+-   Concentration risk analysis
+-   Top holdings breakdown
+
+### Daily Brief (`tick daily`)
+
+-   Portfolio overview
+-   Top holdings
+-   Risk summary
+-   News per holding
+-   Attention signals
+-   Daily price moves (% change with arrows)
+
+### CLI Experience
+
+-   Fast, terminal-first UX
+-   Clean, readable output
+-   Designed for daily usage
+
+------------------------------------------------------------------------
 
 ## Getting Started
 
 ### Run locally
 
-```bash
-go run ./cmd/tick portfolio summary
-```
+go run ./cmd/tick daily
 
 ### Build the CLI
 
-```bash
-go build -o bin/tick ./cmd/tick
-./bin/tick portfolio summary
-```
+go build -o bin/tick ./cmd/tick ./bin/tick daily
 
 ### Install globally (Go)
 
-```bash
 go install github.com/squeakycheese75/tick/cmd/tick@latest
-```
 
-Then:
-
-```bash
-tick portfolio summary
-```
-
----
+------------------------------------------------------------------------
 
 ## Example Usage
 
 Create a portfolio:
 
-```bash
 tick portfolio create main --base-currency EUR
-```
 
 Add positions:
 
-```bash
-tick portfolio add NVDA --qty 10 --avg-cost 400 --currency USD --portfolio main
-tick portfolio add ASML --qty 5 --avg-cost 850 --currency EUR --portfolio main
-```
+tick portfolio add NVDA --qty 10 --avg-cost 400 --currency USD
+--portfolio main tick portfolio add ASML --qty 5 --avg-cost 850
+--currency EUR --portfolio main
 
-View your portfolio:
+View summary:
 
-```bash
 tick portfolio summary
-```
 
----
+Run daily brief:
+
+tick daily
+
+------------------------------------------------------------------------
+
+## Configuration
+
+`tick` is configured via environment variables (supports `.env`).
+
+### Example `.env`
+
+PRICE_PROVIDER=finnhub FX_PROVIDER=frankfurter
+
+FINNHUB_API_KEY=your_api_key_here
+
+CACHE_ENABLED=true CACHE_PRICE_TTL=15m CACHE_FX_TTL=12h
+
+### Providers
+
+-   Price: static, finnhub
+-   FX: static, frankfurter
+
+------------------------------------------------------------------------
 
 ## Project Structure
 
-```
-cmd/tick/          # CLI entrypoint
-internal/
-  app/             # application services (use cases)
-  domain/          # core models and logic
-  adapters/        # DB, FX, pricing providers
-  cli/             # rendering/output
-```
+cmd/tick/ \# CLI entrypoint internal/ app/ \# wiring, config, provider
+factories domain/ \# core models usecase/ \# application logic service/
+\# reusable services adapters/market/ \# price + FX providers cli/ \#
+rendering/output
 
----
+------------------------------------------------------------------------
 
 ## Design Principles
 
-- **Terminal-first**: fast, minimal, composable
-- **Local-first**: SQLite-backed, no cloud dependency
-- **Deterministic core**: calculations handled in code
-- **Modular architecture**: CLI is thin, logic lives in services
-- **Extensible**: designed for future data sources and interfaces
+-   Terminal-first
+-   Local-first
+-   Deterministic core
+-   Composable architecture
+-   Extensible
+-   Grounded intelligence
 
----
+------------------------------------------------------------------------
 
 ## Roadmap
 
-- [ ] Portfolio risk analysis
-- [ ] Asset info and fundamentals
-- [ ] News integration
-- [ ] Synthetic portfolios and strategy simulation
-- [ ] Better terminal output (tables, formatting)
-- [ ] Live price and FX providers
+### Near Term
 
----
+-   Live price integration
+-   FX conversion
+-   Daily brief
+-   News integration
+-   Caching
+
+### Next
+
+-   AI-assisted portfolio analysis (local LLM)
+-   Better instrument metadata
+-   Improved terminal formatting
+-   Historical performance tracking
+
+### Future
+
+-   Strategy simulation
+-   Alerts and signals
+-   Plugin/provider ecosystem
+
+------------------------------------------------------------------------
 
 ## Versioning
 
-This project follows semantic versioning.
+Semantic versioning
 
-Current stage: `v0.x` (early development)
+Current stage: v0.x
 
----
+------------------------------------------------------------------------
 
 ## License
 
