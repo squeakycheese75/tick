@@ -94,3 +94,61 @@ func RenderGetPortfolioRisk(w io.Writer, s usecase.GetPortfolioRiskOutput) error
 
 	return out.err
 }
+
+func RenderGetDailyBrief(w io.Writer, s usecase.GetDailyBriefOutput) error {
+	out := &writer{w: w}
+
+	out.printf("tick daily\n\n")
+	out.printf("Portfolio: %s\n", s.PortfolioName)
+	out.printf("Base currency: %s\n", s.BaseCurrency)
+	out.printf("Total value: %.2f\n\n", s.TotalValue)
+
+	out.printf("Top holdings\n")
+	if len(s.TopHoldings) == 0 {
+		out.println("- No positions")
+	} else {
+		for _, h := range s.TopHoldings {
+			out.printf(
+				"- %s  %.2f%%  %.2f %s\n",
+				h.Ticker,
+				h.Weight*100,
+				h.MarketValueBase,
+				s.BaseCurrency,
+			)
+		}
+	}
+
+	out.println("\nRisk")
+	if s.Risk.LargestPosition == "" {
+		out.printf("- No risk data available\n")
+	} else {
+		out.printf("- Largest position: %s (%.2f%%)\n", s.Risk.LargestPosition, s.Risk.LargestWeight*100)
+		out.printf("- Top 3 concentration: %.2f%%\n", s.Risk.Top3Concentration*100)
+		for _, observation := range s.Risk.Observations {
+			out.printf("- Observation: %s\n", observation)
+		}
+	}
+
+	out.println("\nNews")
+	if len(s.News) == 0 {
+		out.printf("- No news\n")
+	} else {
+		for _, group := range s.News {
+			if len(group.Headlines) == 0 {
+				out.printf("- %s: no recent headlines\n", group.Ticker)
+				continue
+			}
+			out.printf("- %s:\n", group.Ticker)
+			for _, headline := range group.Headlines {
+				out.printf("  - %s\n", headline.Title)
+			}
+		}
+	}
+
+	out.println("\nAttention")
+	for _, item := range s.Attention {
+		out.printf("- %s\n", item)
+	}
+
+	return out.err
+}
