@@ -1,9 +1,5 @@
 package usecase
 
-const (
-	basePortfolioCcy = "EUR"
-)
-
 type GetPortfolioSummaryUsecaseInput struct {
 	PortfolioName string
 }
@@ -27,13 +23,13 @@ type SummaryPosition struct {
 	Weight             float64
 }
 type CreatePortfolioUsecaseInput struct {
-	Name         string
-	BaseCurrency string
+	PortfolioName string
+	BaseCurrency  string
 }
 
 type CreatePortfolioUsecaseOutout struct {
-	Name         string
-	BaseCurrency string
+	PortfolioName string
+	BaseCurrency  string
 }
 
 type AddPositionToPortfolioUseCaseInput struct {
@@ -50,4 +46,18 @@ type AddPositionToPortfolioUseCaseOutput struct {
 	Currency      string
 	AvgCost       float64
 	PortfolioName string
+}
+
+type GetPortfolioRiskInput struct {
+	PortfolioName string
+}
+
+type GetPortfolioRiskOutput struct {
+	PortfolioName     string
+	BaseCurrency      string
+	PositionCount     int
+	LargestPosition   string
+	LargestWeight     float64
+	Top3Concentration float64
+	Observations      []string
 }

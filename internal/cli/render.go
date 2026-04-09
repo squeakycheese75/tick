@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/squeakycheese75/tick/cmd/usecase"
+	"github.com/squeakycheese75/tick/internal/usecase"
 )
 
 type writer struct {
@@ -59,7 +59,7 @@ func RenderCreatePortfolio(w io.Writer, s usecase.CreatePortfolioUsecaseOutout) 
 
 	out.printf(
 		"Portfolio %q saved (base currency: %s)\n",
-		s.Name,
+		s.PortfolioName,
 		s.BaseCurrency,
 	)
 	return out.err
@@ -69,6 +69,28 @@ func RenderAddPortfolioPosition(w io.Writer, s usecase.AddPositionToPortfolioUse
 	out := &writer{w: w}
 
 	out.printf("Saved %s in portfolio %s: qty=%.4f avg_cost=%.2f %s\n", s.Ticker, s.PortfolioName, s.Qty, s.AvgCost, s.Currency)
+
+	return out.err
+}
+
+func RenderGetPortfolioRisk(w io.Writer, s usecase.GetPortfolioRiskOutput) error {
+	out := &writer{w: w}
+
+	out.printf("Risk summary: %s\n\n", s.PortfolioName)
+	out.printf("Base currency: %s\n", s.BaseCurrency)
+	out.printf("Positions: %d\n", s.PositionCount)
+
+	if s.PositionCount > 0 {
+		out.printf("Largest position: %s (%.2f%%)\n", s.LargestPosition, s.LargestWeight*100)
+		out.printf("Top 3 concentration: %.2f%%\n", s.Top3Concentration*100)
+	}
+
+	if len(s.Observations) > 0 {
+		out.println("\nObservations:")
+		for _, observation := range s.Observations {
+			out.printf("- %s\n", observation)
+		}
+	}
 
 	return out.err
 }
