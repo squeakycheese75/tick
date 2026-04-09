@@ -8,6 +8,12 @@ context --- directly from your terminal.
 
 ------------------------------------------------------------------------
 
+## Example Output
+
+![tick daily output](docs/screenshot.png)
+
+------------------------------------------------------------------------
+
 ## Features
 
 ### Portfolio Management
@@ -27,7 +33,6 @@ context --- directly from your terminal.
 
 -   Portfolio summary (weights, values)
 -   Concentration risk analysis
--   Top holdings breakdown
 
 ### Daily Brief (`tick daily`)
 
@@ -38,27 +43,28 @@ context --- directly from your terminal.
 -   Attention signals
 -   Daily price moves (% change with arrows)
 
-### CLI Experience
-
--   Fast, terminal-first UX
--   Clean, readable output
--   Designed for daily usage
-
 ------------------------------------------------------------------------
 
 ## Getting Started
 
 ### Run locally
 
+``` bash
 go run ./cmd/tick daily
+```
 
 ### Build the CLI
 
-go build -o bin/tick ./cmd/tick ./bin/tick daily
+``` bash
+go build -o bin/tick ./cmd/tick
+./bin/tick daily
+```
 
 ### Install globally (Go)
 
+``` bash
 go install github.com/squeakycheese75/tick/cmd/tick@latest
+```
 
 ------------------------------------------------------------------------
 
@@ -66,21 +72,28 @@ go install github.com/squeakycheese75/tick/cmd/tick@latest
 
 Create a portfolio:
 
+``` bash
 tick portfolio create main --base-currency EUR
+```
 
 Add positions:
 
-tick portfolio add NVDA --qty 10 --avg-cost 400 --currency USD
---portfolio main tick portfolio add ASML --qty 5 --avg-cost 850
---currency EUR --portfolio main
+``` bash
+tick portfolio add NVDA --qty 10 --avg-cost 400 --currency USD --portfolio main
+tick portfolio add ASML --qty 5 --avg-cost 850 --currency EUR --portfolio main
+```
 
 View summary:
 
+``` bash
 tick portfolio summary
+```
 
 Run daily brief:
 
+``` bash
 tick daily
+```
 
 ------------------------------------------------------------------------
 
@@ -90,69 +103,16 @@ tick daily
 
 ### Example `.env`
 
-PRICE_PROVIDER=finnhub FX_PROVIDER=frankfurter
+``` env
+PRICE_PROVIDER=finnhub
+FX_PROVIDER=frankfurter
 
 FINNHUB_API_KEY=your_api_key_here
 
-CACHE_ENABLED=true CACHE_PRICE_TTL=15m CACHE_FX_TTL=12h
-
-### Providers
-
--   Price: static, finnhub
--   FX: static, frankfurter
-
-------------------------------------------------------------------------
-
-## Project Structure
-
-cmd/tick/ \# CLI entrypoint internal/ app/ \# wiring, config, provider
-factories domain/ \# core models usecase/ \# application logic service/
-\# reusable services adapters/market/ \# price + FX providers cli/ \#
-rendering/output
-
-------------------------------------------------------------------------
-
-## Design Principles
-
--   Terminal-first
--   Local-first
--   Deterministic core
--   Composable architecture
--   Extensible
--   Grounded intelligence
-
-------------------------------------------------------------------------
-
-## Roadmap
-
-### Near Term
-
--   Live price integration
--   FX conversion
--   Daily brief
--   News integration
--   Caching
-
-### Next
-
--   AI-assisted portfolio analysis (local LLM)
--   Better instrument metadata
--   Improved terminal formatting
--   Historical performance tracking
-
-### Future
-
--   Strategy simulation
--   Alerts and signals
--   Plugin/provider ecosystem
-
-------------------------------------------------------------------------
-
-## Versioning
-
-Semantic versioning
-
-Current stage: v0.x
+CACHE_ENABLED=true
+CACHE_PRICE_TTL=15m
+CACHE_FX_TTL=12h
+```
 
 ------------------------------------------------------------------------
 
