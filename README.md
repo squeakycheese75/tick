@@ -10,13 +10,7 @@ context --- directly from your terminal.
 
 ## Example Output
 
-```{=html}
-<p align="center">
-```
-`<img src="docs/screenshot.png" width="700" />`{=html}
-```{=html}
-</p>
-```
+![tick daily output](docs/screenshot.png)
 
 ------------------------------------------------------------------------
 
