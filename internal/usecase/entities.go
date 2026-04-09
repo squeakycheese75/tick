@@ -13,15 +13,17 @@ type GetPortfolioSummaryUsecaseOutput struct {
 
 type SummaryPosition struct {
 	Ticker             string
-	Quantity           float64
-	InstrumentCurrency string
 	BaseCurrency       string
+	InstrumentCurrency string
 	AvgCost            float64
-	CurrentPrice       float64
-	FXRate             float64
-	MarketValueBase    float64
+	ConvertedPrice     float64
+	QuotedPrice        float64
 	Weight             float64
+	MarketValueBase    float64
+	FXRate             float64
+	Quantity           float64
 }
+
 type CreatePortfolioUsecaseInput struct {
 	PortfolioName string
 	BaseCurrency  string

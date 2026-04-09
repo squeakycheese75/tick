@@ -28,21 +28,23 @@ func RenderGetPortfolioSummary(w io.Writer, s usecase.GetPortfolioSummaryUsecase
 
 	out.printf("Portfolio: %s\n\n", s.PortfolioName)
 	out.printf("Base currency: %s\n", s.BaseCurrency)
-	out.printf("Total value: %.2f\n\n", s.TotalValue)
+	out.printf("Total value: %.2f %s\n\n", s.TotalValue, s.BaseCurrency)
 
 	if len(s.Positions) == 0 {
 		out.println("No positions")
-		return nil
+		return out.err
 	}
 
 	out.println("Positions:")
+	out.println("TICKER   QTY        PRICE         FX       VALUE         WEIGHT")
+	out.println("------   --------   ------------  -------  ------------  -------")
 
 	for _, p := range s.Positions {
 		out.printf(
-			"- %s qty=%.4f price=%.2f %s fx=%.4f value=%.2f %s weight=%.2f%%\n",
+			"%-6s   %8.4f   %8.2f %-3s  %7.4f  %10.2f %-3s  %6.2f%%\n",
 			p.Ticker,
 			p.Quantity,
-			p.CurrentPrice,
+			p.QuotedPrice,
 			p.InstrumentCurrency,
 			p.FXRate,
 			p.MarketValueBase,

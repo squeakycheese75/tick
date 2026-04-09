@@ -40,10 +40,12 @@ func mapPortfolioAnalysisToSummaryOutput(r analysis.PortfolioAnalysis) GetPortfo
 			BaseCurrency:       r.BaseCurrency,
 			InstrumentCurrency: pos.InstrumentCurrency,
 			AvgCost:            pos.AvgCost,
-			CurrentPrice:       pos.CurrentPrice,
+			QuotedPrice:        pos.QuotedPrice,
+			ConvertedPrice:     pos.ConvertedPrice,
 			Weight:             pos.Weight,
 			MarketValueBase:    pos.MarketValueBase,
 			FXRate:             pos.FXRate,
+			Quantity:           pos.Quantity,
 		})
 	}
 
