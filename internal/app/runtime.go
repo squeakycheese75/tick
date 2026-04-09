@@ -1,9 +1,6 @@
 package app
 
 import (
-	"time"
-
-	"github.com/squeakycheese75/tick/internal/adapters/market"
 	"github.com/squeakycheese75/tick/internal/adapters/news"
 	"github.com/squeakycheese75/tick/internal/domain/analysis"
 	"github.com/squeakycheese75/tick/internal/service"
@@ -20,10 +17,10 @@ type Runtime struct {
 }
 
 func BuildRuntime(dbPath string) (*Runtime, error) {
-	// cfg, err := LoadConfig()
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
+	cfg, err := LoadConfig()
+	if err != nil {
+		return nil, err
+	}
 
 	db, err := store.Open(dbPath)
 	if err != nil {
@@ -33,9 +30,15 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 	portfolioRepo := store.NewPortfolioRepository(db)
 	positionRepo := store.NewPositionRepository(db)
 
-	priceProvider := market.NewCachedPriceProvider(market.NewStaticPriceProvider(), 15*time.Minute)
-	// priceProvider := market.NewFinnhubPriceProvider(cfg.FinnhubAPIKey)
-	fxProvider := market.NewCachedFXProvider(market.NewStaticFXProvider(), 12*time.Hour)
+	priceProvider, err := BuildPriceProvider(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	fxProvider, err := BuildFXProvider(cfg)
+	if err != nil {
+		return nil, err
+	}
 
 	pricingSvc := service.NewPricingService(priceProvider, fxProvider)
 	newsProvider := news.NewStaticProvider()

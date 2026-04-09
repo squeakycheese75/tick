@@ -88,6 +88,9 @@ type DailyHolding struct {
 	Ticker          string
 	Weight          float64
 	MarketValueBase float64
+	QuotedPrice     float64
+	PriceCurrency   string
+	ChangePercent   float64
 }
 
 type DailyRisk struct {
