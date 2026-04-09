@@ -23,6 +23,31 @@ func (w *writer) println(s string) {
 	w.printf("%s\n", s)
 }
 
+const (
+	ansiReset = "\033[0m"
+	ansiGreen = "\033[32m"
+	ansiRed   = "\033[31m"
+)
+
+func formatChangePercent(v float64) string {
+	arrow := "→"
+	color := ""
+	reset := ""
+
+	switch {
+	case v > 0:
+		arrow = "↑"
+		color = ansiGreen
+		reset = ansiReset
+	case v < 0:
+		arrow = "↓"
+		color = ansiRed
+		reset = ansiReset
+	}
+
+	return fmt.Sprintf("%s%s %+.2f%%%s", color, arrow, v, reset)
+}
+
 func RenderGetPortfolioSummary(w io.Writer, s usecase.GetPortfolioSummaryUsecaseOutput) error {
 	out := &writer{w: w}
 
@@ -111,11 +136,14 @@ func RenderGetDailyBrief(w io.Writer, s usecase.GetDailyBriefOutput) error {
 	} else {
 		for _, h := range s.TopHoldings {
 			out.printf(
-				"- %s  %.2f%%  %.2f %s\n",
+				"- %s  %.2f%%  %.2f %s  @ %.2f %s  %s\n",
 				h.Ticker,
 				h.Weight*100,
 				h.MarketValueBase,
 				s.BaseCurrency,
+				h.QuotedPrice,
+				h.PriceCurrency,
+				formatChangePercent(h.ChangePercent),
 			)
 		}
 	}

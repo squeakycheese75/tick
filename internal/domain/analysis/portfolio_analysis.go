@@ -35,10 +35,12 @@ type AnalyzedPosition struct {
 	AvgCost            float64
 	InstrumentCurrency string
 	QuotedPrice        float64
-	QuoteCurrency      string
+	QuotedChange       float64
+	QuotedChangePct    float64
+	PriceCurrency      string
 	FXRate             float64
 	ConvertedPrice     float64
-	BaseCurrency       string
+	ConvertedChange    float64
 	MarketValueBase    float64
 	Weight             float64
 }
@@ -72,10 +74,11 @@ func (a *PortfolioAnalyzer) Analyze(ctx context.Context, in AnalyzePortfolioInpu
 			AvgCost:            pos.AvgCost,
 			InstrumentCurrency: pos.InstrumentCurrency,
 			QuotedPrice:        valuationQuote.Quote.Price,
-			QuoteCurrency:      valuationQuote.Quote.PriceCurrency,
+			QuotedChange:       valuationQuote.Quote.Change,
+			QuotedChangePct:    valuationQuote.Quote.ChangePercent,
+			PriceCurrency:      valuationQuote.Quote.PriceCurrency,
 			FXRate:             valuationQuote.FXRate,
 			ConvertedPrice:     valuationQuote.ConvertedPrice,
-			BaseCurrency:       valuationQuote.TargetCurrency,
 			MarketValueBase:    marketValueBase,
 		})
 	}

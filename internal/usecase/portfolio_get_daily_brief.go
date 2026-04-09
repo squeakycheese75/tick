@@ -54,6 +54,9 @@ func (uc *GetDailyBriefUseCase) Execute(
 			Ticker:          pos.Ticker,
 			Weight:          pos.Weight,
 			MarketValueBase: pos.MarketValueBase,
+			QuotedPrice:     pos.QuotedPrice,
+			PriceCurrency:   pos.PriceCurrency,
+			ChangePercent:   pos.QuotedChangePct,
 		})
 	}
 

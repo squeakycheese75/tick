@@ -22,7 +22,8 @@ func NewFinnhubPriceProvider(apiKey string) *FinnhubPriceProvider {
 }
 
 type finnhubQuoteResponse struct {
-	C float64 `json:"c"` // current price
+	C  float64 `json:"c"`  // current price
+	PC float64 `json:"pc"` // previous close
 }
 
 func (p *FinnhubPriceProvider) GetQuote(ctx context.Context, ticker string) (domain.Quote, error) {
@@ -34,12 +35,12 @@ func (p *FinnhubPriceProvider) GetQuote(ctx context.Context, ticker string) (dom
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		return domain.Quote{Price: 0}, err
+		return domain.Quote{}, err
 	}
 
 	resp, err := p.client.Do(req)
 	if err != nil {
-		return domain.Quote{Price: 0}, err
+		return domain.Quote{}, err
 	}
 	defer func() {
 		_ = resp.Body.Close()
@@ -47,18 +48,27 @@ func (p *FinnhubPriceProvider) GetQuote(ctx context.Context, ticker string) (dom
 
 	var data finnhubQuoteResponse
 	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
-		return domain.Quote{Price: 0}, err
+		return domain.Quote{}, err
 	}
 
 	if data.C == 0 {
-		return domain.Quote{Price: 0}, fmt.Errorf("no price returned for %s", ticker)
+		return domain.Quote{}, fmt.Errorf("no price returned for %s", ticker)
 	}
 
-	// Finnhub does not always return currency → assume USD for now
+	change := 0.0
+	changePercent := 0.0
+	if data.PC > 0 {
+		change = data.C - data.PC
+		changePercent = (change / data.PC) * 100
+	}
+
 	return domain.Quote{
 		Ticker:        ticker,
 		Price:         data.C,
 		PriceCurrency: "USD",
+		PreviousClose: data.PC,
+		Change:        change,
+		ChangePercent: changePercent,
 		Source:        "finnhub",
 	}, nil
 }

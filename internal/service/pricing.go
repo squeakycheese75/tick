@@ -45,7 +45,6 @@ func (s *PricingService) GetValuationQuote(
 	if priceCurrency == "" {
 		priceCurrency = instrumentCurrency
 	}
-
 	if priceCurrency == "" {
 		return domain.ValuationQuote{}, fmt.Errorf("missing price currency for %s", ticker)
 	}
@@ -53,16 +52,16 @@ func (s *PricingService) GetValuationQuote(
 	pc := strings.ToUpper(priceCurrency)
 	tc := strings.ToUpper(targetCurrency)
 
-	// normalize for downstream use
 	quote.PriceCurrency = pc
 
-	// ✅ No FX needed
 	if pc == tc {
 		return domain.ValuationQuote{
-			Quote:          quote,
-			TargetCurrency: tc,
-			FXRate:         1.0,
-			ConvertedPrice: quote.Price,
+			Quote:                  quote,
+			TargetCurrency:         tc,
+			FXRate:                 1.0,
+			ConvertedPrice:         quote.Price,
+			ConvertedPreviousClose: quote.PreviousClose,
+			ConvertedChange:        quote.Change,
 		}, nil
 	}
 
@@ -72,9 +71,11 @@ func (s *PricingService) GetValuationQuote(
 	}
 
 	return domain.ValuationQuote{
-		Quote:          quote,
-		TargetCurrency: tc,
-		FXRate:         rate,
-		ConvertedPrice: quote.Price * rate,
+		Quote:                  quote,
+		TargetCurrency:         tc,
+		FXRate:                 rate,
+		ConvertedPrice:         quote.Price * rate,
+		ConvertedPreviousClose: quote.PreviousClose * rate,
+		ConvertedChange:        quote.Change * rate,
 	}, nil
 }
