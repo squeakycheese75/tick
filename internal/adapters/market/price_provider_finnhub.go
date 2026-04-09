@@ -42,7 +42,9 @@ func (p *FinnhubPriceProvider) GetQuote(ctx context.Context, ticker string) (dom
 	if err != nil {
 		return domain.Quote{}, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	var data finnhubQuoteResponse
 	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {

@@ -53,7 +53,9 @@ func (p *FrankfurterFXProvider) GetRate(ctx context.Context, from string, to str
 	if err != nil {
 		return 0, fmt.Errorf("perform frankfurter request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return 0, fmt.Errorf("frankfurter returned status %s", resp.Status)

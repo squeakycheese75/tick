@@ -42,7 +42,7 @@ func BuildFXProvider(cfg Config) (service.FXProvider, error) {
 		return nil, fmt.Errorf("unsupported FX_PROVIDER %q", cfg.FXProvider)
 	}
 
-	// ✅ apply cache conditionally
+	// apply cache conditionally
 	if cfg.CacheEnabled {
 		provider = market.NewCachedFXProvider(provider, cfg.FXCacheTTL)
 	}
