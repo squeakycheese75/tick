@@ -22,6 +22,7 @@ It is designed around a simple daily workflow:
 		newPortfolioCmd(app),
 		newInfoCmd(),
 		newNewsCmd(),
+		newDailyCmd(app),
 	)
 
 	return rootCmd

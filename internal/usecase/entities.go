@@ -61,3 +61,46 @@ type GetPortfolioRiskOutput struct {
 	Top3Concentration float64
 	Observations      []string
 }
+
+type GetDailyBriefInput struct {
+	PortfolioName string
+	NewsLimit     int
+}
+
+type GetDailyBriefOutput struct {
+	PortfolioName string
+	BaseCurrency  string
+	TotalValue    float64
+	TopHoldings   []DailyHolding
+	Risk          DailyRisk
+	News          []DailyNews
+	Attention     []string
+}
+
+type TickerNews struct {
+	Ticker    string
+	Headlines []NewsHeadline
+}
+
+type DailyHolding struct {
+	Ticker          string
+	Weight          float64
+	MarketValueBase float64
+}
+
+type DailyRisk struct {
+	LargestPosition   string
+	LargestWeight     float64
+	Top3Concentration float64
+	Observations      []string
+}
+
+type DailyNews struct {
+	Ticker    string
+	Headlines []NewsHeadline
+}
+
+type NewsHeadline struct {
+	Title string
+	URL   string
+}

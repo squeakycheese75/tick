@@ -2,7 +2,9 @@ package app
 
 import (
 	"github.com/squeakycheese75/tick/internal/adapters/market"
+	"github.com/squeakycheese75/tick/internal/adapters/news"
 	"github.com/squeakycheese75/tick/internal/domain/analysis"
+	"github.com/squeakycheese75/tick/internal/service"
 	"github.com/squeakycheese75/tick/internal/store"
 	"github.com/squeakycheese75/tick/internal/usecase"
 )
@@ -12,6 +14,7 @@ type Runtime struct {
 	CreatePortfolio     *usecase.CreatePortfolioUseCase
 	AddPosition         *usecase.AddPositionToPortfolioUseCase
 	GetPortfolioRisk    *usecase.GetPortfolioRiskUseCase
+	GetDailyBrief       *usecase.GetDailyBriefUseCase
 }
 
 func BuildRuntime(dbPath string) (*Runtime, error) {
@@ -24,23 +27,23 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 	positionRepo := store.NewPositionRepository(db)
 	priceProvider := market.NewStaticPriceProvider()
 	fxProvider := market.NewStaticFXProvider()
+	newsProvider := news.NewStaticProvider()
 
 	portfolioAnalyser := analysis.NewPortfolioAnalyzer(priceProvider, fxProvider)
 	riskAnalyser := analysis.NewRiskAnalyzer()
 
+	portfolioSvc := service.NewPortfolioService(portfolioRepo, positionRepo, portfolioAnalyser, riskAnalyser)
+	portfolioInsights := service.NewPortfolioInsights()
+
 	return &Runtime{
 		GetPortfolioSummary: usecase.NewGetPortfolioSummaryUseCase(
-			portfolioRepo,
-			positionRepo,
-			portfolioAnalyser,
+			portfolioSvc,
 		),
 		CreatePortfolio: usecase.NewCreatePortfolioUseCase(portfolioRepo),
 		AddPosition:     usecase.NewAddPositionToPortfolioUseCase(positionRepo, portfolioRepo),
 		GetPortfolioRisk: usecase.NewGetPortfolioRiskUseCase(
-			portfolioRepo,
-			positionRepo,
-			portfolioAnalyser,
-			riskAnalyser,
+			portfolioSvc,
 		),
+		GetDailyBrief: usecase.NewGetDailyBriefUseCase(portfolioSvc, portfolioInsights, newsProvider),
 	}, nil
 }

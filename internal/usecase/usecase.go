@@ -28,4 +28,15 @@ type (
 	RiskAnalyzer interface {
 		Analyze(in analysis.PortfolioAnalysis) (analysis.PortfolioRisk, error)
 	}
+	NewsProvider interface {
+		GetNews(ctx context.Context, ticker string, limit int) ([]domain.NewsHeadline, error)
+	}
+	PortfolioSvc interface {
+		GetAnalysis(ctx context.Context, portfolioName string) (analysis.PortfolioAnalysis, error)
+		GetRisk(ctx context.Context, portfolioName string) (analysis.PortfolioRisk, error)
+	}
+	PortfolioInsights interface {
+		TopHoldings(portfolioAnalysis analysis.PortfolioAnalysis, limit int) []analysis.AnalyzedPosition
+		AttentionSignals(portfolioAnalysis analysis.PortfolioAnalysis, portfolioRisk analysis.PortfolioRisk) []string
+	}
 )
