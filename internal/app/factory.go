@@ -1,9 +1,12 @@
 package app
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	"github.com/squeakycheese75/tick/internal/adapters/market"
+	"github.com/squeakycheese75/tick/internal/llm"
 	"github.com/squeakycheese75/tick/internal/service"
 )
 
@@ -48,4 +51,26 @@ func BuildFXProvider(cfg Config) (service.FXProvider, error) {
 	}
 
 	return provider, nil
+}
+
+func BuildLLMClient(cfg Config) (llm.LLMClient, error) {
+	var llmClient llm.LLMClient
+
+	if cfg.LLMEnabled {
+		switch cfg.LLMProvider {
+		case "ollama":
+			llmClient = llm.NewOllamaClient(cfg.LLMBaseURL, cfg.LLMModel)
+		default:
+			return nil, fmt.Errorf("unsupported LLM_PROVIDER %q", cfg.LLMProvider)
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+
+		if err := llmClient.Ping(ctx); err != nil {
+			return nil, fmt.Errorf("llm not ready: %w", err)
+		}
+	}
+
+	return llmClient, nil
 }

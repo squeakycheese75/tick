@@ -13,7 +13,7 @@ type Runtime struct {
 	CreatePortfolio     *usecase.CreatePortfolioUseCase
 	AddPosition         *usecase.AddPositionToPortfolioUseCase
 	GetPortfolioRisk    *usecase.GetPortfolioRiskUseCase
-	GetDailyBrief       *usecase.GetDailyBriefUseCase
+	GetDailyReport      *usecase.GetDailyReportUseCase
 }
 
 func BuildRuntime(dbPath string) (*Runtime, error) {
@@ -40,6 +40,11 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 		return nil, err
 	}
 
+	llmProvider, err := BuildLLMClient(cfg)
+	if err != nil {
+		return nil, err
+	}
+
 	pricingSvc := service.NewPricingService(priceProvider, fxProvider)
 	newsProvider := news.NewStaticProvider()
 
@@ -48,6 +53,9 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 
 	portfolioSvc := service.NewPortfolioService(portfolioRepo, positionRepo, portfolioAnalyser, riskAnalyser)
 	portfolioInsights := service.NewPortfolioInsights()
+	newsSvc := service.NewNewsService(newsProvider)
+
+	reportingSvc := service.NewReportService(portfolioSvc, newsSvc, portfolioInsights)
 
 	return &Runtime{
 		GetPortfolioSummary: usecase.NewGetPortfolioSummaryUseCase(
@@ -58,6 +66,6 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 		GetPortfolioRisk: usecase.NewGetPortfolioRiskUseCase(
 			portfolioSvc,
 		),
-		GetDailyBrief: usecase.NewGetDailyBriefUseCase(portfolioSvc, portfolioInsights, newsProvider),
+		GetDailyReport: usecase.NewGetDailyReportUseCase(reportingSvc, llmProvider),
 	}, nil
 }

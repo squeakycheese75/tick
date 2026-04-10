@@ -1,5 +1,7 @@
 package usecase
 
+import "github.com/squeakycheese75/tick/internal/report"
+
 type GetPortfolioSummaryUsecaseInput struct {
 	PortfolioName string
 }
@@ -64,19 +66,15 @@ type GetPortfolioRiskOutput struct {
 	Observations      []string
 }
 
-type GetDailyBriefInput struct {
+type GetDailyReportInput struct {
 	PortfolioName string
 	NewsLimit     int
+	WithAI        bool
 }
 
-type GetDailyBriefOutput struct {
-	PortfolioName string
-	BaseCurrency  string
-	TotalValue    float64
-	TopHoldings   []DailyHolding
-	Risk          DailyRisk
-	News          []DailyNews
-	Attention     []string
+type GetDailyReportOutput struct {
+	DailyReport report.DailyReport
+	AISummary   string
 }
 
 type TickerNews struct {

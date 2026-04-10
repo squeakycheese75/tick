@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/squeakycheese75/tick/internal/usecase"
 )
@@ -122,25 +123,25 @@ func RenderGetPortfolioRisk(w io.Writer, s usecase.GetPortfolioRiskOutput) error
 	return out.err
 }
 
-func RenderGetDailyBrief(w io.Writer, s usecase.GetDailyBriefOutput) error {
+func RenderGetDailyReport(w io.Writer, s usecase.GetDailyReportOutput) error {
 	out := &writer{w: w}
 
 	out.printf("tick daily\n\n")
-	out.printf("Portfolio: %s\n", s.PortfolioName)
-	out.printf("Base currency: %s\n", s.BaseCurrency)
-	out.printf("Total value: %.2f\n\n", s.TotalValue)
+	out.printf("Portfolio: %s\n", s.DailyReport.PortfolioName)
+	out.printf("Base currency: %s\n", s.DailyReport.BaseCurrency)
+	out.printf("Total value: %.2f\n\n", s.DailyReport.TotalValue)
 
 	out.printf("Top holdings\n")
-	if len(s.TopHoldings) == 0 {
+	if len(s.DailyReport.TopHoldings) == 0 {
 		out.println("- No positions")
 	} else {
-		for _, h := range s.TopHoldings {
+		for _, h := range s.DailyReport.TopHoldings {
 			out.printf(
 				"- %s  %.2f%%  %.2f %s  @ %.2f %s  %s\n",
 				h.Ticker,
 				h.Weight*100,
 				h.MarketValueBase,
-				s.BaseCurrency,
+				s.DailyReport.BaseCurrency,
 				h.QuotedPrice,
 				h.PriceCurrency,
 				formatChangePercent(h.ChangePercent),
@@ -149,21 +150,21 @@ func RenderGetDailyBrief(w io.Writer, s usecase.GetDailyBriefOutput) error {
 	}
 
 	out.println("\nRisk")
-	if s.Risk.LargestPosition == "" {
+	if s.DailyReport.Risk.LargestPosition == "" {
 		out.printf("- No risk data available\n")
 	} else {
-		out.printf("- Largest position: %s (%.2f%%)\n", s.Risk.LargestPosition, s.Risk.LargestWeight*100)
-		out.printf("- Top 3 concentration: %.2f%%\n", s.Risk.Top3Concentration*100)
-		for _, observation := range s.Risk.Observations {
+		out.printf("- Largest position: %s (%.2f%%)\n", s.DailyReport.Risk.LargestPosition, s.DailyReport.Risk.LargestWeight*100)
+		out.printf("- Top 3 concentration: %.2f%%\n", s.DailyReport.Risk.Top3Concentration*100)
+		for _, observation := range s.DailyReport.Risk.Observations {
 			out.printf("- Observation: %s\n", observation)
 		}
 	}
 
 	out.println("\nNews")
-	if len(s.News) == 0 {
+	if len(s.DailyReport.News) == 0 {
 		out.printf("- No news\n")
 	} else {
-		for _, group := range s.News {
+		for _, group := range s.DailyReport.News {
 			if len(group.Headlines) == 0 {
 				out.printf("- %s: no recent headlines\n", group.Ticker)
 				continue
@@ -176,8 +177,21 @@ func RenderGetDailyBrief(w io.Writer, s usecase.GetDailyBriefOutput) error {
 	}
 
 	out.println("\nAttention")
-	for _, item := range s.Attention {
+	for _, item := range s.DailyReport.Attention {
 		out.printf("- %s\n", item)
+	}
+
+	if s.AISummary != "" {
+		out.println("")
+		out.println("AI Summary")
+
+		for _, line := range strings.Split(s.AISummary, "\n") {
+			line = strings.TrimSpace(line)
+			if line == "" {
+				continue
+			}
+			out.println(line)
+		}
 	}
 
 	return out.err
