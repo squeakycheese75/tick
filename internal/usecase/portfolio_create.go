@@ -21,15 +21,12 @@ func NewCreatePortfolioUseCase(portfolioRepo PortfolioRepository) *CreatePortfol
 
 func (uc *CreatePortfolioUseCase) Execute(ctx context.Context, in CreatePortfolioUsecaseInput) (*CreatePortfolioUsecaseOutout, error) {
 	_, err := uc.portfolios.GetByName(ctx, in.PortfolioName)
-	if err != nil {
-		if errors.Is(err, domain.ErrPortfolioAlreadyExists) {
-			return nil, fmt.Errorf("portfolio %q already exists", in.PortfolioName)
-		}
-		return nil, err
-	}
+	switch {
+	case err == nil:
+		return nil, fmt.Errorf("portfolio %q already exists", in.PortfolioName)
 
-	if !errors.Is(err, domain.ErrPortfolioNotFound) {
-		return nil, fmt.Errorf("get portfolio: %w", err)
+	case !errors.Is(err, domain.ErrPortfolioNotFound):
+		return nil, fmt.Errorf("get portfolio %q: %w", in.PortfolioName, err)
 	}
 
 	if err := uc.portfolios.Create(ctx, repository.Portfolio{
