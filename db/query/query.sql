@@ -42,14 +42,12 @@ VALUES (?, ?)
 ON CONFLICT(name) DO UPDATE SET
     base_currency = excluded.base_currency;
 
-
--- name: GetInstrumentBySymbol :one
+-- name: GetInstrumentBySymbolAndExchange :one
 SELECT id, symbol, provider_symbol, asset_type, exchange, quote_currency, created_at, updated_at
 FROM instruments
-WHERE symbol = ?;
+WHERE symbol = ? AND exchange = ?;
 
-
--- name: CreateInstrument :exec
+-- name: CreateInstrument :one
 INSERT INTO instruments (
   symbol,
   provider_symbol,
@@ -59,8 +57,4 @@ INSERT INTO instruments (
 ) VALUES (
   ?, ?, ?, ?, ?
 )
-ON CONFLICT(symbol, exchange) DO UPDATE SET
-    provider_symbol = excluded.provider_symbol,
-    asset_type = excluded.asset_type,
-    quote_currency = excluded.quote_currency;
-;
+RETURNING id;

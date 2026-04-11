@@ -10,7 +10,7 @@ import (
 	"database/sql"
 )
 
-const createInstrument = `-- name: CreateInstrument :exec
+const createInstrument = `-- name: CreateInstrument :one
 INSERT INTO instruments (
   symbol,
   provider_symbol,
@@ -20,10 +20,7 @@ INSERT INTO instruments (
 ) VALUES (
   ?, ?, ?, ?, ?
 )
-ON CONFLICT(symbol, exchange) DO UPDATE SET
-    provider_symbol = excluded.provider_symbol,
-    asset_type = excluded.asset_type,
-    quote_currency = excluded.quote_currency
+RETURNING id
 `
 
 type CreateInstrumentParams struct {
@@ -34,15 +31,17 @@ type CreateInstrumentParams struct {
 	QuoteCurrency  string         `json:"quote_currency"`
 }
 
-func (q *Queries) CreateInstrument(ctx context.Context, arg CreateInstrumentParams) error {
-	_, err := q.db.ExecContext(ctx, createInstrument,
+func (q *Queries) CreateInstrument(ctx context.Context, arg CreateInstrumentParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, createInstrument,
 		arg.Symbol,
 		arg.ProviderSymbol,
 		arg.AssetType,
 		arg.Exchange,
 		arg.QuoteCurrency,
 	)
-	return err
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }
 
 const createPortfolio = `-- name: CreatePortfolio :exec
@@ -97,14 +96,19 @@ func (q *Queries) CreatePosition(ctx context.Context, arg CreatePositionParams) 
 	return err
 }
 
-const getInstrumentBySymbol = `-- name: GetInstrumentBySymbol :one
+const getInstrumentBySymbolAndExchange = `-- name: GetInstrumentBySymbolAndExchange :one
 SELECT id, symbol, provider_symbol, asset_type, exchange, quote_currency, created_at, updated_at
 FROM instruments
-WHERE symbol = ?
+WHERE symbol = ? AND exchange = ?
 `
 
-func (q *Queries) GetInstrumentBySymbol(ctx context.Context, symbol string) (Instrument, error) {
-	row := q.db.QueryRowContext(ctx, getInstrumentBySymbol, symbol)
+type GetInstrumentBySymbolAndExchangeParams struct {
+	Symbol   string         `json:"symbol"`
+	Exchange sql.NullString `json:"exchange"`
+}
+
+func (q *Queries) GetInstrumentBySymbolAndExchange(ctx context.Context, arg GetInstrumentBySymbolAndExchangeParams) (Instrument, error) {
+	row := q.db.QueryRowContext(ctx, getInstrumentBySymbolAndExchange, arg.Symbol, arg.Exchange)
 	var i Instrument
 	err := row.Scan(
 		&i.ID,

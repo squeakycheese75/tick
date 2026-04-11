@@ -53,17 +53,39 @@ func newPortfolioSummaryCmd(app *app.Runtime) *cobra.Command {
 func newPortfolioAddPositionCmd(app *app.Runtime) *cobra.Command {
 	var qty float64
 	var avgCost float64
-	var currency string
+	var quoteCurrency string
 	var portfolioName string
+	var assetType string
+	var exchange string
 
 	cmd := &cobra.Command{
-		Use:   "add <ticker>",
-		Short: "Add or update a portfolio position",
+		Use:   "add <symbol>",
+		Short: "Add a position to a portfolio",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ticker := strings.ToUpper(strings.TrimSpace(args[0]))
-			if ticker == "" {
-				return fmt.Errorf("ticker is required")
+			symbol := strings.ToUpper(strings.TrimSpace(args[0]))
+			if symbol == "" {
+				return fmt.Errorf("symbol is required")
+			}
+
+			portfolioName = strings.TrimSpace(portfolioName)
+			if portfolioName == "" {
+				return fmt.Errorf("portfolio is required")
+			}
+
+			assetType = strings.ToLower(strings.TrimSpace(assetType))
+			if assetType == "" {
+				return fmt.Errorf("asset-type is required")
+			}
+
+			exchange = strings.ToUpper(strings.TrimSpace(exchange))
+			if exchange == "" {
+				return fmt.Errorf("exchange is required")
+			}
+
+			quoteCurrency = strings.ToUpper(strings.TrimSpace(quoteCurrency))
+			if quoteCurrency == "" {
+				return fmt.Errorf("quote-currency is required")
 			}
 
 			if qty <= 0 {
@@ -74,17 +96,14 @@ func newPortfolioAddPositionCmd(app *app.Runtime) *cobra.Command {
 				return fmt.Errorf("avg-cost must be 0 or greater")
 			}
 
-			currency = strings.ToUpper(strings.TrimSpace(currency))
-			if currency == "" {
-				currency = "USD"
-			}
-
 			out, err := app.AddPosition.Execute(
 				cmd.Context(),
 				usecase.AddPositionToPortfolioInput{
 					PortfolioName: portfolioName,
-					Symbol:        ticker,
-					QuoteCurrency: currency,
+					Symbol:        symbol,
+					AssetType:     assetType,
+					Exchange:      exchange,
+					QuoteCurrency: quoteCurrency,
 					AvgCost:       avgCost,
 					Qty:           qty,
 				},
@@ -99,7 +118,9 @@ func newPortfolioAddPositionCmd(app *app.Runtime) *cobra.Command {
 
 	cmd.Flags().Float64Var(&qty, "qty", 0, "Position quantity")
 	cmd.Flags().Float64Var(&avgCost, "avg-cost", 0, "Average cost basis per unit")
-	cmd.Flags().StringVar(&currency, "currency", "USD", "Position currency")
+	cmd.Flags().StringVar(&quoteCurrency, "quote-currency", "", "Instrument quote currency, e.g. USD")
+	cmd.Flags().StringVar(&assetType, "asset-type", "", "Instrument asset type, e.g. equity, etf, crypto")
+	cmd.Flags().StringVar(&exchange, "exchange", "", "Instrument exchange, e.g. NASDAQ")
 	cmd.Flags().StringVar(&portfolioName, "portfolio", "main", "Portfolio name")
 
 	return cmd

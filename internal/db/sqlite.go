@@ -2,10 +2,14 @@ package db
 
 import (
 	"database/sql"
+	"errors"
+	"io"
+	"log"
 
 	"github.com/pressly/goose/v3"
 
-	_ "modernc.org/sqlite"
+	"modernc.org/sqlite"
+	sqlite3 "modernc.org/sqlite/lib"
 )
 
 type DB struct {
@@ -24,6 +28,11 @@ func OpenAndMigrateSqlite(dsn string) (*DB, error) {
 		return nil, err
 	}
 
+	// silent migrations
+	originalWriter := log.Writer()
+	log.SetOutput(io.Discard)
+	defer log.SetOutput(originalWriter)
+
 	if err := goose.Up(db, "internal/db/migrations"); err != nil {
 		_ = db.Close()
 		return nil, err
@@ -34,4 +43,18 @@ func OpenAndMigrateSqlite(dsn string) (*DB, error) {
 
 func (db *DB) Close() error {
 	return db.SqlDB.Close()
+}
+
+func IsUniqueViolation(err error) bool {
+	var sqliteErr *sqlite.Error
+	if !errors.As(err, &sqliteErr) {
+		return false
+	}
+
+	switch sqliteErr.Code() {
+	case sqlite3.SQLITE_CONSTRAINT_UNIQUE, sqlite3.SQLITE_CONSTRAINT_PRIMARYKEY:
+		return true
+	default:
+		return false
+	}
 }

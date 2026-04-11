@@ -18,8 +18,9 @@ type (
 		Create(ctx context.Context, p repository.CreatePositionParams) error
 	}
 	InstrumentRepository interface {
-		Create(ctx context.Context, p repository.Instrument) error
-		GetBySymbol(ctx context.Context, symbol string) (repository.Instrument, error)
+		Create(ctx context.Context, p repository.Instrument) (repository.Instrument, error)
+		GetBySymbolAndExchange(ctx context.Context, symbol, exchange string) (repository.Instrument, error)
+		GetOrCreate(ctx context.Context, in repository.Instrument) (repository.Instrument, error)
 	}
 )
 

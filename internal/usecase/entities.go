@@ -1,6 +1,10 @@
 package usecase
 
-import "github.com/squeakycheese75/tick/internal/report"
+import (
+	"fmt"
+
+	"github.com/squeakycheese75/tick/internal/report"
+)
 
 type GetPortfolioSummaryUsecaseInput struct {
 	PortfolioName string
@@ -45,6 +49,30 @@ type AddPositionToPortfolioInput struct {
 	Qty            float64
 	AvgCost        float64
 	PortfolioName  string
+}
+
+func (i *AddPositionToPortfolioInput) Validate() error {
+	if i.PortfolioName == "" {
+		return fmt.Errorf("portfolio name is required")
+	}
+
+	if i.Symbol == "" {
+		return fmt.Errorf("symbol is required")
+	}
+
+	if i.Qty <= 0 {
+		return fmt.Errorf("qty must be greater than 0")
+	}
+
+	if i.AvgCost < 0 {
+		return fmt.Errorf("avg cost must be greater than or equal to 0")
+	}
+
+	if i.QuoteCurrency == "" {
+		return fmt.Errorf("quote currency is required")
+	}
+
+	return nil
 }
 
 type AddPositionToPortfolioOutput struct {

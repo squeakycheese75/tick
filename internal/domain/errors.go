@@ -3,7 +3,10 @@ package domain
 import "errors"
 
 var (
-	ErrPortfolioNotFound  = errors.New("portfolio not found")
-	ErrPositionNotFound   = errors.New("position not found")
-	ErrInstrumentNotFound = errors.New("instrument not found")
+	ErrPortfolioNotFound       = errors.New("portfolio not found")
+	ErrPositionNotFound        = errors.New("position not found")
+	ErrInstrumentNotFound      = errors.New("instrument not found")
+	ErrPortfolioAlreadyExists  = errors.New("portfolio already exists")
+	ErrPositionAlreadyExists   = errors.New("position already exists")
+	ErrInstrumentAlreadyExists = errors.New("instrument already exists")
 )
