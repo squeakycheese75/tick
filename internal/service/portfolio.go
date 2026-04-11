@@ -7,14 +7,15 @@ import (
 
 	"github.com/squeakycheese75/tick/internal/domain"
 	"github.com/squeakycheese75/tick/internal/domain/analysis"
+	"github.com/squeakycheese75/tick/internal/repository"
 )
 
 type PortfolioRepository interface {
-	GetByName(ctx context.Context, name string) (domain.Portfolio, error)
+	GetByName(ctx context.Context, name string) (repository.Portfolio, error)
 }
 
 type PositionRepository interface {
-	ListByPortfolio(ctx context.Context, portfolioName string) ([]domain.Position, error)
+	ListByPortfolioID(ctx context.Context, portfolioID int64) ([]repository.Position, error)
 }
 
 type PortfolioAnalyzer interface {
@@ -59,14 +60,33 @@ func (s *PortfolioService) GetAnalysis(ctx context.Context, portfolioName string
 		return analysis.PortfolioAnalysis{}, fmt.Errorf("get portfolio: %w", err)
 	}
 
-	positions, err := s.positions.ListByPortfolio(ctx, portfolioName)
+	positions, err := s.positions.ListByPortfolioID(ctx, pf.ID)
 	if err != nil {
 		return analysis.PortfolioAnalysis{}, fmt.Errorf("list positions: %w", err)
 	}
 
+	mappedPositions := make([]domain.Position, 0, len(positions))
+	for _, p := range positions {
+		mappedPositions = append(mappedPositions, domain.Position{
+			PortfolioName: pf.Name,
+			Instrument: domain.Instrument{
+				Symbol:         p.Instrument.Symbol,
+				ProviderSymbol: p.Instrument.Symbol,
+				AssetType:      p.Instrument.AssetType,
+				QuoteCurrency:  p.Instrument.QuoteCurrency,
+				Exchange:       p.Instrument.ProviderSymbol,
+			},
+			Quantity: p.Quantity,
+			AvgCost:  p.AvgCost,
+		})
+	}
+
 	result, err := s.portfolioAnalyzer.Analyze(ctx, analysis.AnalyzePortfolioInput{
-		Portfolio: pf,
-		Positions: positions,
+		Portfolio: domain.Portfolio{
+			Name:         pf.Name,
+			BaseCurrency: pf.BaseCurrency,
+		},
+		Positions: mappedPositions,
 	})
 	if err != nil {
 		return analysis.PortfolioAnalysis{}, fmt.Errorf("analyze portfolio: %w", err)

@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/squeakycheese75/tick/internal/domain"
+	"github.com/squeakycheese75/tick/internal/repository"
 )
 
 type CreatePortfolioUseCase struct {
@@ -21,18 +22,17 @@ func NewCreatePortfolioUseCase(portfolioRepo PortfolioRepository) *CreatePortfol
 func (uc *CreatePortfolioUseCase) Execute(ctx context.Context, in CreatePortfolioUsecaseInput) (*CreatePortfolioUsecaseOutout, error) {
 	_, err := uc.portfolios.GetByName(ctx, in.PortfolioName)
 	if err == nil {
-		// portfolio already exists
 		return nil, fmt.Errorf(
 			"portfolio %q already exists. Use a different name or update it",
 			in.PortfolioName,
 		)
 	}
+
 	if !errors.Is(err, domain.ErrPortfolioNotFound) {
-		// real error
 		return nil, fmt.Errorf("get portfolio: %w", err)
 	}
 
-	if err := uc.portfolios.Create(ctx, domain.Portfolio{
+	if err := uc.portfolios.Create(ctx, repository.Portfolio{
 		Name:         in.PortfolioName,
 		BaseCurrency: in.BaseCurrency,
 	}); err != nil {

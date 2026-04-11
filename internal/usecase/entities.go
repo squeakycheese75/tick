@@ -14,7 +14,7 @@ type GetPortfolioSummaryUsecaseOutput struct {
 }
 
 type SummaryPosition struct {
-	Ticker             string
+	Symbol             string
 	BaseCurrency       string
 	InstrumentCurrency string
 	AvgCost            float64
@@ -36,20 +36,26 @@ type CreatePortfolioUsecaseOutout struct {
 	BaseCurrency  string
 }
 
-type AddPositionToPortfolioUseCaseInput struct {
-	Ticker        string
-	Qty           float64
-	Currency      string
-	AvgCost       float64
-	PortfolioName string
+type AddPositionToPortfolioInput struct {
+	Symbol         string
+	ProviderSymbol string
+	AssetType      string
+	Exchange       string
+	QuoteCurrency  string
+	Qty            float64
+	AvgCost        float64
+	PortfolioName  string
 }
 
-type AddPositionToPortfolioUseCaseOutput struct {
-	Ticker        string
-	Qty           float64
-	Currency      string
-	AvgCost       float64
-	PortfolioName string
+type AddPositionToPortfolioOutput struct {
+	Symbol         string
+	ProviderSymbol string
+	AssetType      string
+	Exchange       string
+	Qty            float64
+	QuoteCurrency  string
+	AvgCost        float64
+	PortfolioName  string
 }
 
 type GetPortfolioRiskInput struct {

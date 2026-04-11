@@ -81,10 +81,10 @@ func newPortfolioAddPositionCmd(app *app.Runtime) *cobra.Command {
 
 			out, err := app.AddPosition.Execute(
 				cmd.Context(),
-				usecase.AddPositionToPortfolioUseCaseInput{
+				usecase.AddPositionToPortfolioInput{
 					PortfolioName: portfolioName,
-					Ticker:        ticker,
-					Currency:      currency,
+					Symbol:        ticker,
+					QuoteCurrency: currency,
 					AvgCost:       avgCost,
 					Qty:           qty,
 				},
@@ -93,7 +93,7 @@ func newPortfolioAddPositionCmd(app *app.Runtime) *cobra.Command {
 				return err
 			}
 
-			return RenderAddPortfolioPosition(cmd.OutOrStdout(), out)
+			return RenderAddPortfolioPosition(cmd.OutOrStdout(), *out)
 		},
 	}
 

@@ -6,11 +6,10 @@ type Portfolio struct {
 }
 
 type Position struct {
-	PortfolioName      string
-	Ticker             string
-	Quantity           float64
-	AvgCost            float64
-	InstrumentCurrency string
+	PortfolioName string
+	Instrument    Instrument
+	Quantity      float64
+	AvgCost       float64
 }
 
 type SummaryPosition struct {
@@ -30,4 +29,12 @@ type Summary struct {
 	BaseCurrency  string
 	TotalValue    float64
 	Positions     []SummaryPosition
+}
+
+type Instrument struct {
+	Symbol         string
+	ProviderSymbol string
+	AssetType      string
+	QuoteCurrency  string
+	Exchange       string
 }

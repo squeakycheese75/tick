@@ -2,9 +2,10 @@ package app
 
 import (
 	"github.com/squeakycheese75/tick/internal/adapters/news"
+	"github.com/squeakycheese75/tick/internal/db"
 	"github.com/squeakycheese75/tick/internal/domain/analysis"
+	"github.com/squeakycheese75/tick/internal/repository"
 	"github.com/squeakycheese75/tick/internal/service"
-	"github.com/squeakycheese75/tick/internal/store"
 	"github.com/squeakycheese75/tick/internal/usecase"
 )
 
@@ -22,13 +23,14 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 		return nil, err
 	}
 
-	db, err := store.Open(dbPath)
+	database, err := db.OpenAndMigrateSqlite(dbPath)
 	if err != nil {
 		return nil, err
 	}
 
-	portfolioRepo := store.NewPortfolioRepository(db)
-	positionRepo := store.NewPositionRepository(db)
+	portfolioRepo := repository.NewPortfolioRepository(database)
+	positionRepo := repository.NewPositionRepository(database)
+	instrumentRepo := repository.NewInstrumentRepository(database)
 
 	priceProvider, err := BuildPriceProvider(cfg)
 	if err != nil {
@@ -62,7 +64,7 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 			portfolioSvc,
 		),
 		CreatePortfolio: usecase.NewCreatePortfolioUseCase(portfolioRepo),
-		AddPosition:     usecase.NewAddPositionToPortfolioUseCase(positionRepo, portfolioRepo),
+		AddPosition:     usecase.NewAddPositionToPortfolioUseCase(positionRepo, portfolioRepo, instrumentRepo),
 		GetPortfolioRisk: usecase.NewGetPortfolioRiskUseCase(
 			portfolioSvc,
 		),

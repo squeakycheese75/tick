@@ -30,7 +30,7 @@ type AnalyzePortfolioInput struct {
 }
 
 type AnalyzedPosition struct {
-	Ticker             string
+	Symbol             string
 	Quantity           float64
 	AvgCost            float64
 	InstrumentCurrency string
@@ -60,19 +60,19 @@ func (a *PortfolioAnalyzer) Analyze(ctx context.Context, in AnalyzePortfolioInpu
 	}
 
 	for _, pos := range in.Positions {
-		valuationQuote, err := a.pricingSvc.GetValuationQuote(ctx, pos.Ticker, in.Portfolio.BaseCurrency, pos.InstrumentCurrency)
+		valuationQuote, err := a.pricingSvc.GetValuationQuote(ctx, pos.Instrument.Symbol, in.Portfolio.BaseCurrency, pos.Instrument.QuoteCurrency)
 		if err != nil {
-			return PortfolioAnalysis{}, fmt.Errorf("get valuation quote for %s: %w", pos.Ticker, err)
+			return PortfolioAnalysis{}, fmt.Errorf("get valuation quote for %s: %w", pos.Instrument.Symbol, err)
 		}
 
 		marketValueBase := pos.Quantity * valuationQuote.ConvertedPrice
 		result.TotalValue += marketValueBase
 
 		result.AnalyzedPositions = append(result.AnalyzedPositions, AnalyzedPosition{
-			Ticker:             pos.Ticker,
+			Symbol:             pos.Instrument.Symbol,
 			Quantity:           pos.Quantity,
 			AvgCost:            pos.AvgCost,
-			InstrumentCurrency: pos.InstrumentCurrency,
+			InstrumentCurrency: pos.Instrument.QuoteCurrency,
 			QuotedPrice:        valuationQuote.Quote.Price,
 			QuotedChange:       valuationQuote.Quote.Change,
 			QuotedChangePct:    valuationQuote.Quote.ChangePercent,

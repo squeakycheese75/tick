@@ -37,7 +37,7 @@ func (a *RiskAnalyzer) Analyze(in PortfolioAnalysis) (PortfolioRisk, error) {
 	}
 
 	largest := in.AnalyzedPositions[0]
-	out.LargestPosition = largest.Ticker
+	out.LargestPosition = largest.Symbol
 	out.LargestWeight = largest.Weight
 
 	topN := 3
