@@ -1,7 +1,9 @@
 package cli
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -20,6 +22,7 @@ func newPortfolioCmd(app *app.Runtime) *cobra.Command {
 		newPortfolioSummaryCmd(app),
 		newPortfolioRiskCmd(app),
 		newPortfolioAddPositionCmd(app),
+		newPortfolioImportCmd(app),
 	)
 
 	return portfolioCmd
@@ -191,5 +194,42 @@ func newPortfolioRiskCmd(rt *app.Runtime) *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&portfolioName, "portfolio", "main", "Portfolio name")
+	return cmd
+}
+
+func newPortfolioImportCmd(app *app.Runtime) *cobra.Command {
+	var filePath string
+
+	cmd := &cobra.Command{
+		Use:   "import",
+		Short: "Import a portfolio from a JSON file",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			filePath = strings.TrimSpace(filePath)
+			if filePath == "" {
+				return fmt.Errorf("file is required")
+			}
+
+			data, err := os.ReadFile(filePath)
+			if err != nil {
+				return fmt.Errorf("read file %q: %w", filePath, err)
+			}
+
+			var in usecase.ImportPortfolioInput
+			if err := json.Unmarshal(data, &in); err != nil {
+				return fmt.Errorf("decode import file %q: %w", filePath, err)
+			}
+
+			out, err := app.ImportPortfolio.Execute(cmd.Context(), in)
+			if err != nil {
+				return err
+			}
+
+			return renderImportPortfolio(cmd.OutOrStdout(), *out)
+		},
+	}
+
+	cmd.Flags().StringVar(&filePath, "file", "", "Path to portfolio JSON file")
+	_ = cmd.MarkFlagRequired("file")
+
 	return cmd
 }

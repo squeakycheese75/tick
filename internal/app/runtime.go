@@ -15,6 +15,7 @@ type Runtime struct {
 	AddPosition         *usecase.AddPositionToPortfolioUseCase
 	GetPortfolioRisk    *usecase.GetPortfolioRiskUseCase
 	GetDailyReport      *usecase.GetDailyReportUseCase
+	ImportPortfolio     *usecase.ImportPortfolioUseCase
 }
 
 func BuildRuntime(dbPath string) (*Runtime, error) {
@@ -68,6 +69,7 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 		GetPortfolioRisk: usecase.NewGetPortfolioRiskUseCase(
 			portfolioSvc,
 		),
-		GetDailyReport: usecase.NewGetDailyReportUseCase(reportingSvc, llmProvider),
+		GetDailyReport:  usecase.NewGetDailyReportUseCase(reportingSvc, llmProvider),
+		ImportPortfolio: usecase.NewImportPortfolioUseCase(positionRepo, portfolioRepo, instrumentRepo),
 	}, nil
 }

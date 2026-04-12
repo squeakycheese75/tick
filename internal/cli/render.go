@@ -196,3 +196,15 @@ func RenderGetDailyReport(w io.Writer, s usecase.GetDailyReportOutput) error {
 
 	return out.err
 }
+
+func renderImportPortfolio(w io.Writer, out usecase.ImportPortfolioOutput) error {
+	_, err := fmt.Fprintf(
+		w,
+		"Imported portfolio %q (%s): %d positions%s\n",
+		out.PortfolioName,
+		out.BaseCurrency,
+		out.ImportedPositions,
+		map[bool]string{true: ", portfolio created", false: ""}[out.CreatedPortfolio],
+	)
+	return err
+}

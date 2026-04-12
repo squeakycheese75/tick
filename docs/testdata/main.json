@@ -1,0 +1,22 @@
+{
+  "portfolioName": "main",
+  "baseCurrency": "EUR",
+  "positions": [
+    {
+      "symbol": "NVDA",
+      "assetType": "equity",
+      "exchange": "NASDAQ",
+      "quoteCurrency": "USD",
+      "quantity": 10,
+      "avgCost": 400
+    },
+    {
+      "symbol": "MSFT",
+      "assetType": "equity",
+      "exchange": "NASDAQ",
+      "quoteCurrency": "USD",
+      "quantity": 5,
+      "avgCost": 300
+    }
+  ]
+}
