@@ -8,6 +8,8 @@ import (
 	"github.com/squeakycheese75/tick/internal/repository"
 )
 
+//go:generate mockgen -destination=./mocks/mock_interfaces.go -package=mocks . PortfolioRepository,InstrumentRepository,PositionRepository
+
 type (
 	PortfolioRepository interface {
 		GetByName(ctx context.Context, name string) (repository.Portfolio, error)

@@ -8,12 +8,6 @@ import (
 	"github.com/squeakycheese75/tick/internal/domain"
 )
 
-type (
-	PricingSvc interface {
-		GetValuationQuote(ctx context.Context, ticker string, targetCurrency string, instrumentCurrency string) (domain.ValuationQuote, error)
-	}
-)
-
 type PortfolioAnalyzer struct {
 	pricingSvc PricingSvc
 }
@@ -79,6 +73,7 @@ func (a *PortfolioAnalyzer) Analyze(ctx context.Context, in AnalyzePortfolioInpu
 			PriceCurrency:      valuationQuote.Quote.PriceCurrency,
 			FXRate:             valuationQuote.FXRate,
 			ConvertedPrice:     valuationQuote.ConvertedPrice,
+			ConvertedChange:    valuationQuote.Quote.Change * valuationQuote.FXRate,
 			MarketValueBase:    marketValueBase,
 		})
 	}

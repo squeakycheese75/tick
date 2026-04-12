@@ -20,6 +20,10 @@ func NewCreatePortfolioUseCase(portfolioRepo PortfolioRepository) *CreatePortfol
 }
 
 func (uc *CreatePortfolioUseCase) Execute(ctx context.Context, in CreatePortfolioUsecaseInput) (*CreatePortfolioUsecaseOutout, error) {
+	if err := in.Validate(); err != nil {
+		return nil, err
+	}
+
 	_, err := uc.portfolios.GetByName(ctx, in.PortfolioName)
 	switch {
 	case err == nil:
