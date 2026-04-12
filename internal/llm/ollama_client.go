@@ -118,8 +118,10 @@ func (c *OllamaClient) Ping(ctx context.Context) error {
 		return fmt.Errorf("decode ollama ping response: %w", err)
 	}
 
+	want := normalizeModel(c.model)
+
 	for _, m := range data.Models {
-		if m.Name == c.model {
+		if normalizeModel(m.Name) == want {
 			return nil
 		}
 	}
@@ -142,4 +144,12 @@ func buildOllamaPrompt(req CompletionRequest) string {
 	}
 
 	return b.String()
+}
+
+func normalizeModel(name string) string {
+	name = strings.TrimSpace(strings.ToLower(name))
+	if !strings.Contains(name, ":") {
+		return name + ":latest"
+	}
+	return name
 }
