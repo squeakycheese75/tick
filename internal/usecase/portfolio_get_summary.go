@@ -36,7 +36,7 @@ func mapPortfolioAnalysisToSummaryOutput(r analysis.PortfolioAnalysis) GetPortfo
 
 	for _, pos := range r.AnalyzedPositions {
 		result.Positions = append(result.Positions, SummaryPosition{
-			Ticker:             pos.Ticker,
+			Symbol:             pos.Symbol,
 			BaseCurrency:       r.BaseCurrency,
 			InstrumentCurrency: pos.InstrumentCurrency,
 			AvgCost:            pos.AvgCost,

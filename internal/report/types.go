@@ -3,7 +3,7 @@ package report
 import "github.com/squeakycheese75/tick/internal/domain"
 
 type TopHoldingReport struct {
-	Ticker          string
+	Symbol          string
 	Weight          float64
 	MarketValueBase float64
 	QuotedPrice     float64

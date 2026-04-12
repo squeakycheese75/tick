@@ -68,7 +68,7 @@ func RenderGetPortfolioSummary(w io.Writer, s usecase.GetPortfolioSummaryUsecase
 	for _, p := range s.Positions {
 		out.printf(
 			"%-6s   %8.4f   %8.2f %-3s  %7.4f  %10.2f %-3s  %6.2f%%\n",
-			p.Ticker,
+			p.Symbol,
 			p.Quantity,
 			p.QuotedPrice,
 			p.InstrumentCurrency,
@@ -93,10 +93,10 @@ func RenderCreatePortfolio(w io.Writer, s usecase.CreatePortfolioUsecaseOutout) 
 	return out.err
 }
 
-func RenderAddPortfolioPosition(w io.Writer, s usecase.AddPositionToPortfolioUseCaseOutput) error {
+func RenderAddPortfolioPosition(w io.Writer, s usecase.AddPositionToPortfolioOutput) error {
 	out := &writer{w: w}
 
-	out.printf("Saved %s in portfolio %s: qty=%.4f avg_cost=%.2f %s\n", s.Ticker, s.PortfolioName, s.Qty, s.AvgCost, s.Currency)
+	out.printf("Saved %s in portfolio %s: qty=%.4f avg_cost=%.2f %s\n", s.Symbol, s.PortfolioName, s.Qty, s.AvgCost, s.QuoteCurrency)
 
 	return out.err
 }
@@ -138,7 +138,7 @@ func RenderGetDailyReport(w io.Writer, s usecase.GetDailyReportOutput) error {
 		for _, h := range s.DailyReport.TopHoldings {
 			out.printf(
 				"- %s  %.2f%%  %.2f %s  @ %.2f %s  %s\n",
-				h.Ticker,
+				h.Symbol,
 				h.Weight*100,
 				h.MarketValueBase,
 				s.DailyReport.BaseCurrency,
@@ -195,4 +195,16 @@ func RenderGetDailyReport(w io.Writer, s usecase.GetDailyReportOutput) error {
 	}
 
 	return out.err
+}
+
+func renderImportPortfolio(w io.Writer, out usecase.ImportPortfolioOutput) error {
+	_, err := fmt.Fprintf(
+		w,
+		"Imported portfolio %q (%s): %d positions%s\n",
+		out.PortfolioName,
+		out.BaseCurrency,
+		out.ImportedPositions,
+		map[bool]string{true: ", portfolio created", false: ""}[out.CreatedPortfolio],
+	)
+	return err
 }

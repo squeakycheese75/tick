@@ -40,7 +40,7 @@ func (s *ReportService) BuildDailyReport(
 	topHoldings := make([]report.TopHoldingReport, 0, len(topPositions))
 	for _, pos := range topPositions {
 		topHoldings = append(topHoldings, report.TopHoldingReport{
-			Ticker:          pos.Ticker,
+			Symbol:          pos.Symbol,
 			Weight:          pos.Weight,
 			MarketValueBase: pos.MarketValueBase,
 			QuotedPrice:     pos.QuotedPrice,
@@ -65,9 +65,9 @@ func (s *ReportService) BuildDailyReport(
 	}
 
 	for _, holding := range out.TopHoldings {
-		tickerNews, err := s.newsSvc.GetNews(ctx, holding.Ticker, newsLimit)
+		tickerNews, err := s.newsSvc.GetNews(ctx, holding.Symbol, newsLimit)
 		if err != nil {
-			return report.DailyReport{}, fmt.Errorf("get news for %s: %w", holding.Ticker, err)
+			return report.DailyReport{}, fmt.Errorf("get news for %s: %w", holding.Symbol, err)
 		}
 
 		out.News = append(out.News, tickerNews)

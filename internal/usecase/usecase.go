@@ -5,17 +5,28 @@ import (
 
 	"github.com/squeakycheese75/tick/internal/domain"
 	"github.com/squeakycheese75/tick/internal/domain/analysis"
+	"github.com/squeakycheese75/tick/internal/repository"
 )
+
+//go:generate mockgen -destination=./mocks/mock_interfaces.go -package=mocks . PortfolioRepository,InstrumentRepository,PositionRepository
 
 type (
 	PortfolioRepository interface {
-		GetByName(ctx context.Context, name string) (domain.Portfolio, error)
-		Create(ctx context.Context, p domain.Portfolio) error
+		GetByName(ctx context.Context, name string) (repository.Portfolio, error)
+		Create(ctx context.Context, p repository.Portfolio) error
 	}
 	PositionRepository interface {
-		ListByPortfolio(ctx context.Context, portfolioName string) ([]domain.Position, error)
-		Create(ctx context.Context, p domain.Position) error
+		ListByPortfolioID(ctx context.Context, portfolioID int64) ([]repository.Position, error)
+		Create(ctx context.Context, p repository.CreatePositionParams) error
 	}
+	InstrumentRepository interface {
+		Create(ctx context.Context, p repository.Instrument) (repository.Instrument, error)
+		GetBySymbolAndExchange(ctx context.Context, symbol, exchange string) (repository.Instrument, error)
+		GetOrCreate(ctx context.Context, in repository.Instrument) (repository.Instrument, error)
+	}
+)
+
+type (
 	PriceProvider interface {
 		GetPrice(ctx context.Context, ticker string) (price float64, currency string, err error)
 	}

@@ -107,7 +107,7 @@ func buildDailyBriefAIUserPrompt(brief report.DailyReport) string {
 		for _, h := range brief.TopHoldings {
 			b.WriteString(fmt.Sprintf(
 				"- %s: weight %.2f%%, value %.2f %s, quoted price %.2f %s, daily move %+.2f%%\n",
-				h.Ticker,
+				h.Symbol,
 				h.Weight*100,
 				h.MarketValueBase,
 				brief.BaseCurrency,

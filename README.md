@@ -3,15 +3,8 @@
 Terminal-native portfolio and market intelligence tool.
 
 `tick` is a Bloomberg-style CLI for developers and investors. It
-provides real-time portfolio valuation, risk insights, and market
-context --- directly from your terminal, now with optional **local AI
-analysis**.
-
-------------------------------------------------------------------------
-
-## Example Output
-
-![tick daily output](docs/screenshot.png)
+provides portfolio valuation, risk insights, and market context — directly
+from your terminal, with optional **local AI analysis**.
 
 ------------------------------------------------------------------------
 
@@ -19,37 +12,33 @@ analysis**.
 
 ### Portfolio Management
 
--   Create and manage portfolios
--   Add/update positions
--   Multi-currency support per position
+- Create and manage portfolios
+- Add positions with full instrument metadata
+- Import portfolios from JSON
+- Multi-currency support per position
 
 ### Valuation & Pricing
 
--   Live price data (via Finnhub)
--   FX conversion (via Frankfurter)
--   Portfolio base currency normalization
--   Cached pricing and FX (configurable TTLs)
+- Live price data (via Finnhub)
+- FX conversion (via Frankfurter)
+- Portfolio base currency normalization
+- Cached pricing and FX (configurable TTLs)
 
 ### Analysis
 
--   Portfolio summary (weights, values)
--   Concentration risk analysis
-
-### Daily Brief (`tick daily`)
-
--   Portfolio overview
--   Top holdings
--   Risk summary
--   News per holding
--   Attention signals
--   Daily price moves (% change with arrows)
+- Portfolio valuation and weights
+- Concentration insights
+- Per-position metrics:
+  - market value
+  - weights
+  - FX-adjusted pricing
+  - change in base currency
 
 ### AI Analysis (`--ai`)
 
--   Local LLM support via Ollama
--   Generates concise daily insights
--   Fully private (no external API required)
--   Built on top of structured portfolio data
+- Local LLM support via Ollama
+- Generates concise insights
+- Fully private (no external API required)
 
 ------------------------------------------------------------------------
 
@@ -57,19 +46,19 @@ analysis**.
 
 ### Run locally
 
-``` bash
+```bash
 go run ./cmd/tick daily
 ```
 
 ### With AI
 
-``` bash
+```bash
 go run ./cmd/tick daily --ai
 ```
 
 ### Build the CLI
 
-``` bash
+```bash
 go build -o bin/tick ./cmd/tick
 ./bin/tick daily
 ```
@@ -78,28 +67,64 @@ go build -o bin/tick ./cmd/tick
 
 ## Example Usage
 
-Create a portfolio:
+### Create a portfolio
 
-``` bash
+```bash
 tick portfolio create main --base-currency EUR
 ```
 
-Add positions:
+### Add a position
 
-``` bash
-tick portfolio add NVDA --qty 10 --avg-cost 400 --currency USD --portfolio main
-tick portfolio add ASML --qty 5 --avg-cost 850 --currency EUR --portfolio main
+```bash
+tick portfolio add NVDA \
+  --portfolio main \
+  --asset-type equity \
+  --exchange NASDAQ \
+  --quote-currency USD \
+  --qty 10 \
+  --avg-cost 400
 ```
 
-Run daily brief:
+> Note: Instruments are automatically created if they do not exist.
 
-``` bash
+---
+
+### Import a portfolio (recommended for development)
+
+```bash
+tick portfolio import --file ./testdata/portfolio-main.json
+```
+
+Example file:
+
+```json
+{
+  "portfolioName": "main",
+  "baseCurrency": "EUR",
+  "positions": [
+    {
+      "symbol": "NVDA",
+      "assetType": "equity",
+      "exchange": "NASDAQ",
+      "quoteCurrency": "USD",
+      "quantity": 10,
+      "avgCost": 400
+    }
+  ]
+}
+```
+
+---
+
+### Run daily brief
+
+```bash
 tick daily
 ```
 
-Run with AI:
+### With AI
 
-``` bash
+```bash
 tick daily --ai
 ```
 
@@ -111,47 +136,67 @@ tick daily --ai
 
 ### Pricing & FX
 
-``` env
+```env
+# Price data provider: static | finnhub
 PRICE_PROVIDER=finnhub
+
+# FX provider: static | frankfurter
 FX_PROVIDER=frankfurter
 
+# Required if using Finnhub
 FINNHUB_API_KEY=your_api_key_here
 ```
 
+---
+
 ### Caching
 
-``` env
+```env
 CACHE_ENABLED=true
 CACHE_PRICE_TTL=15m
 CACHE_FX_TTL=12h
 ```
 
-### AI (Ollama)
+---
 
-``` env
+### LLM (Ollama)
+
+```env
 LLM_ENABLED=true
 LLM_PROVIDER=ollama
 LLM_BASE_URL=http://localhost:11434
-LLM_MODEL=llama3.1:8b
+
+# Model tag optional (":latest" assumed if omitted)
+LLM_MODEL=llama3
 ```
 
 Install and run Ollama:
 
-``` bash
+```bash
 brew install ollama
-ollama pull llama3.1:8b
-ollama run llama3.1:8b
+ollama pull llama3
+ollama run llama3
 ```
 
-------------------------------------------------------------------------
+---
 
 ## Architecture
 
--   **domain** → core business entities
--   **services** → orchestration (pricing, reports, news)
--   **report** → structured output models
--   **usecases** → thin entry points
--   **adapters** → external integrations (APIs, LLMs)
+- **domain** → core business entities
+- **repository** → persistence layer (sqlc)
+- **usecase** → application logic
+- **analysis** → portfolio analytics engine
+- **adapters** → external integrations (pricing, FX, LLM)
+- **cmd** → CLI entrypoints (Cobra)
+
+------------------------------------------------------------------------
+
+## Development Notes
+
+- Use `tick portfolio import` to quickly seed data
+- Instruments are created automatically on first use
+- Model names are normalized (`llama3` → `llama3:latest`)
+- Ollama health is checked via `/api/version`
 
 ------------------------------------------------------------------------
 
