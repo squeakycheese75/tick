@@ -32,10 +32,15 @@ func newConfigShowCmd() *cobra.Command {
 				return err
 			}
 
-			fmt.Fprintln(cmd.OutOrStdout(), cfg.String())
+			if _, err := fmt.Fprintln(cmd.OutOrStdout(), cfg.String()); err != nil {
+				return err
+			}
 
 			if err := cfg.Validate(); err != nil {
-				fmt.Fprintf(cmd.OutOrStdout(), "\nWarning: %v\n", err)
+				if _, err := fmt.Fprintf(cmd.OutOrStdout(), "\nWarning: %v\n", err); err != nil {
+					return err
+				}
+				return err
 			}
 
 			return nil
@@ -66,9 +71,15 @@ func newConfigInitCmd() *cobra.Command {
 				return fmt.Errorf("write config file: %w", err)
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Created config at %s\n", configPath)
-			fmt.Fprintln(cmd.OutOrStdout(), "Edit this file to configure tick.")
-			fmt.Fprintln(cmd.OutOrStdout(), "Run `tick config show` to verify your configuration.")
+			if _, err := fmt.Fprintf(cmd.OutOrStdout(), "Created config at %s\n", configPath); err != nil {
+				return err
+			}
+			if _, err := fmt.Fprintln(cmd.OutOrStdout(), "Edit this file to configure tick."); err != nil {
+				return err
+			}
+			if _, err := fmt.Fprintln(cmd.OutOrStdout(), "Run `tick config show` to verify your configuration."); err != nil {
+				return err
+			}
 
 			return nil
 		},

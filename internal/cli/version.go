@@ -8,13 +8,19 @@ import (
 )
 
 func newVersionCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "version",
 		Short: "Print tick version information",
-		Run: func(cmd *cobra.Command, args []string) {
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "tick version %s\n", buildinfo.Version)
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "commit: %s\n", buildinfo.Commit)
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "built: %s\n", buildinfo.BuildDate)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if _, err := fmt.Fprintf(cmd.OutOrStdout(), "tick version %s\n", buildinfo.Version); err != nil {
+				return err
+			}
+			if _, err := fmt.Fprintln(cmd.OutOrStdout(), "Run `tick config show` to verify your configuration."); err != nil {
+				return err
+			}
+			return nil
 		},
 	}
+
+	return cmd
 }
