@@ -10,4 +10,5 @@ var (
 	ErrPositionAlreadyExists   = errors.New("position already exists")
 	ErrInstrumentAlreadyExists = errors.New("instrument already exists")
 	ErrPriceCacheNotFound      = errors.New("price cache not found")
+	ErrFXCacheNotFound         = errors.New("fx cache not found")
 )

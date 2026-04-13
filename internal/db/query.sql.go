@@ -97,6 +97,35 @@ func (q *Queries) CreatePosition(ctx context.Context, arg CreatePositionParams) 
 	return err
 }
 
+const getFXCacheByPair = `-- name: GetFXCacheByPair :one
+SELECT
+    base_currency,
+    quote_currency,
+    rate,
+    source,
+    fetched_at
+FROM fx_cache
+WHERE base_currency = ? AND quote_currency = ?
+`
+
+type GetFXCacheByPairParams struct {
+	BaseCurrency  string `json:"base_currency"`
+	QuoteCurrency string `json:"quote_currency"`
+}
+
+func (q *Queries) GetFXCacheByPair(ctx context.Context, arg GetFXCacheByPairParams) (FxCache, error) {
+	row := q.db.QueryRowContext(ctx, getFXCacheByPair, arg.BaseCurrency, arg.QuoteCurrency)
+	var i FxCache
+	err := row.Scan(
+		&i.BaseCurrency,
+		&i.QuoteCurrency,
+		&i.Rate,
+		&i.Source,
+		&i.FetchedAt,
+	)
+	return i, err
+}
+
 const getInstrumentBySymbolAndExchange = `-- name: GetInstrumentBySymbolAndExchange :one
 SELECT id, symbol, provider_symbol, asset_type, exchange, quote_currency, created_at, updated_at
 FROM instruments
@@ -236,6 +265,39 @@ func (q *Queries) ListPositionsByPortfolio(ctx context.Context, portfolioID int6
 		return nil, err
 	}
 	return items, nil
+}
+
+const upsertFXCache = `-- name: UpsertFXCache :exec
+INSERT INTO fx_cache (
+    base_currency,
+    quote_currency,
+    rate,
+    source,
+    fetched_at
+) VALUES (?, ?, ?, ?, ?)
+ON CONFLICT(base_currency, quote_currency) DO UPDATE SET
+    rate = excluded.rate,
+    source = excluded.source,
+    fetched_at = excluded.fetched_at
+`
+
+type UpsertFXCacheParams struct {
+	BaseCurrency  string    `json:"base_currency"`
+	QuoteCurrency string    `json:"quote_currency"`
+	Rate          float64   `json:"rate"`
+	Source        string    `json:"source"`
+	FetchedAt     time.Time `json:"fetched_at"`
+}
+
+func (q *Queries) UpsertFXCache(ctx context.Context, arg UpsertFXCacheParams) error {
+	_, err := q.db.ExecContext(ctx, upsertFXCache,
+		arg.BaseCurrency,
+		arg.QuoteCurrency,
+		arg.Rate,
+		arg.Source,
+		arg.FetchedAt,
+	)
+	return err
 }
 
 const upsertPriceCache = `-- name: UpsertPriceCache :exec

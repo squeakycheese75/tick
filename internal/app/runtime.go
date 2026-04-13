@@ -38,14 +38,15 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 	instrumentRepo := repository.NewInstrumentRepository(database)
 
 	// Caching
-	priceCacheRepo := repository.NewPriceCacheRepository(database)
+	priceCache := repository.NewPriceCacheRepository(database)
+	fxCache := repository.NewFXCacheRepository(database)
 
-	priceProvider, err := BuildPriceProvider(cfg, priceCacheRepo)
+	priceProvider, err := BuildPriceProvider(cfg, priceCache)
 	if err != nil {
 		return nil, err
 	}
 
-	fxProvider, err := BuildFXProvider(cfg)
+	fxProvider, err := BuildFXProvider(cfg, fxCache)
 	if err != nil {
 		return nil, err
 	}

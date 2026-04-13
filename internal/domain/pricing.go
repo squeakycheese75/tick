@@ -10,6 +10,13 @@ type Quote struct {
 	Source        string
 }
 
+type FXRate struct {
+	BaseCurrency  string
+	QuoteCurrency string
+	Rate          float64
+	Source        string
+}
+
 type ValuationQuote struct {
 	Quote                  Quote
 	TargetCurrency         string

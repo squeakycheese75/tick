@@ -52,3 +52,11 @@ type CachedPriceQuote struct {
 	PriceQuote PriceQuote
 	FetchedAt  time.Time
 }
+
+type CachedFXRate struct {
+	BaseCurrency  string
+	QuoteCurrency string
+	Rate          float64
+	Source        string
+	FetchedAt     time.Time
+}

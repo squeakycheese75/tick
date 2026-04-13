@@ -91,3 +91,26 @@ ON CONFLICT(ticker) DO UPDATE SET
     change_percent = excluded.change_percent,
     source = excluded.source,
     fetched_at = excluded.fetched_at;
+
+-- name: GetFXCacheByPair :one
+SELECT
+    base_currency,
+    quote_currency,
+    rate,
+    source,
+    fetched_at
+FROM fx_cache
+WHERE base_currency = ? AND quote_currency = ?;
+
+-- name: UpsertFXCache :exec
+INSERT INTO fx_cache (
+    base_currency,
+    quote_currency,
+    rate,
+    source,
+    fetched_at
+) VALUES (?, ?, ?, ?, ?)
+ON CONFLICT(base_currency, quote_currency) DO UPDATE SET
+    rate = excluded.rate,
+    source = excluded.source,
+    fetched_at = excluded.fetched_at;

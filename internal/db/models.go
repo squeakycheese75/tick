@@ -13,6 +13,7 @@ type FxCache struct {
 	BaseCurrency  string    `json:"base_currency"`
 	QuoteCurrency string    `json:"quote_currency"`
 	Rate          float64   `json:"rate"`
+	Source        string    `json:"source"`
 	FetchedAt     time.Time `json:"fetched_at"`
 }
 

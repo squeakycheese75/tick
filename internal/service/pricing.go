@@ -13,7 +13,7 @@ type (
 		GetQuote(ctx context.Context, ticker string) (domain.Quote, error)
 	}
 	FXProvider interface {
-		GetRate(ctx context.Context, from string, to string) (float64, error)
+		GetRate(ctx context.Context, from string, to string) (domain.FXRate, error)
 	}
 )
 
@@ -73,9 +73,9 @@ func (s *PricingService) GetValuationQuote(
 	return domain.ValuationQuote{
 		Quote:                  quote,
 		TargetCurrency:         tc,
-		FXRate:                 rate,
-		ConvertedPrice:         quote.Price * rate,
-		ConvertedPreviousClose: quote.PreviousClose * rate,
-		ConvertedChange:        quote.Change * rate,
+		FXRate:                 rate.Rate,
+		ConvertedPrice:         quote.Price * rate.Rate,
+		ConvertedPreviousClose: quote.PreviousClose * rate.Rate,
+		ConvertedChange:        quote.Change * rate.Rate,
 	}, nil
 }

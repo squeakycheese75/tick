@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"strings"
+
+	"github.com/squeakycheese75/tick/internal/domain"
 )
 
 type StaticFXProvider struct {
@@ -26,11 +28,16 @@ func NewStaticFXProvider() *StaticFXProvider {
 	}
 }
 
-func (f *StaticFXProvider) GetRate(_ context.Context, from string, to string) (float64, error) {
+func (f *StaticFXProvider) GetRate(_ context.Context, from string, to string) (domain.FXRate, error) {
 	key := strings.ToUpper(from) + ":" + strings.ToUpper(to)
 	rate, ok := f.rates[key]
 	if !ok {
-		return 0, fmt.Errorf("fx rate not found for %s", key)
+		return domain.FXRate{}, fmt.Errorf("fx rate not found for %s", key)
 	}
-	return rate, nil
+	return domain.FXRate{
+		Rate:          rate,
+		BaseCurrency:  from,
+		QuoteCurrency: to,
+		Source:        "static",
+	}, nil
 }
