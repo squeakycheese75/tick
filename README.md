@@ -46,7 +46,41 @@ from your terminal, with optional **local AI analysis**.
 
 ------------------------------------------------------------------------
 
-## Getting Started
+## Installation
+
+### Install via Homebrew (recommended)
+
+```bash
+brew tap squeakycheese75/tick
+brew install tick
+```
+
+### Upgrade
+
+```bash
+brew update
+brew upgrade tick
+```
+
+### Verify install
+
+```bash
+tick version
+```
+
+### Data location
+
+`tick` stores data locally in:
+
+```
+~/.tick/tick.db
+```
+
+This file is created automatically on first use.
+
+------------------------------------------------------------------------
+
+## Getting Started (Development)
 
 ### Run locally
 
@@ -141,17 +175,10 @@ tick daily --ai
 ### Pricing & FX
 
 ```env
-# Price data provider: static | finnhub
 PRICE_PROVIDER=finnhub
-
-# FX provider: static | frankfurter
 FX_PROVIDER=frankfurter
-
-# Required if using Finnhub
 FINNHUB_API_KEY=your_api_key_here
 ```
-
----
 
 ### Caching
 
@@ -161,16 +188,12 @@ CACHE_PRICE_TTL=15m
 CACHE_FX_TTL=12h
 ```
 
----
-
 ### LLM (Ollama)
 
 ```env
 LLM_ENABLED=true
 LLM_PROVIDER=ollama
 LLM_BASE_URL=http://localhost:11434
-
-# Model tag optional (":latest" assumed if omitted)
 LLM_MODEL=llama3
 ```
 
@@ -182,16 +205,16 @@ ollama pull llama3
 ollama run llama3
 ```
 
----
+------------------------------------------------------------------------
 
 ## Architecture
 
-- **domain** → core business entities
-- **repository** → persistence layer (sqlc)
-- **usecase** → application logic
-- **analysis** → portfolio analytics engine
-- **adapters** → external integrations (pricing, FX, LLM)
-- **cmd** → CLI entrypoints (Cobra)
+- domain → core business entities
+- repository → persistence layer (sqlc)
+- usecase → application logic
+- analysis → portfolio analytics engine
+- adapters → external integrations (pricing, FX, LLM)
+- cmd → CLI entrypoints (Cobra)
 
 ------------------------------------------------------------------------
 
