@@ -114,3 +114,4 @@ ON CONFLICT(base_currency, quote_currency) DO UPDATE SET
     rate = excluded.rate,
     source = excluded.source,
     fetched_at = excluded.fetched_at;
+    
