@@ -29,6 +29,22 @@ release:
     owner: squeakycheese75
     name: tick
 
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+  groups:
+    - title: Features
+      regexp: '^feat'
+    - title: Fixes
+      regexp: '^fix'
+    - title: Refactoring
+      regexp: '^refactor'
+    - title: Other
+      regexp: '.*'
+
 brews:
   - name: tick
     ids:
