@@ -5,25 +5,18 @@ import (
 	"github.com/squeakycheese75/tick/internal/app"
 )
 
-func NewRootCmd(app *app.Runtime) *cobra.Command {
-	rootCmd := &cobra.Command{
-		Use:   "tick",
-		Short: "Terminal-native portfolio and market intelligence tool",
-		Long: `tick is a terminal-native portfolio and market intelligence tool.
+type RuntimeBuilder func() (*app.Runtime, error)
 
-It is designed around a simple daily workflow:
-- check portfolio positions
-- review news
-- investigate a stock
-- look at portfolio risk`,
+func NewRootCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
+	rootCmd := &cobra.Command{
+		Use: "tick",
 	}
 
-	rootCmd.AddCommand(
-		newPortfolioCmd(app),
-		newInfoCmd(),
-		newNewsCmd(),
-		newDailyCmd(app),
-	)
+	rootCmd.AddCommand(newVersionCmd())
+	rootCmd.AddCommand(newDailyCmd(runtimeBuilder))
+	rootCmd.AddCommand(newPortfolioCmd(runtimeBuilder))
+	rootCmd.AddCommand(newInfoCmd())
+	rootCmd.AddCommand(newNewsCmd())
 
 	return rootCmd
 }

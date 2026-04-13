@@ -7,34 +7,38 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/squeakycheese75/tick/internal/app"
 	"github.com/squeakycheese75/tick/internal/usecase"
 )
 
-func newPortfolioCmd(app *app.Runtime) *cobra.Command {
+func newPortfolioCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 	portfolioCmd := &cobra.Command{
 		Use:   "portfolio",
 		Short: "Portfolio commands",
 	}
 
 	portfolioCmd.AddCommand(
-		newPortfolioCreateCmd(app),
-		newPortfolioSummaryCmd(app),
-		newPortfolioRiskCmd(app),
-		newPortfolioAddPositionCmd(app),
-		newPortfolioImportCmd(app),
+		newPortfolioCreateCmd(runtimeBuilder),
+		newPortfolioSummaryCmd(runtimeBuilder),
+		newPortfolioRiskCmd(runtimeBuilder),
+		newPortfolioAddPositionCmd(runtimeBuilder),
+		newPortfolioImportCmd(runtimeBuilder),
 	)
 
 	return portfolioCmd
 }
 
-func newPortfolioSummaryCmd(app *app.Runtime) *cobra.Command {
+func newPortfolioSummaryCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 	var portfolioName string
 
 	cmd := &cobra.Command{
 		Use:   "summary",
 		Short: "Show portfolio summary",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			app, err := runtimeBuilder()
+			if err != nil {
+				return err
+			}
+
 			out, err := app.GetPortfolioSummary.Execute(
 				cmd.Context(),
 				usecase.GetPortfolioSummaryUsecaseInput{
@@ -53,7 +57,7 @@ func newPortfolioSummaryCmd(app *app.Runtime) *cobra.Command {
 	return cmd
 }
 
-func newPortfolioAddPositionCmd(app *app.Runtime) *cobra.Command {
+func newPortfolioAddPositionCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 	var qty float64
 	var avgCost float64
 	var quoteCurrency string
@@ -99,6 +103,11 @@ func newPortfolioAddPositionCmd(app *app.Runtime) *cobra.Command {
 				return fmt.Errorf("avg-cost must be 0 or greater")
 			}
 
+			app, err := runtimeBuilder()
+			if err != nil {
+				return err
+			}
+
 			out, err := app.AddPosition.Execute(
 				cmd.Context(),
 				usecase.AddPositionToPortfolioInput{
@@ -129,7 +138,7 @@ func newPortfolioAddPositionCmd(app *app.Runtime) *cobra.Command {
 	return cmd
 }
 
-func newPortfolioCreateCmd(app *app.Runtime) *cobra.Command {
+func newPortfolioCreateCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 	var baseCurrency string
 
 	cmd := &cobra.Command{
@@ -145,6 +154,11 @@ func newPortfolioCreateCmd(app *app.Runtime) *cobra.Command {
 			baseCurrency = strings.ToUpper(strings.TrimSpace(baseCurrency))
 			if baseCurrency == "" {
 				return fmt.Errorf("base-currency is required")
+			}
+
+			app, err := runtimeBuilder()
+			if err != nil {
+				return err
 			}
 
 			out, err := app.CreatePortfolio.Execute(
@@ -172,14 +186,19 @@ func newPortfolioCreateCmd(app *app.Runtime) *cobra.Command {
 	return cmd
 }
 
-func newPortfolioRiskCmd(rt *app.Runtime) *cobra.Command {
+func newPortfolioRiskCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 	var portfolioName string
 
 	cmd := &cobra.Command{
 		Use:   "risk",
 		Short: "Show portfolio concentration and basic risk summary",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			out, err := rt.GetPortfolioRisk.Execute(
+			app, err := runtimeBuilder()
+			if err != nil {
+				return err
+			}
+
+			out, err := app.GetPortfolioRisk.Execute(
 				cmd.Context(),
 				usecase.GetPortfolioRiskInput{
 					PortfolioName: portfolioName,
@@ -197,7 +216,7 @@ func newPortfolioRiskCmd(rt *app.Runtime) *cobra.Command {
 	return cmd
 }
 
-func newPortfolioImportCmd(app *app.Runtime) *cobra.Command {
+func newPortfolioImportCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 	var filePath string
 
 	cmd := &cobra.Command{
@@ -217,6 +236,11 @@ func newPortfolioImportCmd(app *app.Runtime) *cobra.Command {
 			var in usecase.ImportPortfolioInput
 			if err := json.Unmarshal(data, &in); err != nil {
 				return fmt.Errorf("decode import file %q: %w", filePath, err)
+			}
+
+			app, err := runtimeBuilder()
+			if err != nil {
+				return err
 			}
 
 			out, err := app.ImportPortfolio.Execute(cmd.Context(), in)

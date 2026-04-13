@@ -3,7 +3,9 @@ package db
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"io"
+	"io/fs"
 	"log"
 
 	"github.com/pressly/goose/v3"
@@ -17,14 +19,15 @@ type DB struct {
 }
 
 func OpenAndMigrateSqlite(dsn string) (*DB, error) {
-	db, err := sql.Open("sqlite", dsn)
+	sqlDB, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return nil, err
 	}
 
-	wrapped := &DB{SqlDB: db}
+	wrapped := &DB{SqlDB: sqlDB}
 
 	if err := goose.SetDialect("sqlite3"); err != nil {
+		_ = sqlDB.Close()
 		return nil, err
 	}
 
@@ -33,8 +36,18 @@ func OpenAndMigrateSqlite(dsn string) (*DB, error) {
 	log.SetOutput(io.Discard)
 	defer log.SetOutput(originalWriter)
 
-	if err := goose.Up(db, "internal/db/migrations"); err != nil {
-		_ = db.Close()
+	// use the embedded migrations files
+
+	migrationsFS, err := fs.Sub(migrationFiles, "migrations")
+	if err != nil {
+		_ = sqlDB.Close()
+		return nil, fmt.Errorf("sub migrations fs: %w", err)
+	}
+
+	goose.SetBaseFS(migrationsFS)
+
+	if err := goose.Up(sqlDB, "."); err != nil {
+		_ = sqlDB.Close()
 		return nil, err
 	}
 

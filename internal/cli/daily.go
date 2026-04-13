@@ -4,11 +4,10 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/squeakycheese75/tick/internal/app"
 	"github.com/squeakycheese75/tick/internal/usecase"
 )
 
-func newDailyCmd(rt *app.Runtime) *cobra.Command {
+func newDailyCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 	var portfolioName string
 	var newsLimit int
 	var ai bool
@@ -17,6 +16,11 @@ func newDailyCmd(rt *app.Runtime) *cobra.Command {
 		Use:   "daily",
 		Short: "Show the daily portfolio brief",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			rt, err := runtimeBuilder()
+			if err != nil {
+				return err
+			}
+
 			if ai && rt.GetDailyReport == nil {
 				return fmt.Errorf("ai is not configured")
 			}

@@ -5,6 +5,11 @@ project_name: tick
 builds:
   - main: ./cmd/tick
     binary: tick
+    ldflags:
+      - -s -w
+      - -X github.com/squeakycheese75/tick/internal/buildinfo.Version={{ .Version }}
+      - -X github.com/squeakycheese75/tick/internal/buildinfo.Commit={{ .ShortCommit }}
+      - -X github.com/squeakycheese75/tick/internal/buildinfo.BuildDate={{ .Date }}
     goos:
       - darwin
       - linux
@@ -42,3 +47,5 @@ brews:
       email: james_wooltorton@hotmail.com
     install: |
       bin.install "tick"
+    test: |
+      system "#{bin}/tick", "version"
