@@ -9,9 +9,13 @@ import (
 )
 
 func main() {
-
 	rootCmd := cli.NewRootCmd(func() (*app.Runtime, error) {
-		return app.BuildRuntime("tick.db")
+		dbPath, err := app.DefaultDBPath()
+		if err != nil {
+			return nil, err
+		}
+
+		return app.BuildRuntime(dbPath)
 	})
 
 	if err := rootCmd.Execute(); err != nil {
