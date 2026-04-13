@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/squeakycheese75/tick/internal/domain"
 )
 
 type FrankfurterFXProvider struct {
@@ -30,45 +32,58 @@ type frankfurterSingleRateResponse struct {
 	Rate   float64 `json:"rate"`
 }
 
-func (p *FrankfurterFXProvider) GetRate(ctx context.Context, from string, to string) (float64, error) {
+func (p *FrankfurterFXProvider) GetRate(ctx context.Context, from string, to string) (domain.FXRate, error) {
 	from = strings.ToUpper(strings.TrimSpace(from))
 	to = strings.ToUpper(strings.TrimSpace(to))
 
+	fxRate := domain.FXRate{
+		BaseCurrency:  from,
+		QuoteCurrency: to,
+		Source:        "frankfurter",
+	}
+
 	if from == "" || to == "" {
-		return 0, fmt.Errorf("from and to currencies are required")
+		return fxRate, fmt.Errorf("from and to currencies are required")
 	}
 
 	if from == to {
-		return 1.0, nil
+		fxRate.Rate = 1.0
+		return fxRate, nil
 	}
 
 	url := fmt.Sprintf("%s/v2/rate/%s/%s", p.baseURL, from, to)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return 0, fmt.Errorf("build frankfurter request: %w", err)
+		fxRate.Rate = 0
+		return fxRate, fmt.Errorf("build frankfurter request: %w", err)
 	}
 
 	resp, err := p.client.Do(req)
 	if err != nil {
-		return 0, fmt.Errorf("perform frankfurter request: %w", err)
+		fxRate.Rate = 0
+		return fxRate, fmt.Errorf("perform frankfurter request: %w", err)
 	}
 	defer func() {
 		_ = resp.Body.Close()
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		return 0, fmt.Errorf("frankfurter returned status %s", resp.Status)
+		fxRate.Rate = 0
+		return fxRate, fmt.Errorf("frankfurter returned status %s", resp.Status)
 	}
 
 	var data frankfurterSingleRateResponse
 	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
-		return 0, fmt.Errorf("decode frankfurter response: %w", err)
+		fxRate.Rate = 0
+		return fxRate, fmt.Errorf("decode frankfurter response: %w", err)
 	}
 
 	if data.Rate == 0 {
-		return 0, fmt.Errorf("fx rate not found for %s/%s", from, to)
+		fxRate.Rate = 0
+		return fxRate, fmt.Errorf("fx rate not found for %s/%s", from, to)
 	}
 
-	return data.Rate, nil
+	fxRate.Rate = data.Rate
+	return fxRate, nil
 }

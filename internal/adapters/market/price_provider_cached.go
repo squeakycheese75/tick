@@ -2,35 +2,36 @@ package market
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/squeakycheese75/tick/internal/domain"
+	"github.com/squeakycheese75/tick/internal/repository"
 )
 
 type CachedPriceProvider struct {
 	inner PriceProvider
 	ttl   time.Duration
-
-	mu    sync.RWMutex
-	cache map[string]cachedQuote
+	repo  PriceCacheStore
 }
 
-type cachedQuote struct {
-	quote     domain.Quote
-	expiresAt time.Time
-}
+type (
+	PriceCacheStore interface {
+		Upsert(ctx context.Context, quote repository.PriceQuote, fetchedAt time.Time) error
+		Get(ctx context.Context, ticker string) (repository.CachedPriceQuote, error)
+	}
+	PriceProvider interface {
+		GetQuote(ctx context.Context, ticker string) (domain.Quote, error)
+	}
+)
 
-type PriceProvider interface {
-	GetQuote(ctx context.Context, ticker string) (domain.Quote, error)
-}
-
-func NewCachedPriceProvider(inner PriceProvider, ttl time.Duration) *CachedPriceProvider {
+func NewCachedPriceProvider(inner PriceProvider, cacheRepo PriceCacheStore, ttl time.Duration) *CachedPriceProvider {
 	return &CachedPriceProvider{
 		inner: inner,
 		ttl:   ttl,
-		cache: make(map[string]cachedQuote),
+		repo:  cacheRepo,
 	}
 }
 
@@ -38,25 +39,50 @@ func (p *CachedPriceProvider) GetQuote(ctx context.Context, ticker string) (doma
 	key := strings.ToUpper(strings.TrimSpace(ticker))
 	now := time.Now()
 
-	p.mu.RLock()
-	entry, ok := p.cache[key]
-	p.mu.RUnlock()
+	// 1. Try cache
+	cached, err := p.repo.Get(ctx, key)
+	switch {
+	case err == nil:
+		if now.Sub(cached.FetchedAt) < p.ttl {
+			return toDomainQuote(cached), nil
+		}
 
-	if ok && now.Before(entry.expiresAt) {
-		return entry.quote, nil
+	case !errors.Is(err, domain.ErrPriceCacheNotFound):
+		return domain.Quote{}, fmt.Errorf("get cached quote for %q: %w", key, err)
 	}
 
+	// 2. Fetch fresh
 	quote, err := p.inner.GetQuote(ctx, key)
 	if err != nil {
 		return domain.Quote{}, err
 	}
 
-	p.mu.Lock()
-	p.cache[key] = cachedQuote{
-		quote:     quote,
-		expiresAt: now.Add(p.ttl),
-	}
-	p.mu.Unlock()
+	// 3. Store in cache (best effort)
+	_ = p.repo.Upsert(ctx, toRepositoryQuote(quote), now)
 
 	return quote, nil
+}
+
+func toDomainQuote(c repository.CachedPriceQuote) domain.Quote {
+	return domain.Quote{
+		Ticker:        c.PriceQuote.Ticker,
+		Price:         c.PriceQuote.Price,
+		PriceCurrency: c.PriceQuote.PriceCurrency,
+		PreviousClose: c.PriceQuote.PreviousClose,
+		Change:        c.PriceQuote.Change,
+		ChangePercent: c.PriceQuote.ChangePercent,
+		Source:        c.PriceQuote.Source,
+	}
+}
+
+func toRepositoryQuote(q domain.Quote) repository.PriceQuote {
+	return repository.PriceQuote{
+		Ticker:        q.Ticker,
+		Price:         q.Price,
+		PriceCurrency: q.PriceCurrency,
+		PreviousClose: q.PreviousClose,
+		Change:        q.Change,
+		ChangePercent: q.ChangePercent,
+		Source:        q.Source,
+	}
 }

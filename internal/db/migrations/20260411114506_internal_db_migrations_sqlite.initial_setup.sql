@@ -47,5 +47,5 @@ DROP INDEX IF EXISTS idx_positions_instrument_id;
 DROP INDEX IF EXISTS idx_positions_portfolio_id;
 DROP TABLE IF EXISTS positions;
 DROP TABLE IF EXISTS portfolios;
-DROP TABLE IF EXISTS portfolios;
+DROP TABLE IF EXISTS positions;
 -- +goose StatementEnd

@@ -2,65 +2,83 @@ package market
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"strings"
-	"sync"
 	"time"
+
+	"github.com/squeakycheese75/tick/internal/domain"
+	"github.com/squeakycheese75/tick/internal/repository"
 )
 
 type FXProvider interface {
-	GetRate(ctx context.Context, from string, to string) (float64, error)
+	GetRate(ctx context.Context, baseCurrency, quoteCurrency string) (domain.FXRate, error)
+}
+
+type FXCacheStore interface {
+	Get(ctx context.Context, baseCurrency, quoteCurrency string) (repository.CachedFXRate, error)
+	Upsert(ctx context.Context, cached repository.CachedFXRate) error
 }
 
 type CachedFXProvider struct {
 	inner FXProvider
+	repo  FXCacheStore
 	ttl   time.Duration
-
-	mu    sync.RWMutex
-	cache map[string]cachedRate
 }
 
-type cachedRate struct {
-	rate      float64
-	expiresAt time.Time
-}
-
-func NewCachedFXProvider(inner FXProvider, ttl time.Duration) *CachedFXProvider {
+func NewCachedFXProvider(
+	inner FXProvider,
+	repo FXCacheStore,
+	ttl time.Duration,
+) *CachedFXProvider {
 	return &CachedFXProvider{
 		inner: inner,
+		repo:  repo,
 		ttl:   ttl,
-		cache: make(map[string]cachedRate),
 	}
 }
 
-func (p *CachedFXProvider) GetRate(ctx context.Context, from string, to string) (float64, error) {
-	from = strings.ToUpper(strings.TrimSpace(from))
-	to = strings.ToUpper(strings.TrimSpace(to))
-
-	key := from + ":" + to
+func (p *CachedFXProvider) GetRate(ctx context.Context, baseCurrency, quoteCurrency string) (domain.FXRate, error) {
+	base := strings.ToUpper(strings.TrimSpace(baseCurrency))
+	quote := strings.ToUpper(strings.TrimSpace(quoteCurrency))
 	now := time.Now()
 
-	// fast path
-	p.mu.RLock()
-	entry, ok := p.cache[key]
-	p.mu.RUnlock()
+	cached, err := p.repo.Get(ctx, base, quote)
+	switch {
+	case err == nil:
+		if now.Sub(cached.FetchedAt) < p.ttl {
+			return toDomainFXRate(cached), nil
+		}
 
-	if ok && now.Before(entry.expiresAt) {
-		return entry.rate, nil
+	case !errors.Is(err, domain.ErrFXCacheNotFound):
+		return domain.FXRate{}, fmt.Errorf("get cached fx rate for %s/%s: %w", base, quote, err)
 	}
 
-	// fetch from inner provider
-	rate, err := p.inner.GetRate(ctx, from, to)
+	rate, err := p.inner.GetRate(ctx, base, quote)
 	if err != nil {
-		return 0, err
+		return domain.FXRate{}, err
 	}
 
-	// store
-	p.mu.Lock()
-	p.cache[key] = cachedRate{
-		rate:      rate,
-		expiresAt: now.Add(p.ttl),
-	}
-	p.mu.Unlock()
+	_ = p.repo.Upsert(ctx, toRepositoryFXRate(rate, now))
 
 	return rate, nil
+}
+
+func toDomainFXRate(c repository.CachedFXRate) domain.FXRate {
+	return domain.FXRate{
+		BaseCurrency:  c.BaseCurrency,
+		QuoteCurrency: c.QuoteCurrency,
+		Rate:          c.Rate,
+		Source:        c.Source,
+	}
+}
+
+func toRepositoryFXRate(r domain.FXRate, fetchedAt time.Time) repository.CachedFXRate {
+	return repository.CachedFXRate{
+		BaseCurrency:  r.BaseCurrency,
+		QuoteCurrency: r.QuoteCurrency,
+		Rate:          r.Rate,
+		Source:        r.Source,
+		FetchedAt:     fetchedAt,
+	}
 }

@@ -58,3 +58,60 @@ INSERT INTO instruments (
   ?, ?, ?, ?, ?
 )
 RETURNING id;
+
+-- name: GetPriceCacheByTicker :one
+SELECT
+    ticker,
+    price,
+    price_currency,
+    previous_close,
+    change,
+    change_percent,
+    source,
+    fetched_at
+FROM price_cache
+WHERE ticker = ?;
+
+-- name: UpsertPriceCache :exec
+INSERT INTO price_cache (
+    ticker,
+    price,
+    price_currency,
+    previous_close,
+    change,
+    change_percent,
+    source,
+    fetched_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(ticker) DO UPDATE SET
+    price = excluded.price,
+    price_currency = excluded.price_currency,
+    previous_close = excluded.previous_close,
+    change = excluded.change,
+    change_percent = excluded.change_percent,
+    source = excluded.source,
+    fetched_at = excluded.fetched_at;
+
+-- name: GetFXCacheByPair :one
+SELECT
+    base_currency,
+    quote_currency,
+    rate,
+    source,
+    fetched_at
+FROM fx_cache
+WHERE base_currency = ? AND quote_currency = ?;
+
+-- name: UpsertFXCache :exec
+INSERT INTO fx_cache (
+    base_currency,
+    quote_currency,
+    rate,
+    source,
+    fetched_at
+) VALUES (?, ?, ?, ?, ?)
+ON CONFLICT(base_currency, quote_currency) DO UPDATE SET
+    rate = excluded.rate,
+    source = excluded.source,
+    fetched_at = excluded.fetched_at;
+    

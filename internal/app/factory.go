@@ -6,11 +6,30 @@ import (
 	"time"
 
 	"github.com/squeakycheese75/tick/internal/adapters/market"
+	"github.com/squeakycheese75/tick/internal/domain"
 	"github.com/squeakycheese75/tick/internal/llm"
+	"github.com/squeakycheese75/tick/internal/repository"
 	"github.com/squeakycheese75/tick/internal/service"
 )
 
-func BuildPriceProvider(cfg Config) (service.PriceProvider, error) {
+type (
+	PriceProvider interface {
+		GetQuote(ctx context.Context, ticker string) (domain.Quote, error)
+	}
+	FXProvider interface {
+		GetRate(ctx context.Context, from string, to string) (domain.FXRate, error)
+	}
+	PriceCacheStore interface {
+		Upsert(ctx context.Context, quote repository.PriceQuote, fetchedAt time.Time) error
+		Get(ctx context.Context, ticker string) (repository.CachedPriceQuote, error)
+	}
+	FXCacheStore interface {
+		Get(ctx context.Context, baseCurrency, quoteCurrency string) (repository.CachedFXRate, error)
+		Upsert(ctx context.Context, cached repository.CachedFXRate) error
+	}
+)
+
+func BuildPriceProvider(cfg Config, priceCacheStore PriceCacheStore) (PriceProvider, error) {
 	var provider service.PriceProvider
 
 	switch cfg.PriceProvider {
@@ -20,18 +39,18 @@ func BuildPriceProvider(cfg Config) (service.PriceProvider, error) {
 	case "finnhub":
 		provider = market.NewFinnhubPriceProvider(cfg.FinnhubAPIKey)
 
+		if cfg.CacheEnabled && priceCacheStore != nil {
+			return market.NewCachedPriceProvider(provider, priceCacheStore, cfg.PriceCacheTTL), nil
+		}
+
 	default:
 		return nil, fmt.Errorf("unsupported PRICE_PROVIDER %q", cfg.PriceProvider)
-	}
-
-	if cfg.CacheEnabled {
-		provider = market.NewCachedPriceProvider(provider, cfg.PriceCacheTTL)
 	}
 
 	return provider, nil
 }
 
-func BuildFXProvider(cfg Config) (service.FXProvider, error) {
+func BuildFXProvider(cfg Config, fxCacheStore FXCacheStore) (FXProvider, error) {
 	var provider service.FXProvider
 
 	switch cfg.FXProvider {
@@ -47,7 +66,7 @@ func BuildFXProvider(cfg Config) (service.FXProvider, error) {
 
 	// apply cache conditionally
 	if cfg.CacheEnabled {
-		provider = market.NewCachedFXProvider(provider, cfg.FXCacheTTL)
+		provider = market.NewCachedFXProvider(provider, fxCacheStore, cfg.FXCacheTTL)
 	}
 
 	return provider, nil

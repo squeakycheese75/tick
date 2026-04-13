@@ -1,5 +1,7 @@
 package repository
 
+import "time"
+
 type Instrument struct {
 	ID             int64
 	Symbol         string
@@ -34,4 +36,27 @@ type CreatePositionParams struct {
 	Quantity     float64
 	AvgCost      float64
 	Currency     string
+}
+
+type PriceQuote struct {
+	Ticker        string
+	Price         float64
+	PriceCurrency string
+	PreviousClose float64
+	Change        float64
+	ChangePercent float64
+	Source        string
+}
+
+type CachedPriceQuote struct {
+	PriceQuote PriceQuote
+	FetchedAt  time.Time
+}
+
+type CachedFXRate struct {
+	BaseCurrency  string
+	QuoteCurrency string
+	Rate          float64
+	Source        string
+	FetchedAt     time.Time
 }

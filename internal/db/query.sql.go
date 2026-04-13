@@ -8,6 +8,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"time"
 )
 
 const createInstrument = `-- name: CreateInstrument :one
@@ -96,6 +97,35 @@ func (q *Queries) CreatePosition(ctx context.Context, arg CreatePositionParams) 
 	return err
 }
 
+const getFXCacheByPair = `-- name: GetFXCacheByPair :one
+SELECT
+    base_currency,
+    quote_currency,
+    rate,
+    source,
+    fetched_at
+FROM fx_cache
+WHERE base_currency = ? AND quote_currency = ?
+`
+
+type GetFXCacheByPairParams struct {
+	BaseCurrency  string `json:"base_currency"`
+	QuoteCurrency string `json:"quote_currency"`
+}
+
+func (q *Queries) GetFXCacheByPair(ctx context.Context, arg GetFXCacheByPairParams) (FxCache, error) {
+	row := q.db.QueryRowContext(ctx, getFXCacheByPair, arg.BaseCurrency, arg.QuoteCurrency)
+	var i FxCache
+	err := row.Scan(
+		&i.BaseCurrency,
+		&i.QuoteCurrency,
+		&i.Rate,
+		&i.Source,
+		&i.FetchedAt,
+	)
+	return i, err
+}
+
 const getInstrumentBySymbolAndExchange = `-- name: GetInstrumentBySymbolAndExchange :one
 SELECT id, symbol, provider_symbol, asset_type, exchange, quote_currency, created_at, updated_at
 FROM instruments
@@ -140,6 +170,36 @@ func (q *Queries) GetPortfolioByName(ctx context.Context, name string) (Portfoli
 		&i.BaseCurrency,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getPriceCacheByTicker = `-- name: GetPriceCacheByTicker :one
+SELECT
+    ticker,
+    price,
+    price_currency,
+    previous_close,
+    change,
+    change_percent,
+    source,
+    fetched_at
+FROM price_cache
+WHERE ticker = ?
+`
+
+func (q *Queries) GetPriceCacheByTicker(ctx context.Context, ticker string) (PriceCache, error) {
+	row := q.db.QueryRowContext(ctx, getPriceCacheByTicker, ticker)
+	var i PriceCache
+	err := row.Scan(
+		&i.Ticker,
+		&i.Price,
+		&i.PriceCurrency,
+		&i.PreviousClose,
+		&i.Change,
+		&i.ChangePercent,
+		&i.Source,
+		&i.FetchedAt,
 	)
 	return i, err
 }
@@ -205,4 +265,83 @@ func (q *Queries) ListPositionsByPortfolio(ctx context.Context, portfolioID int6
 		return nil, err
 	}
 	return items, nil
+}
+
+const upsertFXCache = `-- name: UpsertFXCache :exec
+INSERT INTO fx_cache (
+    base_currency,
+    quote_currency,
+    rate,
+    source,
+    fetched_at
+) VALUES (?, ?, ?, ?, ?)
+ON CONFLICT(base_currency, quote_currency) DO UPDATE SET
+    rate = excluded.rate,
+    source = excluded.source,
+    fetched_at = excluded.fetched_at
+`
+
+type UpsertFXCacheParams struct {
+	BaseCurrency  string    `json:"base_currency"`
+	QuoteCurrency string    `json:"quote_currency"`
+	Rate          float64   `json:"rate"`
+	Source        string    `json:"source"`
+	FetchedAt     time.Time `json:"fetched_at"`
+}
+
+func (q *Queries) UpsertFXCache(ctx context.Context, arg UpsertFXCacheParams) error {
+	_, err := q.db.ExecContext(ctx, upsertFXCache,
+		arg.BaseCurrency,
+		arg.QuoteCurrency,
+		arg.Rate,
+		arg.Source,
+		arg.FetchedAt,
+	)
+	return err
+}
+
+const upsertPriceCache = `-- name: UpsertPriceCache :exec
+INSERT INTO price_cache (
+    ticker,
+    price,
+    price_currency,
+    previous_close,
+    change,
+    change_percent,
+    source,
+    fetched_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(ticker) DO UPDATE SET
+    price = excluded.price,
+    price_currency = excluded.price_currency,
+    previous_close = excluded.previous_close,
+    change = excluded.change,
+    change_percent = excluded.change_percent,
+    source = excluded.source,
+    fetched_at = excluded.fetched_at
+`
+
+type UpsertPriceCacheParams struct {
+	Ticker        string    `json:"ticker"`
+	Price         float64   `json:"price"`
+	PriceCurrency string    `json:"price_currency"`
+	PreviousClose float64   `json:"previous_close"`
+	Change        float64   `json:"change"`
+	ChangePercent float64   `json:"change_percent"`
+	Source        string    `json:"source"`
+	FetchedAt     time.Time `json:"fetched_at"`
+}
+
+func (q *Queries) UpsertPriceCache(ctx context.Context, arg UpsertPriceCacheParams) error {
+	_, err := q.db.ExecContext(ctx, upsertPriceCache,
+		arg.Ticker,
+		arg.Price,
+		arg.PriceCurrency,
+		arg.PreviousClose,
+		arg.Change,
+		arg.ChangePercent,
+		arg.Source,
+		arg.FetchedAt,
+	)
+	return err
 }
