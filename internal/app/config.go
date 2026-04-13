@@ -3,10 +3,11 @@ package app
 import (
 	"fmt"
 	"os"
-	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
+	"github.com/squeakycheese75/tick/internal/appdir"
 )
 
 type Config struct {
@@ -26,7 +27,16 @@ type Config struct {
 }
 
 func LoadConfig() (Config, error) {
-	_ = godotenv.Load()
+	configPath, err := appdir.ConfigPath()
+	if err == nil {
+		if err := godotenv.Load(configPath); err != nil && !os.IsNotExist(err) {
+			return Config{}, fmt.Errorf("load home config: %w", err)
+		}
+	}
+
+	if err := godotenv.Overload(".env"); err != nil && !os.IsNotExist(err) {
+		return Config{}, fmt.Errorf("load local .env: %w", err)
+	}
 
 	cfg := Config{
 		PriceProvider: getenvDefault("PRICE_PROVIDER", "static"),
@@ -40,8 +50,6 @@ func LoadConfig() (Config, error) {
 		LLMModel:    getenvDefault("LLM_MODEL", "llama3.1"),
 	}
 
-	var err error
-
 	cfg.PriceCacheTTL, err = durationEnv("CACHE_PRICE_TTL", 15*time.Minute)
 	if err != nil {
 		return Config{}, fmt.Errorf("CACHE_PRICE_TTL: %w", err)
@@ -52,27 +60,41 @@ func LoadConfig() (Config, error) {
 		return Config{}, fmt.Errorf("CACHE_FX_TTL: %w", err)
 	}
 
-	if cfg.PriceProvider == "finnhub" || cfg.FXProvider == "finnhub" {
-		if cfg.FinnhubAPIKey == "" {
-			return Config{}, fmt.Errorf("FINNHUB_API_KEY is required when using finnhub providers")
-		}
+	return cfg, nil
+}
+
+func (c Config) Validate() error {
+	switch c.PriceProvider {
+	case "static", "finnhub":
+	default:
+		return fmt.Errorf("unsupported PRICE_PROVIDER %q", c.PriceProvider)
 	}
 
-	if cfg.LLMEnabled {
-		switch cfg.LLMProvider {
+	switch c.FXProvider {
+	case "static", "frankfurter":
+	default:
+		return fmt.Errorf("unsupported FX_PROVIDER %q", c.FXProvider)
+	}
+
+	if c.PriceProvider == "finnhub" && c.FinnhubAPIKey == "" {
+		return fmt.Errorf("FINNHUB_API_KEY is required when PRICE_PROVIDER=finnhub")
+	}
+
+	if c.LLMEnabled {
+		switch c.LLMProvider {
 		case "ollama":
-			if cfg.LLMBaseURL == "" {
-				return Config{}, fmt.Errorf("LLM_BASE_URL is required when LLM is enabled")
+			if c.LLMBaseURL == "" {
+				return fmt.Errorf("LLM_BASE_URL is required when LLM is enabled")
 			}
-			if cfg.LLMModel == "" {
-				return Config{}, fmt.Errorf("LLM_MODEL is required when LLM is enabled")
+			if c.LLMModel == "" {
+				return fmt.Errorf("LLM_MODEL is required when LLM is enabled")
 			}
 		default:
-			return Config{}, fmt.Errorf("unsupported LLM_PROVIDER %q", cfg.LLMProvider)
+			return fmt.Errorf("unsupported LLM_PROVIDER %q", c.LLMProvider)
 		}
 	}
 
-	return cfg, nil
+	return nil
 }
 
 func getenvDefault(key, fallback string) string {
@@ -91,17 +113,60 @@ func durationEnv(key string, fallback time.Duration) (time.Duration, error) {
 	return time.ParseDuration(v)
 }
 
-func DefaultDBPath() (string, error) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return "", fmt.Errorf("get home dir: %w", err)
+func (c Config) String() string {
+	type kv struct {
+		Key   string
+		Value string
 	}
 
-	dir := filepath.Join(homeDir, ".tick")
+	rows := []kv{
+		{"PRICE_PROVIDER", c.PriceProvider},
+		{"FX_PROVIDER", c.FXProvider},
+		{"CACHE_ENABLED", fmt.Sprintf("%t", c.CacheEnabled)},
+		{"CACHE_PRICE_TTL", c.PriceCacheTTL.String()},
+		{"CACHE_FX_TTL", c.FXCacheTTL.String()},
 
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return "", fmt.Errorf("create ~/.tick dir: %w", err)
+		{"", ""}, // spacer
+
+		{"LLM_ENABLED", fmt.Sprintf("%t", c.LLMEnabled)},
+		{"LLM_PROVIDER", c.LLMProvider},
+		{"LLM_BASE_URL", c.LLMBaseURL},
+		{"LLM_MODEL", c.LLMModel},
+
+		{"", ""}, // spacer
+
+		{"FINNHUB_API_KEY", mask(c.FinnhubAPIKey)},
 	}
 
-	return filepath.Join(dir, "tick.db"), nil
+	// find max key length
+	maxKeyLen := 0
+	for _, r := range rows {
+		if len(r.Key) > maxKeyLen {
+			maxKeyLen = len(r.Key)
+		}
+	}
+
+	var b strings.Builder
+	b.WriteString("Configuration:\n")
+
+	for _, r := range rows {
+		if r.Key == "" {
+			b.WriteString("\n")
+			continue
+		}
+
+		fmt.Fprintf(&b, "  %-*s : %s\n", maxKeyLen, r.Key, r.Value)
+	}
+
+	return b.String()
+}
+
+func mask(s string) string {
+	if s == "" {
+		return "<not set>"
+	}
+	if len(s) <= 4 {
+		return "****"
+	}
+	return s[:4] + "****"
 }

@@ -5,12 +5,13 @@ import (
 	"os"
 
 	"github.com/squeakycheese75/tick/internal/app"
+	"github.com/squeakycheese75/tick/internal/appdir"
 	"github.com/squeakycheese75/tick/internal/cli"
 )
 
 func main() {
 	rootCmd := cli.NewRootCmd(func() (*app.Runtime, error) {
-		dbPath, err := app.DefaultDBPath()
+		dbPath, err := appdir.DBPath()
 		if err != nil {
 			return nil, err
 		}
