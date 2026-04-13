@@ -8,6 +8,10 @@ from your terminal, with optional **local AI analysis**.
 
 ------------------------------------------------------------------------
 
+## Example Output
+
+![tick daily output](docs/screenshot.png)
+
 ## Features
 
 ### Portfolio Management
