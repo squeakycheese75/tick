@@ -32,6 +32,7 @@ brews:
       owner: squeakycheese75
       name: homebrew-tick
       branch: main
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
     homepage: "https://github.com/squeakycheese75/tick"
     description: "Terminal-native portfolio and market intelligence tool"
     license: "MIT"
