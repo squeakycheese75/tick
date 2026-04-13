@@ -12,9 +12,9 @@ func newVersionCmd() *cobra.Command {
 		Use:   "version",
 		Short: "Print tick version information",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Fprintf(cmd.OutOrStdout(), "tick version %s\n", buildinfo.Version)
-			fmt.Fprintf(cmd.OutOrStdout(), "commit: %s\n", buildinfo.Commit)
-			fmt.Fprintf(cmd.OutOrStdout(), "built: %s\n", buildinfo.BuildDate)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "tick version %s\n", buildinfo.Version)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "commit: %s\n", buildinfo.Commit)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "built: %s\n", buildinfo.BuildDate)
 		},
 	}
 }
