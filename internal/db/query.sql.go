@@ -8,6 +8,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"time"
 )
 
 const createInstrument = `-- name: CreateInstrument :one
@@ -144,6 +145,36 @@ func (q *Queries) GetPortfolioByName(ctx context.Context, name string) (Portfoli
 	return i, err
 }
 
+const getPriceCacheByTicker = `-- name: GetPriceCacheByTicker :one
+SELECT
+    ticker,
+    price,
+    price_currency,
+    previous_close,
+    change,
+    change_percent,
+    source,
+    fetched_at
+FROM price_cache
+WHERE ticker = ?
+`
+
+func (q *Queries) GetPriceCacheByTicker(ctx context.Context, ticker string) (PriceCache, error) {
+	row := q.db.QueryRowContext(ctx, getPriceCacheByTicker, ticker)
+	var i PriceCache
+	err := row.Scan(
+		&i.Ticker,
+		&i.Price,
+		&i.PriceCurrency,
+		&i.PreviousClose,
+		&i.Change,
+		&i.ChangePercent,
+		&i.Source,
+		&i.FetchedAt,
+	)
+	return i, err
+}
+
 const listPositionsByPortfolio = `-- name: ListPositionsByPortfolio :many
 SELECT
     p.instrument_id,
@@ -205,4 +236,50 @@ func (q *Queries) ListPositionsByPortfolio(ctx context.Context, portfolioID int6
 		return nil, err
 	}
 	return items, nil
+}
+
+const upsertPriceCache = `-- name: UpsertPriceCache :exec
+INSERT INTO price_cache (
+    ticker,
+    price,
+    price_currency,
+    previous_close,
+    change,
+    change_percent,
+    source,
+    fetched_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(ticker) DO UPDATE SET
+    price = excluded.price,
+    price_currency = excluded.price_currency,
+    previous_close = excluded.previous_close,
+    change = excluded.change,
+    change_percent = excluded.change_percent,
+    source = excluded.source,
+    fetched_at = excluded.fetched_at
+`
+
+type UpsertPriceCacheParams struct {
+	Ticker        string    `json:"ticker"`
+	Price         float64   `json:"price"`
+	PriceCurrency string    `json:"price_currency"`
+	PreviousClose float64   `json:"previous_close"`
+	Change        float64   `json:"change"`
+	ChangePercent float64   `json:"change_percent"`
+	Source        string    `json:"source"`
+	FetchedAt     time.Time `json:"fetched_at"`
+}
+
+func (q *Queries) UpsertPriceCache(ctx context.Context, arg UpsertPriceCacheParams) error {
+	_, err := q.db.ExecContext(ctx, upsertPriceCache,
+		arg.Ticker,
+		arg.Price,
+		arg.PriceCurrency,
+		arg.PreviousClose,
+		arg.Change,
+		arg.ChangePercent,
+		arg.Source,
+		arg.FetchedAt,
+	)
+	return err
 }

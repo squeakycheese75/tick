@@ -9,6 +9,13 @@ import (
 	"time"
 )
 
+type FxCache struct {
+	BaseCurrency  string    `json:"base_currency"`
+	QuoteCurrency string    `json:"quote_currency"`
+	Rate          float64   `json:"rate"`
+	FetchedAt     time.Time `json:"fetched_at"`
+}
+
 type Instrument struct {
 	ID             int64          `json:"id"`
 	Symbol         string         `json:"symbol"`
@@ -37,4 +44,15 @@ type Position struct {
 	Currency     string    `json:"currency"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+type PriceCache struct {
+	Ticker        string    `json:"ticker"`
+	Price         float64   `json:"price"`
+	PriceCurrency string    `json:"price_currency"`
+	PreviousClose float64   `json:"previous_close"`
+	Change        float64   `json:"change"`
+	ChangePercent float64   `json:"change_percent"`
+	Source        string    `json:"source"`
+	FetchedAt     time.Time `json:"fetched_at"`
 }

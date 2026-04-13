@@ -37,7 +37,10 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 	positionRepo := repository.NewPositionRepository(database)
 	instrumentRepo := repository.NewInstrumentRepository(database)
 
-	priceProvider, err := BuildPriceProvider(cfg)
+	// Caching
+	priceCacheRepo := repository.NewPriceCacheRepository(database)
+
+	priceProvider, err := BuildPriceProvider(cfg, priceCacheRepo)
 	if err != nil {
 		return nil, err
 	}

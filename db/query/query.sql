@@ -58,3 +58,36 @@ INSERT INTO instruments (
   ?, ?, ?, ?, ?
 )
 RETURNING id;
+
+-- name: GetPriceCacheByTicker :one
+SELECT
+    ticker,
+    price,
+    price_currency,
+    previous_close,
+    change,
+    change_percent,
+    source,
+    fetched_at
+FROM price_cache
+WHERE ticker = ?;
+
+-- name: UpsertPriceCache :exec
+INSERT INTO price_cache (
+    ticker,
+    price,
+    price_currency,
+    previous_close,
+    change,
+    change_percent,
+    source,
+    fetched_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(ticker) DO UPDATE SET
+    price = excluded.price,
+    price_currency = excluded.price_currency,
+    previous_close = excluded.previous_close,
+    change = excluded.change,
+    change_percent = excluded.change_percent,
+    source = excluded.source,
+    fetched_at = excluded.fetched_at;
