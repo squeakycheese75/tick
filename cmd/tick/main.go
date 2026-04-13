@@ -9,13 +9,10 @@ import (
 )
 
 func main() {
-	app, err := app.BuildRuntime("tick.db")
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
 
-	rootCmd := cli.NewRootCmd(app)
+	rootCmd := cli.NewRootCmd(func() (*app.Runtime, error) {
+		return app.BuildRuntime("tick.db")
+	})
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
