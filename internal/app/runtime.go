@@ -24,6 +24,10 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 		return nil, err
 	}
 
+	if err := cfg.Validate(); err != nil {
+		return nil, err
+	}
+
 	database, err := db.OpenAndMigrateSqlite(dbPath)
 	if err != nil {
 		return nil, err
