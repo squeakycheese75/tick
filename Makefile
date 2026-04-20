@@ -17,3 +17,8 @@ test:
 
 lint:
 	golangci-lint version && golangci-lint run --verbose  -E  misspell    
+
+generate-mocks:
+	@echo "Generating mocks..."
+	mockgen -source internal/usecase/usecase.go -destination internal/usecase/mocks/mock_interfaces.go -package mocks . PortfolioRepository,InstrumentRepository,PositionRepository
+	@echo "Mocks generated successfully"

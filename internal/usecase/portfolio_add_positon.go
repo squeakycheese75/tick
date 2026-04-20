@@ -10,16 +10,22 @@ import (
 )
 
 type AddPositionToPortfolioUseCase struct {
-	portfolios  PortfolioRepository
-	positions   PositionRepository
-	instruments InstrumentRepository
+	portfolios         PortfolioRepository
+	positions          PositionRepository
+	instruments        InstrumentRepository
+	instrumentResolver InstrumentResolver
 }
 
-func NewAddPositionToPortfolioUseCase(positionRepo PositionRepository, portfolioRepo PortfolioRepository, instrumentRepo InstrumentRepository) *AddPositionToPortfolioUseCase {
+func NewAddPositionToPortfolioUseCase(
+	positionRepo PositionRepository,
+	portfolioRepo PortfolioRepository,
+	instrumentRepo InstrumentRepository,
+	intrumentResolver InstrumentResolver) *AddPositionToPortfolioUseCase {
 	return &AddPositionToPortfolioUseCase{
-		positions:   positionRepo,
-		portfolios:  portfolioRepo,
-		instruments: instrumentRepo,
+		positions:          positionRepo,
+		portfolios:         portfolioRepo,
+		instruments:        instrumentRepo,
+		instrumentResolver: intrumentResolver,
 	}
 }
 
@@ -27,7 +33,34 @@ func (uc *AddPositionToPortfolioUseCase) Execute(
 	ctx context.Context,
 	in AddPositionToPortfolioInput,
 ) (*AddPositionToPortfolioOutput, error) {
-	if err := in.Validate(); err != nil {
+	in.Normalize()
+	in.ApplyDefaults()
+
+	if err := in.ValidateBasic(); err != nil {
+		return nil, err
+	}
+
+	if in.AssetType == "" || in.Exchange == "" || in.QuoteCurrency == "" {
+		resolved, err := uc.instrumentResolver.Resolve(ctx, in.Symbol)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"could not resolve instrument metadata for %q; please specify --asset-type, --exchange, and --quote-currency",
+				in.Symbol,
+			)
+		}
+
+		if in.AssetType == "" {
+			in.AssetType = resolved.AssetType
+		}
+		if in.Exchange == "" {
+			in.Exchange = resolved.Exchange
+		}
+		if in.QuoteCurrency == "" {
+			in.QuoteCurrency = resolved.QuoteCurrency
+		}
+	}
+
+	if err := in.ValidateResolved(); err != nil {
 		return nil, err
 	}
 

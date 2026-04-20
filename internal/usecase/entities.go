@@ -15,20 +15,25 @@ type GetPortfolioSummaryUsecaseOutput struct {
 	PortfolioName string
 	BaseCurrency  string
 	TotalValue    float64
+	TotalCost     float64
+	TotalPnL      float64
+	TotalPnLPct   float64
 	Positions     []SummaryPosition
 }
 
 type SummaryPosition struct {
 	Symbol             string
+	Quantity           float64
+	QuotedPrice        float64
 	BaseCurrency       string
 	InstrumentCurrency string
-	AvgCost            float64
-	ConvertedPrice     float64
-	QuotedPrice        float64
-	Weight             float64
-	MarketValueBase    float64
 	FXRate             float64
-	Quantity           float64
+	MarketValueBase    float64
+	Weight             float64
+	AvgCost            float64
+	CostBasisBase      float64
+	UnrealizedPnL      float64
+	UnrealizedPnLPct   float64
 }
 
 type CreatePortfolioUsecaseInput struct {
@@ -66,7 +71,21 @@ type AddPositionToPortfolioInput struct {
 	PortfolioName  string
 }
 
-func (i *AddPositionToPortfolioInput) Validate() error {
+func (i *AddPositionToPortfolioInput) Normalize() {
+	i.PortfolioName = strings.TrimSpace(i.PortfolioName)
+	i.Symbol = strings.ToUpper(strings.TrimSpace(i.Symbol))
+	i.AssetType = strings.ToLower(strings.TrimSpace(i.AssetType))
+	i.Exchange = strings.ToUpper(strings.TrimSpace(i.Exchange))
+	i.QuoteCurrency = strings.ToUpper(strings.TrimSpace(i.QuoteCurrency))
+}
+
+func (i *AddPositionToPortfolioInput) ApplyDefaults() {
+	if i.PortfolioName == "" {
+		i.PortfolioName = "main"
+	}
+}
+
+func (i *AddPositionToPortfolioInput) ValidateBasic() error {
 	if i.PortfolioName == "" {
 		return fmt.Errorf("portfolio name is required")
 	}
@@ -83,6 +102,10 @@ func (i *AddPositionToPortfolioInput) Validate() error {
 		return fmt.Errorf("avg cost must be greater than or equal to 0")
 	}
 
+	return nil
+}
+
+func (i *AddPositionToPortfolioInput) ValidateResolved() error {
 	if i.QuoteCurrency == "" {
 		return fmt.Errorf("quote currency is required")
 	}

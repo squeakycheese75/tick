@@ -4,6 +4,7 @@ import (
 	"github.com/squeakycheese75/tick/internal/adapters/news"
 	"github.com/squeakycheese75/tick/internal/db"
 	"github.com/squeakycheese75/tick/internal/domain/analysis"
+	"github.com/squeakycheese75/tick/internal/instruments"
 	"github.com/squeakycheese75/tick/internal/repository"
 	"github.com/squeakycheese75/tick/internal/service"
 	"github.com/squeakycheese75/tick/internal/usecase"
@@ -66,6 +67,11 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 	portfolioInsights := service.NewPortfolioInsights()
 	newsSvc := service.NewNewsService(newsProvider)
 
+	instrumentResolver, err := instruments.NewStaticResolver()
+	if err != nil {
+		return nil, err
+	}
+
 	reportingSvc := service.NewReportService(portfolioSvc, newsSvc, portfolioInsights)
 
 	return &Runtime{
@@ -73,7 +79,7 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 			portfolioSvc,
 		),
 		CreatePortfolio: usecase.NewCreatePortfolioUseCase(portfolioRepo),
-		AddPosition:     usecase.NewAddPositionToPortfolioUseCase(positionRepo, portfolioRepo, instrumentRepo),
+		AddPosition:     usecase.NewAddPositionToPortfolioUseCase(positionRepo, portfolioRepo, instrumentRepo, instrumentResolver),
 		GetPortfolioRisk: usecase.NewGetPortfolioRiskUseCase(
 			portfolioSvc,
 		),

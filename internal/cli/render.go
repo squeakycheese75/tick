@@ -54,7 +54,9 @@ func RenderGetPortfolioSummary(w io.Writer, s usecase.GetPortfolioSummaryUsecase
 
 	out.printf("Portfolio: %s\n\n", s.PortfolioName)
 	out.printf("Base currency: %s\n", s.BaseCurrency)
-	out.printf("Total value: %.2f %s\n\n", s.TotalValue, s.BaseCurrency)
+	out.printf("Total value: %.2f %s\n", s.TotalValue, s.BaseCurrency)
+	out.printf("Total cost: %.2f %s\n", s.TotalCost, s.BaseCurrency)
+	out.printf("Total PnL: %.2f %s (%.2f%%)\n\n", s.TotalPnL, s.BaseCurrency, s.TotalPnLPct*100)
 
 	if len(s.Positions) == 0 {
 		out.println("No positions")
@@ -62,20 +64,24 @@ func RenderGetPortfolioSummary(w io.Writer, s usecase.GetPortfolioSummaryUsecase
 	}
 
 	out.println("Positions:")
-	out.println("TICKER   QTY        PRICE         FX       VALUE         WEIGHT")
-	out.println("------   --------   ------------  -------  ------------  -------")
+	out.println("TICKER   QTY         PRICE         VALUE         COST          PNL           PNL %")
+	out.println("------   ----------  ------------  ------------  ------------  ------------  -------")
 
 	for _, p := range s.Positions {
+		priceStr := fmt.Sprintf("%.2f %s", p.QuotedPrice, p.InstrumentCurrency)
+		valueStr := fmt.Sprintf("%.2f %s", p.MarketValueBase, s.BaseCurrency)
+		costStr := fmt.Sprintf("%.2f %s", p.CostBasisBase, s.BaseCurrency)
+		pnlStr := fmt.Sprintf("%.2f %s", p.UnrealizedPnL, s.BaseCurrency)
+
 		out.printf(
-			"%-6s   %8.4f   %8.2f %-3s  %7.4f  %10.2f %-3s  %6.2f%%\n",
+			"%-6s   %10.4f  %12s  %12s  %12s  %12s  %6.2f%%\n",
 			p.Symbol,
 			p.Quantity,
-			p.QuotedPrice,
-			p.InstrumentCurrency,
-			p.FXRate,
-			p.MarketValueBase,
-			s.BaseCurrency,
-			p.Weight*100,
+			priceStr,
+			valueStr,
+			costStr,
+			pnlStr,
+			p.UnrealizedPnLPct*100,
 		)
 	}
 

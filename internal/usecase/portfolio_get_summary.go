@@ -34,20 +34,45 @@ func mapPortfolioAnalysisToSummaryOutput(r analysis.PortfolioAnalysis) GetPortfo
 		Positions:     make([]SummaryPosition, 0, len(r.AnalyzedPositions)),
 	}
 
+	var totalCost float64
+	var totalPnL float64
+
 	for _, pos := range r.AnalyzedPositions {
+		costBasis := pos.Quantity * pos.AvgCost * pos.FXRate
+		pnl := pos.MarketValueBase - costBasis
+
+		var pnlPct float64
+		if costBasis != 0 {
+			pnlPct = pnl / costBasis
+		}
+
 		result.Positions = append(result.Positions, SummaryPosition{
 			Symbol:             pos.Symbol,
 			BaseCurrency:       r.BaseCurrency,
 			InstrumentCurrency: pos.InstrumentCurrency,
-			AvgCost:            pos.AvgCost,
-			QuotedPrice:        pos.QuotedPrice,
-			ConvertedPrice:     pos.ConvertedPrice,
-			Weight:             pos.Weight,
-			MarketValueBase:    pos.MarketValueBase,
-			FXRate:             pos.FXRate,
 			Quantity:           pos.Quantity,
+			QuotedPrice:        pos.QuotedPrice,
+			AvgCost:            pos.AvgCost,
+			FXRate:             pos.FXRate,
+			MarketValueBase:    pos.MarketValueBase,
+			CostBasisBase:      costBasis,
+			UnrealizedPnL:      pnl,
+			UnrealizedPnLPct:   pnlPct,
+			Weight:             pos.Weight,
 		})
+
+		totalCost += costBasis
+		totalPnL += pnl
 	}
+
+	var totalPnLPct float64
+	if totalCost != 0 {
+		totalPnLPct = totalPnL / totalCost
+	}
+
+	result.TotalCost = totalCost
+	result.TotalPnL = totalPnL
+	result.TotalPnLPct = totalPnLPct
 
 	return result
 }
