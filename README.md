@@ -1,109 +1,82 @@
 # tick
 
-Terminal-native portfolio and market intelligence tool.
+Terminal-native portfolio tracker with live pricing, FX conversion, and instant PnL — built for developers.
 
-`tick` is a Bloomberg-style CLI for developers and investors. It
-provides portfolio valuation, risk insights, and market context — directly
-from your terminal, with optional **local AI analysis**.
+---
 
-------------------------------------------------------------------------
+## Quick Demo
 
-## Example Output
+```bash
+tick portfolio create main --base-currency EUR
 
-![tick daily output](docs/screenshot.png)
+tick add NVDA --qty 10 --avg-cost 400
+tick add MSTR --qty 10 --avg-cost 100
+
+tick portfolio summary
+```
+
+Example output:
+
+```
+Portfolio: main
+
+Base currency: EUR
+Total value: 3127.53 EUR
+Total cost: 4416.93 EUR
+Total PnL: -1289.40 EUR (-29.19%)
+
+Positions:
+TICKER   QTY         PRICE         VALUE         COST          PNL           PNL %
+NVDA     10.0000     201.68 USD    1713.09 EUR   3397.64 EUR   -1684.55 EUR  -49.58%
+MSTR     10.0000     166.52 USD    1414.44 EUR   1019.29 EUR    395.15 EUR   38.77%
+```
+
+---
 
 ## Features
 
 ### Portfolio Management
 
 - Create and manage portfolios
-- Add positions with full instrument metadata
+- Add positions with simple commands (`tick add NVDA`)
+- Automatic instrument resolution (asset type, exchange, currency)
 - Import portfolios from JSON
-- Multi-currency support per position
+- Multi-currency support
 
 ### Valuation & Pricing
 
 - Live price data (via Finnhub)
 - FX conversion (via Frankfurter)
 - Portfolio base currency normalization
-- Cached pricing and FX (configurable TTLs)
+- Cached pricing and FX
 
 ### Analysis
 
 - Portfolio valuation and weights
-- Concentration insights
+- Cost basis and PnL tracking
 - Per-position metrics:
   - market value
-  - weights
-  - FX-adjusted pricing
-  - change in base currency
+  - cost basis
+  - unrealized PnL
 
 ### AI Analysis (`--ai`)
 
 - Local LLM support via Ollama
 - Generates concise insights
-- Fully private (no external API required)
+- Fully private
 
-------------------------------------------------------------------------
+---
 
 ## Installation
-
-### Install via Homebrew (recommended)
 
 ```bash
 brew tap squeakycheese75/tick
 brew install tick
 ```
 
-### Upgrade
+---
 
-```bash
-brew update
-brew upgrade tick
-```
-
-### Verify install
-
-```bash
-tick version
-```
-
-### Data location
-
-`tick` stores data locally in:
-
-```
-~/.tick/tick.db
-```
-
-This file is created automatically on first use.
-
-------------------------------------------------------------------------
-
-## Getting Started (Development)
-
-### Run locally
-
-```bash
-go run ./cmd/tick daily
-```
-
-### With AI
-
-```bash
-go run ./cmd/tick daily --ai
-```
-
-### Build the CLI
-
-```bash
-go build -o bin/tick ./cmd/tick
-./bin/tick daily
-```
-
-------------------------------------------------------------------------
-
-## Example Usage
+## Usage
 
 ### Create a portfolio
 
@@ -114,119 +87,19 @@ tick portfolio create main --base-currency EUR
 ### Add a position
 
 ```bash
-tick portfolio add NVDA \
-  --portfolio main \
-  --asset-type equity \
-  --exchange NASDAQ \
-  --quote-currency USD \
-  --qty 10 \
-  --avg-cost 400
+tick add NVDA --qty 10 --avg-cost 400
 ```
 
-> Note: Instruments are automatically created if they do not exist.
+> Instrument metadata is resolved automatically for supported symbols.
 
----
-
-### Import a portfolio (recommended for development)
+### Import a portfolio
 
 ```bash
-tick portfolio import --file ./testdata/portfolio-main.json
-```
-
-Example file:
-
-```json
-{
-  "portfolioName": "main",
-  "baseCurrency": "EUR",
-  "positions": [
-    {
-      "symbol": "NVDA",
-      "assetType": "equity",
-      "exchange": "NASDAQ",
-      "quoteCurrency": "USD",
-      "quantity": 10,
-      "avgCost": 400
-    }
-  ]
-}
+tick portfolio import --file ./portfolio.json
 ```
 
 ---
-
-### Run daily brief
-
-```bash
-tick daily
-```
-
-### With AI
-
-```bash
-tick daily --ai
-```
-
-------------------------------------------------------------------------
-
-## Configuration
-
-`tick` is configured via environment variables (supports `.env`).
-
-### Pricing & FX
-
-```env
-PRICE_PROVIDER=finnhub
-FX_PROVIDER=frankfurter
-FINNHUB_API_KEY=your_api_key_here
-```
-
-### Caching
-
-```env
-CACHE_ENABLED=true
-CACHE_PRICE_TTL=15m
-CACHE_FX_TTL=12h
-```
-
-### LLM (Ollama)
-
-```env
-LLM_ENABLED=true
-LLM_PROVIDER=ollama
-LLM_BASE_URL=http://localhost:11434
-LLM_MODEL=llama3
-```
-
-Install and run Ollama:
-
-```bash
-brew install ollama
-ollama pull llama3
-ollama run llama3
-```
-
-------------------------------------------------------------------------
-
-## Architecture
-
-- domain → core business entities
-- repository → persistence layer (sqlc)
-- usecase → application logic
-- analysis → portfolio analytics engine
-- adapters → external integrations (pricing, FX, LLM)
-- cmd → CLI entrypoints (Cobra)
-
-------------------------------------------------------------------------
-
-## Development Notes
-
-- Use `tick portfolio import` to quickly seed data
-- Instruments are created automatically on first use
-- Model names are normalized (`llama3` → `llama3:latest`)
-- Ollama health is checked via `/api/version`
-
-------------------------------------------------------------------------
 
 ## License
 
-MIT License
+MIT

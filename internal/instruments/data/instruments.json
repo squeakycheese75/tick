@@ -1,0 +1,28 @@
+[
+  { "symbol": "NVDA", "asset_type": "equity", "exchange": "NASDAQ", "quote_currency": "USD" },
+  { "symbol": "AAPL", "asset_type": "equity", "exchange": "NASDAQ", "quote_currency": "USD" },
+  { "symbol": "MSFT", "asset_type": "equity", "exchange": "NASDAQ", "quote_currency": "USD" },
+  { "symbol": "GOOGL", "asset_type": "equity", "exchange": "NASDAQ", "quote_currency": "USD" },
+  { "symbol": "AMZN", "asset_type": "equity", "exchange": "NASDAQ", "quote_currency": "USD" },
+  { "symbol": "META", "asset_type": "equity", "exchange": "NASDAQ", "quote_currency": "USD" },
+
+  { "symbol": "TSLA", "asset_type": "equity", "exchange": "NASDAQ", "quote_currency": "USD" },
+  { "symbol": "PLTR", "asset_type": "equity", "exchange": "NYSE", "quote_currency": "USD" },
+  { "symbol": "SNOW", "asset_type": "equity", "exchange": "NYSE", "quote_currency": "USD" },
+  { "symbol": "NET",  "asset_type": "equity", "exchange": "NYSE", "quote_currency": "USD" },
+
+  { "symbol": "MSTR", "asset_type": "equity", "exchange": "NASDAQ", "quote_currency": "USD" },
+  { "symbol": "COIN", "asset_type": "equity", "exchange": "NASDAQ", "quote_currency": "USD" },
+
+  { "symbol": "JPM", "asset_type": "equity", "exchange": "NYSE", "quote_currency": "USD" },
+  { "symbol": "GS",  "asset_type": "equity", "exchange": "NYSE", "quote_currency": "USD" },
+  { "symbol": "BRK.B", "asset_type": "equity", "exchange": "NYSE", "quote_currency": "USD" },
+
+  { "symbol": "SPY", "asset_type": "etf", "exchange": "NYSE", "quote_currency": "USD" },
+  { "symbol": "QQQ", "asset_type": "etf", "exchange": "NASDAQ", "quote_currency": "USD" },
+  { "symbol": "VTI", "asset_type": "etf", "exchange": "NYSE", "quote_currency": "USD" },
+  { "symbol": "ARKK", "asset_type": "etf", "exchange": "NYSE", "quote_currency": "USD" },
+
+  { "symbol": "BTC", "asset_type": "crypto", "exchange": "CRYPTO", "quote_currency": "USD" },
+  { "symbol": "ETH", "asset_type": "crypto", "exchange": "CRYPTO", "quote_currency": "USD" }
+]

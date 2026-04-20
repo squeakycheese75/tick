@@ -20,7 +20,6 @@ func newPortfolioCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 		newPortfolioCreateCmd(runtimeBuilder),
 		newPortfolioSummaryCmd(runtimeBuilder),
 		newPortfolioRiskCmd(runtimeBuilder),
-		newPortfolioAddPositionCmd(runtimeBuilder),
 		newPortfolioImportCmd(runtimeBuilder),
 	)
 
@@ -57,89 +56,8 @@ func newPortfolioSummaryCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 	return cmd
 }
 
-func newPortfolioAddPositionCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
-	var qty float64
-	var avgCost float64
-	var quoteCurrency string
-	var portfolioName string
-	var assetType string
-	var exchange string
-
-	cmd := &cobra.Command{
-		Use:   "add <symbol>",
-		Short: "Add a position to a portfolio",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			symbol := strings.ToUpper(strings.TrimSpace(args[0]))
-			if symbol == "" {
-				return fmt.Errorf("symbol is required")
-			}
-
-			portfolioName = strings.TrimSpace(portfolioName)
-			if portfolioName == "" {
-				return fmt.Errorf("portfolio is required")
-			}
-
-			assetType = strings.ToLower(strings.TrimSpace(assetType))
-			if assetType == "" {
-				return fmt.Errorf("asset-type is required")
-			}
-
-			exchange = strings.ToUpper(strings.TrimSpace(exchange))
-			if exchange == "" {
-				return fmt.Errorf("exchange is required")
-			}
-
-			quoteCurrency = strings.ToUpper(strings.TrimSpace(quoteCurrency))
-			if quoteCurrency == "" {
-				return fmt.Errorf("quote-currency is required")
-			}
-
-			if qty <= 0 {
-				return fmt.Errorf("qty must be greater than 0")
-			}
-
-			if avgCost < 0 {
-				return fmt.Errorf("avg-cost must be 0 or greater")
-			}
-
-			app, err := runtimeBuilder()
-			if err != nil {
-				return err
-			}
-
-			out, err := app.AddPosition.Execute(
-				cmd.Context(),
-				usecase.AddPositionToPortfolioInput{
-					PortfolioName: portfolioName,
-					Symbol:        symbol,
-					AssetType:     assetType,
-					Exchange:      exchange,
-					QuoteCurrency: quoteCurrency,
-					AvgCost:       avgCost,
-					Qty:           qty,
-				},
-			)
-			if err != nil {
-				return err
-			}
-
-			return RenderAddPortfolioPosition(cmd.OutOrStdout(), *out)
-		},
-	}
-
-	cmd.Flags().Float64Var(&qty, "qty", 0, "Position quantity")
-	cmd.Flags().Float64Var(&avgCost, "avg-cost", 0, "Average cost basis per unit")
-	cmd.Flags().StringVar(&quoteCurrency, "quote-currency", "", "Instrument quote currency, e.g. USD")
-	cmd.Flags().StringVar(&assetType, "asset-type", "", "Instrument asset type, e.g. equity, etf, crypto")
-	cmd.Flags().StringVar(&exchange, "exchange", "", "Instrument exchange, e.g. NASDAQ")
-	cmd.Flags().StringVar(&portfolioName, "portfolio", "main", "Portfolio name")
-
-	return cmd
-}
-
 func newPortfolioCreateCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
-	var baseCurrency string
+	var base string
 
 	cmd := &cobra.Command{
 		Use:   "create <name>",
@@ -151,9 +69,9 @@ func newPortfolioCreateCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 				return fmt.Errorf("portfolio name is required")
 			}
 
-			baseCurrency = strings.ToUpper(strings.TrimSpace(baseCurrency))
-			if baseCurrency == "" {
-				return fmt.Errorf("base-currency is required")
+			base = strings.ToUpper(strings.TrimSpace(base))
+			if base == "" {
+				return fmt.Errorf("base currency is required")
 			}
 
 			app, err := runtimeBuilder()
@@ -165,7 +83,7 @@ func newPortfolioCreateCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 				cmd.Context(),
 				usecase.CreatePortfolioUsecaseInput{
 					PortfolioName: name,
-					BaseCurrency:  baseCurrency,
+					BaseCurrency:  base,
 				},
 			)
 			if err != nil {
@@ -177,8 +95,8 @@ func newPortfolioCreateCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(
-		&baseCurrency,
-		"base-currency",
+		&base,
+		"base",
 		"EUR",
 		"Base currency for the portfolio (e.g. EUR, USD, GBP)",
 	)

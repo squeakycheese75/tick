@@ -17,8 +17,9 @@ func TestAddPositionToPortfolioUseCase_Execute_CreatesPosition(t *testing.T) {
 	portfolios := mocks.NewMockPortfolioRepository(ctrl)
 	instruments := mocks.NewMockInstrumentRepository(ctrl)
 	positions := mocks.NewMockPositionRepository(ctrl)
+	instrumentResolver := mocks.NewMockInstrumentResolver(ctrl)
 
-	uc := NewAddPositionToPortfolioUseCase(positions, portfolios, instruments)
+	uc := NewAddPositionToPortfolioUseCase(positions, portfolios, instruments, instrumentResolver)
 
 	in := AddPositionToPortfolioInput{
 		PortfolioName: "main",
@@ -90,8 +91,9 @@ func TestAddPositionToPortfolioUseCase_Execute_ReturnsErrorWhenPositionExists(t 
 	portfolios := mocks.NewMockPortfolioRepository(ctrl)
 	instruments := mocks.NewMockInstrumentRepository(ctrl)
 	positions := mocks.NewMockPositionRepository(ctrl)
+	instrumentResolver := mocks.NewMockInstrumentResolver(ctrl)
 
-	uc := NewAddPositionToPortfolioUseCase(positions, portfolios, instruments)
+	uc := NewAddPositionToPortfolioUseCase(positions, portfolios, instruments, instrumentResolver)
 
 	in := AddPositionToPortfolioInput{
 		PortfolioName: "main",

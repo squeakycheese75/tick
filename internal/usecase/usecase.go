@@ -5,6 +5,7 @@ import (
 
 	"github.com/squeakycheese75/tick/internal/domain"
 	"github.com/squeakycheese75/tick/internal/domain/analysis"
+	"github.com/squeakycheese75/tick/internal/instruments"
 	"github.com/squeakycheese75/tick/internal/repository"
 )
 
@@ -23,6 +24,9 @@ type (
 		Create(ctx context.Context, p repository.Instrument) (repository.Instrument, error)
 		GetBySymbolAndExchange(ctx context.Context, symbol, exchange string) (repository.Instrument, error)
 		GetOrCreate(ctx context.Context, in repository.Instrument) (repository.Instrument, error)
+	}
+	InstrumentResolver interface {
+		Resolve(ctx context.Context, symbol string) (instruments.ResolvedInstrument, error)
 	}
 )
 
