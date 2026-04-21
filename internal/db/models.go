@@ -36,6 +36,27 @@ type Portfolio struct {
 	UpdatedAt    time.Time `json:"updated_at"`
 }
 
+type PortfolioSnapshot struct {
+	ID            int64     `json:"id"`
+	PortfolioName string    `json:"portfolio_name"`
+	BaseCurrency  string    `json:"base_currency"`
+	TotalValue    float64   `json:"total_value"`
+	CapturedAt    time.Time `json:"captured_at"`
+}
+
+type PortfolioSnapshotPosition struct {
+	ID                 int64     `json:"id"`
+	SnapshotID         int64     `json:"snapshot_id"`
+	Symbol             string    `json:"symbol"`
+	Quantity           float64   `json:"quantity"`
+	InstrumentCurrency string    `json:"instrument_currency"`
+	QuotedPrice        float64   `json:"quoted_price"`
+	FxRate             float64   `json:"fx_rate"`
+	MarketValueBase    float64   `json:"market_value_base"`
+	Weight             float64   `json:"weight"`
+	CreatedAt          time.Time `json:"created_at"`
+}
+
 type Position struct {
 	ID           int64     `json:"id"`
 	InstrumentID int64     `json:"instrument_id"`

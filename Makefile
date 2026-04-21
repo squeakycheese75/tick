@@ -20,5 +20,6 @@ lint:
 
 generate-mocks:
 	@echo "Generating mocks..."
-	mockgen -source internal/usecase/usecase.go -destination internal/usecase/mocks/mock_interfaces.go -package mocks . PortfolioRepository,InstrumentRepository,PositionRepository
+	mockgen -source internal/usecase/usecase.go -destination internal/usecase/mocks/mock_interfaces.go -package mocks . PortfolioRepository,InstrumentRepository,PositionRepository,InstrumentResolver
+	mockgen -source internal/domain/analysis/analysis.go -destination=internal/domain/analysis/mocks/mock_interfaces.go -package=mocks . PricingSvc
 	@echo "Mocks generated successfully"

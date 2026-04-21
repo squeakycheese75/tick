@@ -62,6 +62,93 @@ func (q *Queries) CreatePortfolio(ctx context.Context, arg CreatePortfolioParams
 	return err
 }
 
+const createPortfolioSnapshot = `-- name: CreatePortfolioSnapshot :one
+INSERT INTO portfolio_snapshots (
+    portfolio_name,
+    base_currency,
+    total_value,
+    captured_at
+) VALUES (?, ?, ?, ?)
+RETURNING id, portfolio_name, base_currency, total_value, captured_at
+`
+
+type CreatePortfolioSnapshotParams struct {
+	PortfolioName string    `json:"portfolio_name"`
+	BaseCurrency  string    `json:"base_currency"`
+	TotalValue    float64   `json:"total_value"`
+	CapturedAt    time.Time `json:"captured_at"`
+}
+
+func (q *Queries) CreatePortfolioSnapshot(ctx context.Context, arg CreatePortfolioSnapshotParams) (PortfolioSnapshot, error) {
+	row := q.db.QueryRowContext(ctx, createPortfolioSnapshot,
+		arg.PortfolioName,
+		arg.BaseCurrency,
+		arg.TotalValue,
+		arg.CapturedAt,
+	)
+	var i PortfolioSnapshot
+	err := row.Scan(
+		&i.ID,
+		&i.PortfolioName,
+		&i.BaseCurrency,
+		&i.TotalValue,
+		&i.CapturedAt,
+	)
+	return i, err
+}
+
+const createPortfolioSnapshotPosition = `-- name: CreatePortfolioSnapshotPosition :one
+INSERT INTO portfolio_snapshot_positions (
+    snapshot_id,
+    symbol,
+    quantity,
+    instrument_currency,
+    quoted_price,
+    fx_rate,
+    market_value_base,
+    weight
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+RETURNING id, snapshot_id, symbol, quantity, instrument_currency, quoted_price, fx_rate, market_value_base, weight, created_at
+`
+
+type CreatePortfolioSnapshotPositionParams struct {
+	SnapshotID         int64   `json:"snapshot_id"`
+	Symbol             string  `json:"symbol"`
+	Quantity           float64 `json:"quantity"`
+	InstrumentCurrency string  `json:"instrument_currency"`
+	QuotedPrice        float64 `json:"quoted_price"`
+	FxRate             float64 `json:"fx_rate"`
+	MarketValueBase    float64 `json:"market_value_base"`
+	Weight             float64 `json:"weight"`
+}
+
+func (q *Queries) CreatePortfolioSnapshotPosition(ctx context.Context, arg CreatePortfolioSnapshotPositionParams) (PortfolioSnapshotPosition, error) {
+	row := q.db.QueryRowContext(ctx, createPortfolioSnapshotPosition,
+		arg.SnapshotID,
+		arg.Symbol,
+		arg.Quantity,
+		arg.InstrumentCurrency,
+		arg.QuotedPrice,
+		arg.FxRate,
+		arg.MarketValueBase,
+		arg.Weight,
+	)
+	var i PortfolioSnapshotPosition
+	err := row.Scan(
+		&i.ID,
+		&i.SnapshotID,
+		&i.Symbol,
+		&i.Quantity,
+		&i.InstrumentCurrency,
+		&i.QuotedPrice,
+		&i.FxRate,
+		&i.MarketValueBase,
+		&i.Weight,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const createPosition = `-- name: CreatePosition :exec
 INSERT INTO positions (
   instrument_id,
@@ -153,6 +240,54 @@ func (q *Queries) GetInstrumentBySymbolAndExchange(ctx context.Context, arg GetI
 	return i, err
 }
 
+const getLatestPortfolioSnapshot = `-- name: GetLatestPortfolioSnapshot :one
+SELECT id, portfolio_name, base_currency, total_value, captured_at
+FROM portfolio_snapshots
+WHERE portfolio_name = ?
+ORDER BY captured_at DESC, id DESC
+LIMIT 1
+`
+
+func (q *Queries) GetLatestPortfolioSnapshot(ctx context.Context, portfolioName string) (PortfolioSnapshot, error) {
+	row := q.db.QueryRowContext(ctx, getLatestPortfolioSnapshot, portfolioName)
+	var i PortfolioSnapshot
+	err := row.Scan(
+		&i.ID,
+		&i.PortfolioName,
+		&i.BaseCurrency,
+		&i.TotalValue,
+		&i.CapturedAt,
+	)
+	return i, err
+}
+
+const getLatestPortfolioSnapshotBefore = `-- name: GetLatestPortfolioSnapshotBefore :one
+SELECT id, portfolio_name, base_currency, total_value, captured_at
+FROM portfolio_snapshots
+WHERE portfolio_name = ?
+  AND captured_at < ?
+ORDER BY captured_at DESC, id DESC
+LIMIT 1
+`
+
+type GetLatestPortfolioSnapshotBeforeParams struct {
+	PortfolioName string    `json:"portfolio_name"`
+	CapturedAt    time.Time `json:"captured_at"`
+}
+
+func (q *Queries) GetLatestPortfolioSnapshotBefore(ctx context.Context, arg GetLatestPortfolioSnapshotBeforeParams) (PortfolioSnapshot, error) {
+	row := q.db.QueryRowContext(ctx, getLatestPortfolioSnapshotBefore, arg.PortfolioName, arg.CapturedAt)
+	var i PortfolioSnapshot
+	err := row.Scan(
+		&i.ID,
+		&i.PortfolioName,
+		&i.BaseCurrency,
+		&i.TotalValue,
+		&i.CapturedAt,
+	)
+	return i, err
+}
+
 const getPortfolioByName = `-- name: GetPortfolioByName :one
 ;
 
@@ -202,6 +337,47 @@ func (q *Queries) GetPriceCacheByTicker(ctx context.Context, ticker string) (Pri
 		&i.FetchedAt,
 	)
 	return i, err
+}
+
+const listPortfolioSnapshotPositionsBySnapshotID = `-- name: ListPortfolioSnapshotPositionsBySnapshotID :many
+SELECT id, snapshot_id, symbol, quantity, instrument_currency, quoted_price, fx_rate, market_value_base, weight, created_at
+FROM portfolio_snapshot_positions
+WHERE snapshot_id = ?
+ORDER BY symbol ASC
+`
+
+func (q *Queries) ListPortfolioSnapshotPositionsBySnapshotID(ctx context.Context, snapshotID int64) ([]PortfolioSnapshotPosition, error) {
+	rows, err := q.db.QueryContext(ctx, listPortfolioSnapshotPositionsBySnapshotID, snapshotID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []PortfolioSnapshotPosition
+	for rows.Next() {
+		var i PortfolioSnapshotPosition
+		if err := rows.Scan(
+			&i.ID,
+			&i.SnapshotID,
+			&i.Symbol,
+			&i.Quantity,
+			&i.InstrumentCurrency,
+			&i.QuotedPrice,
+			&i.FxRate,
+			&i.MarketValueBase,
+			&i.Weight,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listPositionsByPortfolio = `-- name: ListPositionsByPortfolio :many

@@ -56,3 +56,25 @@ CREATE TABLE IF NOT EXISTS fx_cache (
     fetched_at TIMESTAMP NOT NULL,
     PRIMARY KEY (base_currency, quote_currency)
 );
+
+CREATE TABLE portfolio_snapshots (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    portfolio_name TEXT NOT NULL,
+    base_currency  TEXT NOT NULL,
+    total_value    REAL NOT NULL,
+    captured_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE portfolio_snapshot_positions (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    snapshot_id         INTEGER NOT NULL,
+    symbol              TEXT NOT NULL,
+    quantity            REAL NOT NULL,
+    instrument_currency TEXT NOT NULL,
+    quoted_price        REAL NOT NULL,
+    fx_rate             REAL NOT NULL,
+    market_value_base   REAL NOT NULL,
+    weight              REAL NOT NULL,
+    created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (snapshot_id) REFERENCES portfolio_snapshots(id) ON DELETE CASCADE
+);

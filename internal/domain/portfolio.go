@@ -1,5 +1,7 @@
 package domain
 
+import "time"
+
 type Portfolio struct {
 	Name         string
 	BaseCurrency string
@@ -37,4 +39,23 @@ type Instrument struct {
 	AssetType      string
 	QuoteCurrency  string
 	Exchange       string
+}
+
+type PortfolioSnapshot struct {
+	ID            int64
+	PortfolioName string
+	BaseCurrency  string
+	CapturedAt    time.Time
+	TotalValue    float64
+	Positions     []PortfolioSnapshotPosition
+}
+
+type PortfolioSnapshotPosition struct {
+	Symbol             string
+	Quantity           float64
+	InstrumentCurrency string
+	QuotedPrice        float64
+	FXRate             float64
+	MarketValueBase    float64
+	Weight             float64
 }

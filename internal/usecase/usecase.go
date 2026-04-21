@@ -6,10 +6,11 @@ import (
 	"github.com/squeakycheese75/tick/internal/domain"
 	"github.com/squeakycheese75/tick/internal/domain/analysis"
 	"github.com/squeakycheese75/tick/internal/instruments"
+	"github.com/squeakycheese75/tick/internal/report"
 	"github.com/squeakycheese75/tick/internal/repository"
 )
 
-//go:generate mockgen -destination=./mocks/mock_interfaces.go -package=mocks . PortfolioRepository,InstrumentRepository,PositionRepository
+//go:generate mockgen -destination=./mocks/mock_interfaces.go -package=mocks . PortfolioRepository,InstrumentRepository,PositionRepository,InstrumentResolver
 
 type (
 	PortfolioRepository interface {
@@ -27,6 +28,9 @@ type (
 	}
 	InstrumentResolver interface {
 		Resolve(ctx context.Context, symbol string) (instruments.ResolvedInstrument, error)
+	}
+	PortfolioSnapshotRepository interface {
+		Create(ctx context.Context, in repository.CreatePortfolioSnapshot, positions []repository.CreatePortfolioSnapshotPosition) (int64, error)
 	}
 )
 
@@ -53,5 +57,12 @@ type (
 	PortfolioInsights interface {
 		TopHoldings(portfolioAnalysis analysis.PortfolioAnalysis, limit int) []analysis.AnalyzedPosition
 		AttentionSignals(portfolioAnalysis analysis.PortfolioAnalysis, portfolioRisk analysis.PortfolioRisk) []string
+	}
+	DailyReportSummarizer interface {
+		Summarize(ctx context.Context, report report.DailyReport) (string, error)
+		Enabled() bool
+	}
+	ReportBuilder interface {
+		BuildDailyReport(ctx context.Context, portfolioName string, newsLimit int) (report.DailyReportResult, error)
 	}
 )

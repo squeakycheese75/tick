@@ -5,6 +5,7 @@ import (
 	"github.com/squeakycheese75/tick/internal/db"
 	"github.com/squeakycheese75/tick/internal/domain/analysis"
 	"github.com/squeakycheese75/tick/internal/instruments"
+	"github.com/squeakycheese75/tick/internal/report"
 	"github.com/squeakycheese75/tick/internal/repository"
 	"github.com/squeakycheese75/tick/internal/service"
 	"github.com/squeakycheese75/tick/internal/usecase"
@@ -37,6 +38,7 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 	portfolioRepo := repository.NewPortfolioRepository(database)
 	positionRepo := repository.NewPositionRepository(database)
 	instrumentRepo := repository.NewInstrumentRepository(database)
+	portfolioSnapshotRepo := repository.NewPortfolioSnapshotRepository(database)
 
 	// Caching
 	priceCache := repository.NewPriceCacheRepository(database)
@@ -72,7 +74,13 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 		return nil, err
 	}
 
-	reportingSvc := service.NewReportService(portfolioSvc, newsSvc, portfolioInsights)
+	reportingBuilder := report.NewReportBuilder(portfolioSvc, newsSvc, portfolioInsights)
+
+	var summarizer usecase.DailyReportSummarizer = service.NoopSummarizer{}
+
+	if llmProvider != nil {
+		summarizer = service.NewLLMDailyReportSummarizer(llmProvider)
+	}
 
 	return &Runtime{
 		GetPortfolioSummary: usecase.NewGetPortfolioSummaryUseCase(
@@ -83,7 +91,7 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 		GetPortfolioRisk: usecase.NewGetPortfolioRiskUseCase(
 			portfolioSvc,
 		),
-		GetDailyReport:  usecase.NewGetDailyReportUseCase(reportingSvc, llmProvider),
+		GetDailyReport:  usecase.NewGetDailyReportUseCase(reportingBuilder, summarizer, portfolioSnapshotRepo),
 		ImportPortfolio: usecase.NewImportPortfolioUseCase(positionRepo, portfolioRepo, instrumentRepo),
 	}, nil
 }
