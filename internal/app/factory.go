@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/squeakycheese75/tick/data"
 	"github.com/squeakycheese75/tick/internal/adapters/market"
+	"github.com/squeakycheese75/tick/internal/adapters/news"
 	"github.com/squeakycheese75/tick/internal/domain"
 	"github.com/squeakycheese75/tick/internal/llm"
 	"github.com/squeakycheese75/tick/internal/repository"
-	"github.com/squeakycheese75/tick/internal/service"
 )
 
 type (
@@ -27,12 +28,19 @@ type (
 		Get(ctx context.Context, baseCurrency, quoteCurrency string) (repository.CachedFXRate, error)
 		Upsert(ctx context.Context, cached repository.CachedFXRate) error
 	}
+	NewsProvider interface {
+		GetNews(ctx context.Context, symbol string, limit int) (domain.TickerNewsReport, error)
+	}
+	LLMProvider interface {
+		Complete(ctx context.Context, req llm.CompletionRequest) (llm.CompletionResponse, error)
+		Ping(ctx context.Context) error
+	}
 )
 
-func BuildPriceProvider(cfg Config, priceCacheStore PriceCacheStore) (PriceProvider, error) {
-	var provider service.PriceProvider
+func BuildEquityPriceProvider(cfg Config, priceCacheStore PriceCacheStore) (PriceProvider, error) {
+	var provider PriceProvider
 
-	switch cfg.PriceProvider {
+	switch cfg.EquityPriceProvider {
 	case "static":
 		provider = market.NewStaticPriceProvider()
 
@@ -44,14 +52,35 @@ func BuildPriceProvider(cfg Config, priceCacheStore PriceCacheStore) (PriceProvi
 		}
 
 	default:
-		return nil, fmt.Errorf("unsupported PRICE_PROVIDER %q", cfg.PriceProvider)
+		return nil, fmt.Errorf("unsupported EQUITY_PRICE_PROVIDER %q", cfg.EquityPriceProvider)
+	}
+
+	return provider, nil
+}
+
+func BuildCryptoPriceProvider(cfg Config, priceCacheStore PriceCacheStore) (PriceProvider, error) {
+	var provider PriceProvider
+
+	switch cfg.CryptoPriceProvider {
+	case "static":
+		provider = market.NewStaticCryptoPriceProvider()
+
+	case "coingecko":
+		provider = market.NewCoinGeckoProvider()
+
+		if cfg.CacheEnabled && priceCacheStore != nil {
+			return market.NewCachedPriceProvider(provider, priceCacheStore, cfg.PriceCacheTTL), nil
+		}
+
+	default:
+		return nil, fmt.Errorf("unsupported CRYPTO_PRICE_PROVIDER %q", cfg.EquityPriceProvider)
 	}
 
 	return provider, nil
 }
 
 func BuildFXProvider(cfg Config, fxCacheStore FXCacheStore) (FXProvider, error) {
-	var provider service.FXProvider
+	var provider FXProvider
 
 	switch cfg.FXProvider {
 	case "static":
@@ -72,8 +101,8 @@ func BuildFXProvider(cfg Config, fxCacheStore FXCacheStore) (FXProvider, error) 
 	return provider, nil
 }
 
-func BuildLLMClient(cfg Config) (llm.LLMClient, error) {
-	var llmClient llm.LLMClient
+func BuildLLMClient(cfg Config) (LLMProvider, error) {
+	var llmClient LLMProvider
 
 	if cfg.LLMEnabled {
 		switch cfg.LLMProvider {
@@ -92,4 +121,24 @@ func BuildLLMClient(cfg Config) (llm.LLMClient, error) {
 	}
 
 	return llmClient, nil
+}
+
+func BuildNewsProvider(cfg Config) (NewsProvider, error) {
+	var provider NewsProvider
+
+	switch cfg.NewsProvider {
+	case "static":
+		provider = news.NewStaticProvider()
+
+	case "newsapiorg":
+		keywordHints, err := data.LoadKeywordHints()
+		if err != nil {
+			return nil, err
+		}
+		provider = news.NewNewsAPIProvider(cfg.NewsAPIOrgAPIKey, keywordHints)
+	default:
+		return nil, fmt.Errorf("unsupported NEWS_PROVIDER %q", cfg.NewsProvider)
+	}
+
+	return provider, nil
 }

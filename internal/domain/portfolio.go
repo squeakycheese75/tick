@@ -33,11 +33,20 @@ type Summary struct {
 	TotalValue    float64
 	Positions     []SummaryPosition
 }
+type InstrumentType string
 
 type Instrument struct {
 	Symbol         string
 	ProviderSymbol string
-	AssetType      string
+	InstrumentType InstrumentType
 	QuoteCurrency  string
 	Exchange       string
 }
+
+const (
+	InstrumentTypeEquity InstrumentType = "equity"
+	InstrumentTypeCrypto InstrumentType = "crypto"
+	InstrumentTypeFX     InstrumentType = "fx"
+	InstrumentTypeETF    InstrumentType = "etf"
+	InstrumentTypeBond   InstrumentType = "bond"
+)

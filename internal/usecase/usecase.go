@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/squeakycheese75/tick/internal/domain"
-	"github.com/squeakycheese75/tick/internal/domain/analysis"
 	"github.com/squeakycheese75/tick/internal/instruments"
 	"github.com/squeakycheese75/tick/internal/repository"
 )
@@ -37,28 +36,12 @@ type (
 )
 
 type (
-	PriceProvider interface {
-		GetPrice(ctx context.Context, ticker string) (price float64, currency string, err error)
-	}
-	FXProvider interface {
-		GetRate(ctx context.Context, from string, to string) (float64, error)
-	}
-	PortfolioAnalyzer interface {
-		Analyze(ctx context.Context, in analysis.AnalyzePortfolioInput) (domain.PortfolioAnalysis, error)
-	}
-	RiskAnalyzer interface {
-		Analyze(in domain.PortfolioAnalysis) (analysis.PortfolioRisk, error)
-	}
-	NewsProvider interface {
-		GetNews(ctx context.Context, ticker string, limit int) ([]domain.NewsHeadline, error)
+	NewsSvc interface {
+		GetNews(ctx context.Context, ticker string, limit int) (domain.TickerNewsReport, error)
 	}
 	PortfolioSvc interface {
 		GetAnalysis(ctx context.Context, portfolioName string) (domain.PortfolioAnalysis, error)
 		GetRisk(ctx context.Context, portfolioName string) (domain.PortfolioRisk, error)
-	}
-	PortfolioInsights interface {
-		TopHoldings(portfolioAnalysis domain.PortfolioAnalysis, limit int) []domain.AnalyzedPosition
-		AttentionSignals(portfolioAnalysis domain.PortfolioAnalysis, portfolioRisk analysis.PortfolioRisk) []string
 	}
 	DailyReportSummarizer interface {
 		Summarize(ctx context.Context, report domain.DailyReport) (string, error)

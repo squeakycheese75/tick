@@ -28,10 +28,10 @@ func (r *PositionRepository) ListByPortfolioID(ctx context.Context, portfolioID 
 			AvgCost:  row.AvgCost,
 			Currency: row.Currency,
 			Instrument: Instrument{
-				Symbol:        row.Symbol,
-				AssetType:     row.AssetType,
-				QuoteCurrency: row.QuoteCurrency,
-				Exchange:      row.Exchange.String,
+				Symbol:         row.Symbol,
+				InstrumentType: row.InstrumentType,
+				QuoteCurrency:  row.QuoteCurrency,
+				Exchange:       row.Exchange.String,
 			},
 		})
 	}

@@ -4,7 +4,7 @@
   "positions": [
     {
       "symbol": "NVDA",
-      "assetType": "equity",
+      "instrumentType": "equity",
       "exchange": "NASDAQ",
       "quoteCurrency": "USD",
       "quantity": 10,
@@ -12,7 +12,7 @@
     },
     {
       "symbol": "MSFT",
-      "assetType": "equity",
+      "instrumentType": "equity",
       "exchange": "NASDAQ",
       "quoteCurrency": "USD",
       "quantity": 5,

@@ -12,17 +12,17 @@ import (
 var instrumentsFS []byte
 
 type ResolvedInstrument struct {
-	Symbol        string
-	AssetType     string
-	Exchange      string
-	QuoteCurrency string
+	Symbol         string
+	InstrumentType string
+	Exchange       string
+	QuoteCurrency  string
 }
 
 type instrumentJSON struct {
-	Symbol        string `json:"symbol"`
-	AssetType     string `json:"asset_type"`
-	Exchange      string `json:"exchange"`
-	QuoteCurrency string `json:"quote_currency"`
+	Symbol         string `json:"symbol"`
+	InstrumentType string `json:"asset_type"`
+	Exchange       string `json:"exchange"`
+	QuoteCurrency  string `json:"quote_currency"`
 }
 
 type StaticResolver struct {
@@ -42,10 +42,10 @@ func NewStaticResolver() (*StaticResolver, error) {
 		symbol := strings.ToUpper(strings.TrimSpace(r.Symbol))
 
 		m[symbol] = ResolvedInstrument{
-			Symbol:        symbol,
-			AssetType:     strings.ToLower(r.AssetType),
-			Exchange:      strings.ToUpper(r.Exchange),
-			QuoteCurrency: strings.ToUpper(r.QuoteCurrency),
+			Symbol:         symbol,
+			InstrumentType: strings.ToLower(r.InstrumentType),
+			Exchange:       strings.ToUpper(r.Exchange),
+			QuoteCurrency:  strings.ToUpper(r.QuoteCurrency),
 		}
 	}
 

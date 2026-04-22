@@ -22,13 +22,13 @@ func TestAddPositionToPortfolioUseCase_Execute_CreatesPosition(t *testing.T) {
 	uc := NewAddPositionToPortfolioUseCase(positions, portfolios, instruments, instrumentResolver)
 
 	in := domain.AddPositionToPortfolioInput{
-		PortfolioName: "main",
-		Symbol:        "NVDA",
-		AssetType:     "equity",
-		Exchange:      "NASDAQ",
-		QuoteCurrency: "USD",
-		Qty:           10,
-		AvgCost:       400,
+		PortfolioName:  "main",
+		Symbol:         "NVDA",
+		InstrumentType: "equity",
+		Exchange:       "NASDAQ",
+		QuoteCurrency:  "USD",
+		Qty:            10,
+		AvgCost:        400,
 	}
 
 	portfolios.EXPECT().
@@ -43,7 +43,7 @@ func TestAddPositionToPortfolioUseCase_Execute_CreatesPosition(t *testing.T) {
 		GetOrCreate(gomock.Any(), repository.Instrument{
 			Symbol:         "NVDA",
 			ProviderSymbol: "NVDA",
-			AssetType:      "equity",
+			InstrumentType: "equity",
 			Exchange:       "NASDAQ",
 			QuoteCurrency:  "USD",
 		}).
@@ -51,7 +51,7 @@ func TestAddPositionToPortfolioUseCase_Execute_CreatesPosition(t *testing.T) {
 			ID:             42,
 			Symbol:         "NVDA",
 			ProviderSymbol: "NVDA",
-			AssetType:      "equity",
+			InstrumentType: "equity",
 			Exchange:       "NASDAQ",
 			QuoteCurrency:  "USD",
 		}, nil)
@@ -96,13 +96,13 @@ func TestAddPositionToPortfolioUseCase_Execute_ReturnsErrorWhenPositionExists(t 
 	uc := NewAddPositionToPortfolioUseCase(positions, portfolios, instruments, instrumentResolver)
 
 	in := domain.AddPositionToPortfolioInput{
-		PortfolioName: "main",
-		Symbol:        "NVDA",
-		AssetType:     "equity",
-		Exchange:      "NASDAQ",
-		QuoteCurrency: "USD",
-		Qty:           10,
-		AvgCost:       400,
+		PortfolioName:  "main",
+		Symbol:         "NVDA",
+		InstrumentType: "equity",
+		Exchange:       "NASDAQ",
+		QuoteCurrency:  "USD",
+		Qty:            10,
+		AvgCost:        400,
 	}
 
 	portfolios.EXPECT().

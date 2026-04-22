@@ -27,7 +27,7 @@ RETURNING id
 type CreateInstrumentParams struct {
 	Symbol         string         `json:"symbol"`
 	ProviderSymbol string         `json:"provider_symbol"`
-	AssetType      string         `json:"asset_type"`
+	InstrumentType string         `json:"asset_type"`
 	Exchange       sql.NullString `json:"exchange"`
 	QuoteCurrency  string         `json:"quote_currency"`
 }
@@ -36,7 +36,7 @@ func (q *Queries) CreateInstrument(ctx context.Context, arg CreateInstrumentPara
 	row := q.db.QueryRowContext(ctx, createInstrument,
 		arg.Symbol,
 		arg.ProviderSymbol,
-		arg.AssetType,
+		arg.InstrumentType,
 		arg.Exchange,
 		arg.QuoteCurrency,
 	)
@@ -231,7 +231,7 @@ func (q *Queries) GetInstrumentBySymbolAndExchange(ctx context.Context, arg GetI
 		&i.ID,
 		&i.Symbol,
 		&i.ProviderSymbol,
-		&i.AssetType,
+		&i.InstrumentType,
 		&i.Exchange,
 		&i.QuoteCurrency,
 		&i.CreatedAt,
@@ -399,15 +399,15 @@ ORDER BY i.symbol ASC
 `
 
 type ListPositionsByPortfolioRow struct {
-	InstrumentID  int64          `json:"instrument_id"`
-	Name          string         `json:"name"`
-	Symbol        string         `json:"symbol"`
-	Quantity      float64        `json:"quantity"`
-	AvgCost       float64        `json:"avg_cost"`
-	Currency      string         `json:"currency"`
-	AssetType     string         `json:"asset_type"`
-	Exchange      sql.NullString `json:"exchange"`
-	QuoteCurrency string         `json:"quote_currency"`
+	InstrumentID   int64          `json:"instrument_id"`
+	Name           string         `json:"name"`
+	Symbol         string         `json:"symbol"`
+	Quantity       float64        `json:"quantity"`
+	AvgCost        float64        `json:"avg_cost"`
+	Currency       string         `json:"currency"`
+	InstrumentType string         `json:"asset_type"`
+	Exchange       sql.NullString `json:"exchange"`
+	QuoteCurrency  string         `json:"quote_currency"`
 }
 
 func (q *Queries) ListPositionsByPortfolio(ctx context.Context, portfolioID int64) ([]ListPositionsByPortfolioRow, error) {
@@ -426,7 +426,7 @@ func (q *Queries) ListPositionsByPortfolio(ctx context.Context, portfolioID int6
 			&i.Quantity,
 			&i.AvgCost,
 			&i.Currency,
-			&i.AssetType,
+			&i.InstrumentType,
 			&i.Exchange,
 			&i.QuoteCurrency,
 		); err != nil {

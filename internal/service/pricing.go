@@ -18,25 +18,27 @@ type (
 )
 
 type PricingService struct {
-	prices PriceProvider
-	fx     FXProvider
+	priceProvider       PriceProvider
+	cryptoPriceProvider PriceProvider
+	fx                  FXProvider
 }
 
-func NewPricingService(prices PriceProvider, fx FXProvider) *PricingService {
+func NewPricingService(equityPrices PriceProvider, cryptoPrices PriceProvider, fx FXProvider) *PricingService {
 	return &PricingService{
-		prices: prices,
-		fx:     fx,
+		priceProvider:       equityPrices,
+		cryptoPriceProvider: cryptoPrices,
+		fx:                  fx,
 	}
 }
 
 func (s *PricingService) GetValuationQuote(
 	ctx context.Context,
-	ticker string,
+	symbol string,
 	targetCurrency string,
 	instrumentCurrency string,
+	instrumentType string,
 ) (domain.ValuationQuote, error) {
-
-	quote, err := s.prices.GetQuote(ctx, ticker)
+	quote, err := s.getQuote(ctx, symbol, instrumentType)
 	if err != nil {
 		return domain.ValuationQuote{}, err
 	}
@@ -46,7 +48,7 @@ func (s *PricingService) GetValuationQuote(
 		priceCurrency = instrumentCurrency
 	}
 	if priceCurrency == "" {
-		return domain.ValuationQuote{}, fmt.Errorf("missing price currency for %s", ticker)
+		return domain.ValuationQuote{}, fmt.Errorf("missing price currency for %s", symbol)
 	}
 
 	pc := strings.ToUpper(priceCurrency)
@@ -78,4 +80,15 @@ func (s *PricingService) GetValuationQuote(
 		ConvertedPreviousClose: quote.PreviousClose * rate.Rate,
 		ConvertedChange:        quote.Change * rate.Rate,
 	}, nil
+}
+
+func (s *PricingService) getQuote(ctx context.Context, symbol, instrumentType string) (domain.Quote, error) {
+	switch instrumentType {
+	case string(domain.InstrumentTypeCrypto):
+		return s.cryptoPriceProvider.GetQuote(ctx, symbol)
+	case string(domain.InstrumentTypeEquity):
+		return s.priceProvider.GetQuote(ctx, symbol)
+	default:
+		return domain.Quote{}, fmt.Errorf("unsupported ASSET_TYPE %q", instrumentType)
+	}
 }

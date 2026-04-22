@@ -31,14 +31,20 @@ func NewStaticProvider() *StaticProvider {
 
 func (p *StaticProvider) GetNews(
 	_ context.Context,
-	ticker string,
+	symbol string,
 	limit int,
-) ([]domain.NewsHeadline, error) {
-	items := p.items[strings.ToUpper(ticker)]
-
-	if limit <= 0 || limit >= len(items) {
-		return append([]domain.NewsHeadline(nil), items...), nil
+) (domain.TickerNewsReport, error) {
+	report := domain.TickerNewsReport{
+		Ticker: symbol,
 	}
 
-	return append([]domain.NewsHeadline(nil), items[:limit]...), nil
+	items := p.items[strings.ToUpper(symbol)]
+
+	if limit <= 0 || limit >= len(items) {
+		report.Headlines = append([]domain.NewsHeadline(nil), items...)
+		return report, nil
+	}
+
+	report.Headlines = append([]domain.NewsHeadline(nil), items[:limit]...)
+	return report, nil
 }

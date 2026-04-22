@@ -1,7 +1,6 @@
 package app
 
 import (
-	"github.com/squeakycheese75/tick/internal/adapters/news"
 	"github.com/squeakycheese75/tick/internal/db"
 	"github.com/squeakycheese75/tick/internal/domain/analysis"
 	"github.com/squeakycheese75/tick/internal/instruments"
@@ -18,6 +17,7 @@ type Runtime struct {
 	GetPortfolioRisk    *usecase.GetPortfolioRiskUseCase
 	GetDailyReport      *usecase.GetDailyReportUseCase
 	ImportPortfolio     *usecase.ImportPortfolioUseCase
+	GetTickerNews       *usecase.GetTickerNewsUseCase
 }
 
 func BuildRuntime(dbPath string) (*Runtime, error) {
@@ -41,15 +41,26 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 	portfolioSnapshotRepo := repository.NewPortfolioSnapshotRepository(database)
 
 	// Caching
-	priceCache := repository.NewPriceCacheRepository(database)
-	fxCache := repository.NewFXCacheRepository(database)
+	priceCacher := repository.NewPriceCacheRepository(database)
+	fxCacher := repository.NewFXCacheRepository(database)
 
-	priceProvider, err := BuildPriceProvider(cfg, priceCache)
+	// Providers
+	equityPriceProvider, err := BuildEquityPriceProvider(cfg, priceCacher)
 	if err != nil {
 		return nil, err
 	}
 
-	fxProvider, err := BuildFXProvider(cfg, fxCache)
+	cryptoPriceProvider, err := BuildCryptoPriceProvider(cfg, priceCacher)
+	if err != nil {
+		return nil, err
+	}
+
+	fxProvider, err := BuildFXProvider(cfg, fxCacher)
+	if err != nil {
+		return nil, err
+	}
+
+	newsProvider, err := BuildNewsProvider(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -59,8 +70,8 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 		return nil, err
 	}
 
-	pricingSvc := service.NewPricingService(priceProvider, fxProvider)
-	newsProvider := news.NewStaticProvider()
+	// Services
+	pricingSvc := service.NewPricingService(equityPriceProvider, cryptoPriceProvider, fxProvider)
 
 	portfolioAnalyser := analysis.NewPortfolioAnalyzer(pricingSvc)
 	riskAnalyser := analysis.NewRiskAnalyzer()
@@ -93,5 +104,6 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 		),
 		GetDailyReport:  usecase.NewGetDailyReportUseCase(reportingBuilder, summarizer, portfolioSnapshotRepo),
 		ImportPortfolio: usecase.NewImportPortfolioUseCase(positionRepo, portfolioRepo, instrumentRepo),
+		GetTickerNews:   usecase.NewGetTickerNewsUseCase(newsSvc),
 	}, nil
 }
