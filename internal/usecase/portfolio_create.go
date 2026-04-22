@@ -19,7 +19,7 @@ func NewCreatePortfolioUseCase(portfolioRepo PortfolioRepository) *CreatePortfol
 	}
 }
 
-func (uc *CreatePortfolioUseCase) Execute(ctx context.Context, in CreatePortfolioUsecaseInput) (*CreatePortfolioUsecaseOutout, error) {
+func (uc *CreatePortfolioUseCase) Execute(ctx context.Context, in domain.CreatePortfolioUsecaseInput) (*domain.CreatePortfolioUsecaseOutout, error) {
 	if err := in.Validate(); err != nil {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ func (uc *CreatePortfolioUseCase) Execute(ctx context.Context, in CreatePortfoli
 		return nil, err
 	}
 
-	return &CreatePortfolioUsecaseOutout{
+	return &domain.CreatePortfolioUsecaseOutout{
 		PortfolioName: in.PortfolioName,
 		BaseCurrency:  in.BaseCurrency,
 	}, nil

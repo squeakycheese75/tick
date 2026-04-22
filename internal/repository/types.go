@@ -60,3 +60,39 @@ type CachedFXRate struct {
 	Source        string
 	FetchedAt     time.Time
 }
+
+type Snapshot struct {
+	PortfolioName string
+	BaseCurrency  string
+	TotalValue    float64
+	CapturedAt    time.Time
+}
+
+type SnapshotPosition struct {
+	Symbol             string
+	Quantity           float64
+	InstrumentCurrency string
+	QuotedPrice        float64
+	FXRate             float64
+	MarketValueBase    float64
+	Weight             float64
+}
+
+type PortfolioSnapshot struct {
+	ID            int64
+	PortfolioName string
+	BaseCurrency  string
+	TotalValue    float64
+	CapturedAt    time.Time
+}
+
+type PortfolioSnapshotPosition struct {
+	SnapshotID         int64
+	Symbol             string
+	Quantity           float64
+	InstrumentCurrency string
+	QuotedPrice        float64
+	FXRate             float64
+	MarketValueBase    float64
+	Weight             float64
+}

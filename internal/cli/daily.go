@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/squeakycheese75/tick/internal/usecase"
+	"github.com/squeakycheese75/tick/internal/domain"
 )
 
 func newDailyCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
@@ -27,7 +27,7 @@ func newDailyCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 
 			out, err := rt.GetDailyReport.Execute(
 				cmd.Context(),
-				usecase.GetDailyReportInput{
+				domain.GetDailyReportInput{
 					PortfolioName: portfolioName,
 					NewsLimit:     newsLimit,
 					WithAI:        ai,

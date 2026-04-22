@@ -13,15 +13,18 @@ type Position struct {
 }
 
 type SummaryPosition struct {
-	Ticker             string
+	Symbol             string
 	Quantity           float64
-	InstrumentCurrency string
+	QuotedPrice        float64
 	BaseCurrency       string
-	AvgCost            float64
-	CurrentPrice       float64
+	InstrumentCurrency string
 	FXRate             float64
 	MarketValueBase    float64
 	Weight             float64
+	AvgCost            float64
+	CostBasisBase      float64
+	UnrealizedPnL      float64
+	UnrealizedPnLPct   float64
 }
 
 type Summary struct {

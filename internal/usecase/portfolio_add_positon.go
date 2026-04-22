@@ -31,8 +31,8 @@ func NewAddPositionToPortfolioUseCase(
 
 func (uc *AddPositionToPortfolioUseCase) Execute(
 	ctx context.Context,
-	in AddPositionToPortfolioInput,
-) (*AddPositionToPortfolioOutput, error) {
+	in domain.AddPositionToPortfolioInput,
+) (*domain.AddPositionToPortfolioOutput, error) {
 	in.Normalize()
 	in.ApplyDefaults()
 
@@ -101,7 +101,7 @@ func (uc *AddPositionToPortfolioUseCase) Execute(
 		return nil, fmt.Errorf("create position: %w", err)
 	}
 
-	return &AddPositionToPortfolioOutput{
+	return &domain.AddPositionToPortfolioOutput{
 		PortfolioName: portfolio.Name,
 		Symbol:        instrument.Symbol,
 		Qty:           in.Qty,

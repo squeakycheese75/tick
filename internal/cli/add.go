@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/squeakycheese75/tick/internal/usecase"
+	"github.com/squeakycheese75/tick/internal/domain"
 )
 
 func newAddPositionCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
@@ -50,7 +50,7 @@ func newAddPositionCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 
 			out, err := app.AddPosition.Execute(
 				cmd.Context(),
-				usecase.AddPositionToPortfolioInput{
+				domain.AddPositionToPortfolioInput{
 					PortfolioName: portfolioName,
 					Symbol:        symbol,
 					AssetType:     assetType,

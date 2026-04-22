@@ -114,4 +114,46 @@ ON CONFLICT(base_currency, quote_currency) DO UPDATE SET
     rate = excluded.rate,
     source = excluded.source,
     fetched_at = excluded.fetched_at;
-    
+
+-- name: CreatePortfolioSnapshot :one
+INSERT INTO portfolio_snapshots (
+    portfolio_name,
+    base_currency,
+    total_value,
+    captured_at
+) VALUES (?, ?, ?, ?)
+RETURNING *;
+
+-- name: CreatePortfolioSnapshotPosition :one
+INSERT INTO portfolio_snapshot_positions (
+    snapshot_id,
+    symbol,
+    quantity,
+    instrument_currency,
+    quoted_price,
+    fx_rate,
+    market_value_base,
+    weight
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+RETURNING *;
+
+-- name: GetLatestPortfolioSnapshot :one
+SELECT *
+FROM portfolio_snapshots
+WHERE portfolio_name = ?
+ORDER BY captured_at DESC, id DESC
+LIMIT 1;
+
+-- name: GetLatestPortfolioSnapshotBefore :one
+SELECT *
+FROM portfolio_snapshots
+WHERE portfolio_name = ?
+  AND captured_at < ?
+ORDER BY captured_at DESC, id DESC
+LIMIT 1;
+
+-- name: ListPortfolioSnapshotPositionsBySnapshotID :many
+SELECT *
+FROM portfolio_snapshot_positions
+WHERE snapshot_id = ?
+ORDER BY symbol ASC;

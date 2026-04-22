@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/squeakycheese75/tick/internal/domain/analysis"
+	"github.com/squeakycheese75/tick/internal/domain"
 )
 
 type GetPortfolioSummaryUseCase struct {
@@ -17,21 +17,21 @@ func NewGetPortfolioSummaryUseCase(portfolioSvc PortfolioSvc) *GetPortfolioSumma
 	}
 }
 
-func (uc *GetPortfolioSummaryUseCase) Execute(ctx context.Context, in GetPortfolioSummaryUsecaseInput) (GetPortfolioSummaryUsecaseOutput, error) {
+func (uc *GetPortfolioSummaryUseCase) Execute(ctx context.Context, in domain.GetPortfolioSummaryUsecaseInput) (domain.GetPortfolioSummaryUsecaseOutput, error) {
 	result, err := uc.portfolioSvc.GetAnalysis(ctx, in.PortfolioName)
 	if err != nil {
-		return GetPortfolioSummaryUsecaseOutput{}, fmt.Errorf("analyze portfolio: %w", err)
+		return domain.GetPortfolioSummaryUsecaseOutput{}, fmt.Errorf("analyze portfolio: %w", err)
 	}
 
 	return mapPortfolioAnalysisToSummaryOutput(result), nil
 }
 
-func mapPortfolioAnalysisToSummaryOutput(r analysis.PortfolioAnalysis) GetPortfolioSummaryUsecaseOutput {
-	result := GetPortfolioSummaryUsecaseOutput{
+func mapPortfolioAnalysisToSummaryOutput(r domain.PortfolioAnalysis) domain.GetPortfolioSummaryUsecaseOutput {
+	result := domain.GetPortfolioSummaryUsecaseOutput{
 		PortfolioName: r.PortfolioName,
 		BaseCurrency:  r.BaseCurrency,
 		TotalValue:    r.TotalValue,
-		Positions:     make([]SummaryPosition, 0, len(r.AnalyzedPositions)),
+		Positions:     make([]domain.SummaryPosition, 0, len(r.AnalyzedPositions)),
 	}
 
 	var totalCost float64
@@ -46,7 +46,7 @@ func mapPortfolioAnalysisToSummaryOutput(r analysis.PortfolioAnalysis) GetPortfo
 			pnlPct = pnl / costBasis
 		}
 
-		result.Positions = append(result.Positions, SummaryPosition{
+		result.Positions = append(result.Positions, domain.SummaryPosition{
 			Symbol:             pos.Symbol,
 			BaseCurrency:       r.BaseCurrency,
 			InstrumentCurrency: pos.InstrumentCurrency,

@@ -1,6 +1,10 @@
 package analysis
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/squeakycheese75/tick/internal/domain"
+)
 
 const (
 	singlePositionConcentrationThreshold = 0.20
@@ -23,7 +27,7 @@ type PortfolioRisk struct {
 	Observations      []string
 }
 
-func (a *RiskAnalyzer) Analyze(in PortfolioAnalysis) (PortfolioRisk, error) {
+func (a *RiskAnalyzer) Analyze(in domain.PortfolioAnalysis) (PortfolioRisk, error) {
 	out := PortfolioRisk{
 		PortfolioName: in.PortfolioName,
 		BaseCurrency:  in.BaseCurrency,
