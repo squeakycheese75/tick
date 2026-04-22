@@ -29,13 +29,14 @@ func TestPortfolioAnalyzer_Analyze_SinglePosition(t *testing.T) {
 				Instrument: domain.Instrument{
 					Symbol:        "NVDA",
 					QuoteCurrency: "USD",
+					AssetType:     "equity",
 				},
 			},
 		},
 	}
 
 	pricingSvc.EXPECT().
-		GetValuationQuote(gomock.Any(), "NVDA", "EUR", "USD").
+		GetValuationQuote(gomock.Any(), "NVDA", "EUR", "USD", "equity").
 		Return(domain.ValuationQuote{
 			Quote: domain.Quote{
 				Price:         450,
@@ -139,6 +140,7 @@ func TestPortfolioAnalyzer_Analyze_MultiplePositions_SortsAndCalculatesWeights(t
 				Instrument: domain.Instrument{
 					Symbol:        "AAA",
 					QuoteCurrency: "USD",
+					AssetType:     "equity",
 				},
 			},
 			{
@@ -147,13 +149,14 @@ func TestPortfolioAnalyzer_Analyze_MultiplePositions_SortsAndCalculatesWeights(t
 				Instrument: domain.Instrument{
 					Symbol:        "BBB",
 					QuoteCurrency: "USD",
+					AssetType:     "equity",
 				},
 			},
 		},
 	}
 
 	pricingSvc.EXPECT().
-		GetValuationQuote(gomock.Any(), "AAA", "EUR", "USD").
+		GetValuationQuote(gomock.Any(), "AAA", "EUR", "USD", "equity").
 		Return(domain.ValuationQuote{
 			Quote: domain.Quote{
 				Price:         100,
@@ -166,7 +169,7 @@ func TestPortfolioAnalyzer_Analyze_MultiplePositions_SortsAndCalculatesWeights(t
 		}, nil)
 
 	pricingSvc.EXPECT().
-		GetValuationQuote(gomock.Any(), "BBB", "EUR", "USD").
+		GetValuationQuote(gomock.Any(), "BBB", "EUR", "USD", "equity").
 		Return(domain.ValuationQuote{
 			Quote: domain.Quote{
 				Price:         50,
@@ -237,13 +240,14 @@ func TestPortfolioAnalyzer_Analyze_ReturnsErrorWhenPricingFails(t *testing.T) {
 				Instrument: domain.Instrument{
 					Symbol:        "NVDA",
 					QuoteCurrency: "USD",
+					AssetType:     "equity",
 				},
 			},
 		},
 	}
 
 	pricingSvc.EXPECT().
-		GetValuationQuote(gomock.Any(), "NVDA", "EUR", "USD").
+		GetValuationQuote(gomock.Any(), "NVDA", "EUR", "USD", "equity").
 		Return(domain.ValuationQuote{}, errors.New("pricing failure"))
 
 	_, err := analyzer.Analyze(context.Background(), in)
@@ -270,13 +274,14 @@ func TestPortfolioAnalyzer_Analyze_ZeroTotalValue_LeavesWeightsAtZero(t *testing
 				Instrument: domain.Instrument{
 					Symbol:        "ZERO",
 					QuoteCurrency: "USD",
+					AssetType:     "equity",
 				},
 			},
 		},
 	}
 
 	pricingSvc.EXPECT().
-		GetValuationQuote(gomock.Any(), "ZERO", "EUR", "USD").
+		GetValuationQuote(gomock.Any(), "ZERO", "EUR", "USD", "equity").
 		Return(domain.ValuationQuote{
 			Quote: domain.Quote{
 				Price:         0,
@@ -325,13 +330,14 @@ func TestPortfolioAnalyzer_Analyze_SetsConvertedChange(t *testing.T) {
 				Instrument: domain.Instrument{
 					Symbol:        "NVDA",
 					QuoteCurrency: "USD",
+					AssetType:     "equity",
 				},
 			},
 		},
 	}
 
 	pricingSvc.EXPECT().
-		GetValuationQuote(gomock.Any(), "NVDA", "EUR", "USD").
+		GetValuationQuote(gomock.Any(), "NVDA", "EUR", "USD", "equity").
 		Return(domain.ValuationQuote{
 			Quote: domain.Quote{
 				Price:         200,

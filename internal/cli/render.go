@@ -191,13 +191,23 @@ func RenderGetDailyReport(w io.Writer, s domain.GetDailyReportOutput) error {
 	} else {
 		for _, group := range s.DailyReport.News {
 			if len(group.Headlines) == 0 {
-				out.printf("- %s: no recent headlines\n", group.Ticker)
 				continue
 			}
+
 			out.printf("- %s:\n", group.Ticker)
+
 			for _, headline := range group.Headlines {
 				out.printf("  - %s\n", headline.Title)
+
+				if headline.URL != "" {
+					// if fullLinks {
+					out.printf("    🔗 %s\n", headline.URL)
+					// } else {
+					// out.printf("    🔗 %s\n", extractDomain(headline.URL))
+					// }
+				}
 			}
+			out.println("")
 		}
 	}
 
@@ -222,6 +232,31 @@ func RenderGetDailyReport(w io.Writer, s domain.GetDailyReportOutput) error {
 	return out.err
 }
 
+func RenderTickerNews(w io.Writer, r domain.TickerNewsReport) error {
+	out := &writer{w: w}
+
+	out.printf("News for %s\n\n", r.Ticker)
+
+	if len(r.Headlines) == 0 {
+		out.println("No recent headlines")
+		return out.err
+	}
+
+	for i, h := range r.Headlines {
+		out.printf("- %s\n", h.Title)
+
+		if h.URL != "" {
+			out.printf("    🔗 %s\n", h.URL)
+		}
+
+		if i < len(r.Headlines)-1 {
+			out.println("")
+		}
+	}
+
+	return out.err
+}
+
 func renderImportPortfolio(w io.Writer, out domain.ImportPortfolioOutput) error {
 	_, err := fmt.Fprintf(
 		w,
@@ -233,3 +268,11 @@ func renderImportPortfolio(w io.Writer, out domain.ImportPortfolioOutput) error 
 	)
 	return err
 }
+
+// func extractDomain(raw string) string {
+// 	u, err := url.Parse(raw)
+// 	if err != nil {
+// 		return raw
+// 	}
+// 	return u.Host
+// }

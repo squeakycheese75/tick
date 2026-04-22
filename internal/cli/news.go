@@ -7,14 +7,80 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newNewsCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "news <ticker>",
-		Short: "Show recent news for an asset",
-		Args:  cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			ticker := strings.ToUpper(args[0])
-			fmt.Printf("Recent news for %s is not implemented yet\n", ticker)
+// func newNewsCmd() *cobra.Command {
+// 	return &cobra.Command{
+// 		Use:   "news <ticker>",
+// 		Short: "Show recent news for an asset",
+// 		Args:  cobra.ExactArgs(1),
+// 		Run: func(cmd *cobra.Command, args []string) {
+// 			ticker := strings.ToUpper(args[0])
+// 			fmt.Printf("Recent news for %s is not implemented yet\n", ticker)
+// 		},
+// 	}
+// }
+
+func newNewsCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
+	var limit int
+
+	cmd := &cobra.Command{
+		Use:   "news <ticker> [ticker...]",
+		Short: "Show recent news for one or more tickers",
+		Args:  cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if limit <= 0 {
+				limit = 2
+			}
+
+			app, err := runtimeBuilder()
+			if err != nil {
+				return err
+			}
+
+			seen := make(map[string]struct{})
+			tickers := make([]string, 0, len(args))
+
+			for _, arg := range args {
+				parts := strings.Split(arg, ",")
+
+				for _, part := range parts {
+					ticker := strings.ToUpper(strings.TrimSpace(part))
+					if ticker == "" {
+						continue
+					}
+
+					if _, ok := seen[ticker]; ok {
+						continue
+					}
+
+					seen[ticker] = struct{}{}
+					tickers = append(tickers, ticker)
+				}
+			}
+
+			if len(tickers) == 0 {
+				return fmt.Errorf("at least one ticker is required")
+			}
+
+			for i, ticker := range tickers {
+				report, err := app.GetTickerNews.Execute(cmd.Context(), ticker, limit)
+				if err != nil {
+					return err
+				}
+
+				if err := RenderTickerNews(cmd.OutOrStdout(), report); err != nil {
+					return err
+				}
+
+				if i < len(tickers)-1 {
+					_, _ = fmt.Fprintln(cmd.OutOrStdout())
+				}
+			}
+
+			return nil
 		},
 	}
+
+	cmd.Flags().IntVar(&limit, "limit", 2, "Number of headlines per ticker")
+
+	return cmd
 }

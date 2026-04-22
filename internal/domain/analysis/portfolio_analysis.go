@@ -31,7 +31,7 @@ func (a *PortfolioAnalyzer) Analyze(ctx context.Context, in AnalyzePortfolioInpu
 	}
 
 	for _, pos := range in.Positions {
-		valuationQuote, err := a.pricingSvc.GetValuationQuote(ctx, pos.Instrument.Symbol, in.Portfolio.BaseCurrency, pos.Instrument.QuoteCurrency)
+		valuationQuote, err := a.pricingSvc.GetValuationQuote(ctx, pos.Instrument.Symbol, in.Portfolio.BaseCurrency, pos.Instrument.QuoteCurrency, pos.Instrument.AssetType)
 		if err != nil {
 			return domain.PortfolioAnalysis{}, fmt.Errorf("get valuation quote for %s: %w", pos.Instrument.Symbol, err)
 		}

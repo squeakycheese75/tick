@@ -10,6 +10,6 @@ import (
 
 type (
 	PricingSvc interface {
-		GetValuationQuote(ctx context.Context, ticker string, targetCurrency string, instrumentCurrency string) (domain.ValuationQuote, error)
+		GetValuationQuote(ctx context.Context, ticker string, targetCurrency string, instrumentCurrency string, instrumentType string) (domain.ValuationQuote, error)
 	}
 )

@@ -42,16 +42,16 @@ func (m *MockPricingSvc) EXPECT() *MockPricingSvcMockRecorder {
 }
 
 // GetValuationQuote mocks base method.
-func (m *MockPricingSvc) GetValuationQuote(ctx context.Context, ticker, targetCurrency, instrumentCurrency string) (domain.ValuationQuote, error) {
+func (m *MockPricingSvc) GetValuationQuote(ctx context.Context, ticker, targetCurrency, instrumentCurrency, instrumentType string) (domain.ValuationQuote, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetValuationQuote", ctx, ticker, targetCurrency, instrumentCurrency)
+	ret := m.ctrl.Call(m, "GetValuationQuote", ctx, ticker, targetCurrency, instrumentCurrency, instrumentType)
 	ret0, _ := ret[0].(domain.ValuationQuote)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetValuationQuote indicates an expected call of GetValuationQuote.
-func (mr *MockPricingSvcMockRecorder) GetValuationQuote(ctx, ticker, targetCurrency, instrumentCurrency any) *gomock.Call {
+func (mr *MockPricingSvcMockRecorder) GetValuationQuote(ctx, ticker, targetCurrency, instrumentCurrency, instrumentType any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetValuationQuote", reflect.TypeOf((*MockPricingSvc)(nil).GetValuationQuote), ctx, ticker, targetCurrency, instrumentCurrency)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetValuationQuote", reflect.TypeOf((*MockPricingSvc)(nil).GetValuationQuote), ctx, ticker, targetCurrency, instrumentCurrency, instrumentType)
 }

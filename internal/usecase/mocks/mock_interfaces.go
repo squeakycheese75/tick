@@ -15,7 +15,6 @@ import (
 	time "time"
 
 	domain "github.com/squeakycheese75/tick/internal/domain"
-	analysis "github.com/squeakycheese75/tick/internal/domain/analysis"
 	instruments "github.com/squeakycheese75/tick/internal/instruments"
 	repository "github.com/squeakycheese75/tick/internal/repository"
 	gomock "go.uber.org/mock/gomock"
@@ -304,200 +303,43 @@ func (mr *MockPortfolioSnapshotRepositoryMockRecorder) ListPositionsBySnapshotID
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPositionsBySnapshotID", reflect.TypeOf((*MockPortfolioSnapshotRepository)(nil).ListPositionsBySnapshotID), ctx, snapshotID)
 }
 
-// MockPriceProvider is a mock of PriceProvider interface.
-type MockPriceProvider struct {
+// MockNewsSvc is a mock of NewsSvc interface.
+type MockNewsSvc struct {
 	ctrl     *gomock.Controller
-	recorder *MockPriceProviderMockRecorder
+	recorder *MockNewsSvcMockRecorder
 	isgomock struct{}
 }
 
-// MockPriceProviderMockRecorder is the mock recorder for MockPriceProvider.
-type MockPriceProviderMockRecorder struct {
-	mock *MockPriceProvider
+// MockNewsSvcMockRecorder is the mock recorder for MockNewsSvc.
+type MockNewsSvcMockRecorder struct {
+	mock *MockNewsSvc
 }
 
-// NewMockPriceProvider creates a new mock instance.
-func NewMockPriceProvider(ctrl *gomock.Controller) *MockPriceProvider {
-	mock := &MockPriceProvider{ctrl: ctrl}
-	mock.recorder = &MockPriceProviderMockRecorder{mock}
+// NewMockNewsSvc creates a new mock instance.
+func NewMockNewsSvc(ctrl *gomock.Controller) *MockNewsSvc {
+	mock := &MockNewsSvc{ctrl: ctrl}
+	mock.recorder = &MockNewsSvcMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockPriceProvider) EXPECT() *MockPriceProviderMockRecorder {
-	return m.recorder
-}
-
-// GetPrice mocks base method.
-func (m *MockPriceProvider) GetPrice(ctx context.Context, ticker string) (float64, string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPrice", ctx, ticker)
-	ret0, _ := ret[0].(float64)
-	ret1, _ := ret[1].(string)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// GetPrice indicates an expected call of GetPrice.
-func (mr *MockPriceProviderMockRecorder) GetPrice(ctx, ticker any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPrice", reflect.TypeOf((*MockPriceProvider)(nil).GetPrice), ctx, ticker)
-}
-
-// MockFXProvider is a mock of FXProvider interface.
-type MockFXProvider struct {
-	ctrl     *gomock.Controller
-	recorder *MockFXProviderMockRecorder
-	isgomock struct{}
-}
-
-// MockFXProviderMockRecorder is the mock recorder for MockFXProvider.
-type MockFXProviderMockRecorder struct {
-	mock *MockFXProvider
-}
-
-// NewMockFXProvider creates a new mock instance.
-func NewMockFXProvider(ctrl *gomock.Controller) *MockFXProvider {
-	mock := &MockFXProvider{ctrl: ctrl}
-	mock.recorder = &MockFXProviderMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockFXProvider) EXPECT() *MockFXProviderMockRecorder {
-	return m.recorder
-}
-
-// GetRate mocks base method.
-func (m *MockFXProvider) GetRate(ctx context.Context, from, to string) (float64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRate", ctx, from, to)
-	ret0, _ := ret[0].(float64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetRate indicates an expected call of GetRate.
-func (mr *MockFXProviderMockRecorder) GetRate(ctx, from, to any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRate", reflect.TypeOf((*MockFXProvider)(nil).GetRate), ctx, from, to)
-}
-
-// MockPortfolioAnalyzer is a mock of PortfolioAnalyzer interface.
-type MockPortfolioAnalyzer struct {
-	ctrl     *gomock.Controller
-	recorder *MockPortfolioAnalyzerMockRecorder
-	isgomock struct{}
-}
-
-// MockPortfolioAnalyzerMockRecorder is the mock recorder for MockPortfolioAnalyzer.
-type MockPortfolioAnalyzerMockRecorder struct {
-	mock *MockPortfolioAnalyzer
-}
-
-// NewMockPortfolioAnalyzer creates a new mock instance.
-func NewMockPortfolioAnalyzer(ctrl *gomock.Controller) *MockPortfolioAnalyzer {
-	mock := &MockPortfolioAnalyzer{ctrl: ctrl}
-	mock.recorder = &MockPortfolioAnalyzerMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockPortfolioAnalyzer) EXPECT() *MockPortfolioAnalyzerMockRecorder {
-	return m.recorder
-}
-
-// Analyze mocks base method.
-func (m *MockPortfolioAnalyzer) Analyze(ctx context.Context, in analysis.AnalyzePortfolioInput) (domain.PortfolioAnalysis, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Analyze", ctx, in)
-	ret0, _ := ret[0].(domain.PortfolioAnalysis)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Analyze indicates an expected call of Analyze.
-func (mr *MockPortfolioAnalyzerMockRecorder) Analyze(ctx, in any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Analyze", reflect.TypeOf((*MockPortfolioAnalyzer)(nil).Analyze), ctx, in)
-}
-
-// MockRiskAnalyzer is a mock of RiskAnalyzer interface.
-type MockRiskAnalyzer struct {
-	ctrl     *gomock.Controller
-	recorder *MockRiskAnalyzerMockRecorder
-	isgomock struct{}
-}
-
-// MockRiskAnalyzerMockRecorder is the mock recorder for MockRiskAnalyzer.
-type MockRiskAnalyzerMockRecorder struct {
-	mock *MockRiskAnalyzer
-}
-
-// NewMockRiskAnalyzer creates a new mock instance.
-func NewMockRiskAnalyzer(ctrl *gomock.Controller) *MockRiskAnalyzer {
-	mock := &MockRiskAnalyzer{ctrl: ctrl}
-	mock.recorder = &MockRiskAnalyzerMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockRiskAnalyzer) EXPECT() *MockRiskAnalyzerMockRecorder {
-	return m.recorder
-}
-
-// Analyze mocks base method.
-func (m *MockRiskAnalyzer) Analyze(in domain.PortfolioAnalysis) (analysis.PortfolioRisk, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Analyze", in)
-	ret0, _ := ret[0].(analysis.PortfolioRisk)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Analyze indicates an expected call of Analyze.
-func (mr *MockRiskAnalyzerMockRecorder) Analyze(in any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Analyze", reflect.TypeOf((*MockRiskAnalyzer)(nil).Analyze), in)
-}
-
-// MockNewsProvider is a mock of NewsProvider interface.
-type MockNewsProvider struct {
-	ctrl     *gomock.Controller
-	recorder *MockNewsProviderMockRecorder
-	isgomock struct{}
-}
-
-// MockNewsProviderMockRecorder is the mock recorder for MockNewsProvider.
-type MockNewsProviderMockRecorder struct {
-	mock *MockNewsProvider
-}
-
-// NewMockNewsProvider creates a new mock instance.
-func NewMockNewsProvider(ctrl *gomock.Controller) *MockNewsProvider {
-	mock := &MockNewsProvider{ctrl: ctrl}
-	mock.recorder = &MockNewsProviderMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockNewsProvider) EXPECT() *MockNewsProviderMockRecorder {
+func (m *MockNewsSvc) EXPECT() *MockNewsSvcMockRecorder {
 	return m.recorder
 }
 
 // GetNews mocks base method.
-func (m *MockNewsProvider) GetNews(ctx context.Context, ticker string, limit int) ([]domain.NewsHeadline, error) {
+func (m *MockNewsSvc) GetNews(ctx context.Context, ticker string, limit int) (domain.TickerNewsReport, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetNews", ctx, ticker, limit)
-	ret0, _ := ret[0].([]domain.NewsHeadline)
+	ret0, _ := ret[0].(domain.TickerNewsReport)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetNews indicates an expected call of GetNews.
-func (mr *MockNewsProviderMockRecorder) GetNews(ctx, ticker, limit any) *gomock.Call {
+func (mr *MockNewsSvcMockRecorder) GetNews(ctx, ticker, limit any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNews", reflect.TypeOf((*MockNewsProvider)(nil).GetNews), ctx, ticker, limit)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNews", reflect.TypeOf((*MockNewsSvc)(nil).GetNews), ctx, ticker, limit)
 }
 
 // MockPortfolioSvc is a mock of PortfolioSvc interface.
@@ -552,58 +394,6 @@ func (m *MockPortfolioSvc) GetRisk(ctx context.Context, portfolioName string) (d
 func (mr *MockPortfolioSvcMockRecorder) GetRisk(ctx, portfolioName any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRisk", reflect.TypeOf((*MockPortfolioSvc)(nil).GetRisk), ctx, portfolioName)
-}
-
-// MockPortfolioInsights is a mock of PortfolioInsights interface.
-type MockPortfolioInsights struct {
-	ctrl     *gomock.Controller
-	recorder *MockPortfolioInsightsMockRecorder
-	isgomock struct{}
-}
-
-// MockPortfolioInsightsMockRecorder is the mock recorder for MockPortfolioInsights.
-type MockPortfolioInsightsMockRecorder struct {
-	mock *MockPortfolioInsights
-}
-
-// NewMockPortfolioInsights creates a new mock instance.
-func NewMockPortfolioInsights(ctrl *gomock.Controller) *MockPortfolioInsights {
-	mock := &MockPortfolioInsights{ctrl: ctrl}
-	mock.recorder = &MockPortfolioInsightsMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockPortfolioInsights) EXPECT() *MockPortfolioInsightsMockRecorder {
-	return m.recorder
-}
-
-// AttentionSignals mocks base method.
-func (m *MockPortfolioInsights) AttentionSignals(portfolioAnalysis domain.PortfolioAnalysis, portfolioRisk analysis.PortfolioRisk) []string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AttentionSignals", portfolioAnalysis, portfolioRisk)
-	ret0, _ := ret[0].([]string)
-	return ret0
-}
-
-// AttentionSignals indicates an expected call of AttentionSignals.
-func (mr *MockPortfolioInsightsMockRecorder) AttentionSignals(portfolioAnalysis, portfolioRisk any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AttentionSignals", reflect.TypeOf((*MockPortfolioInsights)(nil).AttentionSignals), portfolioAnalysis, portfolioRisk)
-}
-
-// TopHoldings mocks base method.
-func (m *MockPortfolioInsights) TopHoldings(portfolioAnalysis domain.PortfolioAnalysis, limit int) []domain.AnalyzedPosition {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TopHoldings", portfolioAnalysis, limit)
-	ret0, _ := ret[0].([]domain.AnalyzedPosition)
-	return ret0
-}
-
-// TopHoldings indicates an expected call of TopHoldings.
-func (mr *MockPortfolioInsightsMockRecorder) TopHoldings(portfolioAnalysis, limit any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TopHoldings", reflect.TypeOf((*MockPortfolioInsights)(nil).TopHoldings), portfolioAnalysis, limit)
 }
 
 // MockDailyReportSummarizer is a mock of DailyReportSummarizer interface.
