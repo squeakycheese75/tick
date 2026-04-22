@@ -21,7 +21,7 @@ type Instrument struct {
 	ID             int64          `json:"id"`
 	Symbol         string         `json:"symbol"`
 	ProviderSymbol string         `json:"provider_symbol"`
-	AssetType      string         `json:"asset_type"`
+	InstrumentType string         `json:"asset_type"`
 	Exchange       sql.NullString `json:"exchange"`
 	QuoteCurrency  string         `json:"quote_currency"`
 	CreatedAt      time.Time      `json:"created_at"`

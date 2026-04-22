@@ -63,7 +63,7 @@ func (uc *ImportPortfolioUseCase) Execute(
 		instrument, err := uc.instruments.GetOrCreate(ctx, repository.Instrument{
 			Symbol:         strings.ToUpper(strings.TrimSpace(pos.Symbol)),
 			ProviderSymbol: strings.ToUpper(strings.TrimSpace(pos.Symbol)),
-			AssetType:      strings.ToLower(strings.TrimSpace(pos.AssetType)),
+			InstrumentType: strings.ToLower(strings.TrimSpace(pos.InstrumentType)),
 			Exchange:       strings.ToUpper(strings.TrimSpace(pos.Exchange)),
 			QuoteCurrency:  strings.ToUpper(strings.TrimSpace(pos.QuoteCurrency)),
 		})

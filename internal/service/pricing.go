@@ -82,13 +82,13 @@ func (s *PricingService) GetValuationQuote(
 	}, nil
 }
 
-func (s *PricingService) getQuote(ctx context.Context, symbol, assetType string) (domain.Quote, error) {
-	switch assetType {
-	case "crypto":
+func (s *PricingService) getQuote(ctx context.Context, symbol, instrumentType string) (domain.Quote, error) {
+	switch instrumentType {
+	case string(domain.InstrumentTypeCrypto):
 		return s.cryptoPriceProvider.GetQuote(ctx, symbol)
-	case "equity":
+	case string(domain.InstrumentTypeEquity):
 		return s.priceProvider.GetQuote(ctx, symbol)
 	default:
-		return domain.Quote{}, fmt.Errorf("unsupported ASSET_TYPE %q", assetType)
+		return domain.Quote{}, fmt.Errorf("unsupported ASSET_TYPE %q", instrumentType)
 	}
 }

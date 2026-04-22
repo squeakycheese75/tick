@@ -72,7 +72,7 @@ func (s *PortfolioService) GetAnalysis(ctx context.Context, portfolioName string
 			Instrument: domain.Instrument{
 				Symbol:         p.Instrument.Symbol,
 				ProviderSymbol: p.Instrument.Symbol,
-				AssetType:      p.Instrument.AssetType,
+				InstrumentType: domain.InstrumentType(p.Instrument.InstrumentType),
 				QuoteCurrency:  p.Instrument.QuoteCurrency,
 				Exchange:       p.Instrument.ProviderSymbol,
 			},

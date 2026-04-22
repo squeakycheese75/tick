@@ -19,12 +19,12 @@ type ImportPortfolioOutput struct {
 }
 
 type ImportPositionInput struct {
-	Symbol        string  `json:"symbol"`
-	AssetType     string  `json:"assetType"`
-	Exchange      string  `json:"exchange"`
-	QuoteCurrency string  `json:"quoteCurrency"`
-	Quantity      float64 `json:"quantity"`
-	AvgCost       float64 `json:"avgCost"`
+	Symbol         string  `json:"symbol"`
+	InstrumentType string  `json:"instrumentType"`
+	Exchange       string  `json:"exchange"`
+	QuoteCurrency  string  `json:"quoteCurrency"`
+	Quantity       float64 `json:"quantity"`
+	AvgCost        float64 `json:"avgCost"`
 }
 
 func (in ImportPortfolioInput) Validate() error {
@@ -51,8 +51,8 @@ func (in ImportPositionInput) Validate() error {
 	switch {
 	case strings.TrimSpace(in.Symbol) == "":
 		return fmt.Errorf("symbol is required")
-	case strings.TrimSpace(in.AssetType) == "":
-		return fmt.Errorf("assetType is required")
+	case strings.TrimSpace(in.InstrumentType) == "":
+		return fmt.Errorf("instrumentType is required")
 	case strings.TrimSpace(in.Exchange) == "":
 		return fmt.Errorf("exchange is required")
 	case strings.TrimSpace(in.QuoteCurrency) == "":
@@ -120,7 +120,7 @@ type CreatePortfolioUsecaseOutout struct {
 type AddPositionToPortfolioInput struct {
 	Symbol         string
 	ProviderSymbol string
-	AssetType      string
+	InstrumentType string
 	Exchange       string
 	QuoteCurrency  string
 	Qty            float64
@@ -131,7 +131,7 @@ type AddPositionToPortfolioInput struct {
 func (i *AddPositionToPortfolioInput) Normalize() {
 	i.PortfolioName = strings.TrimSpace(i.PortfolioName)
 	i.Symbol = strings.ToUpper(strings.TrimSpace(i.Symbol))
-	i.AssetType = strings.ToLower(strings.TrimSpace(i.AssetType))
+	i.InstrumentType = strings.ToLower(strings.TrimSpace(i.InstrumentType))
 	i.Exchange = strings.ToUpper(strings.TrimSpace(i.Exchange))
 	i.QuoteCurrency = strings.ToUpper(strings.TrimSpace(i.QuoteCurrency))
 }
@@ -173,7 +173,7 @@ func (i *AddPositionToPortfolioInput) ValidateResolved() error {
 type AddPositionToPortfolioOutput struct {
 	Symbol         string
 	ProviderSymbol string
-	AssetType      string
+	InstrumentType string
 	Exchange       string
 	Qty            float64
 	QuoteCurrency  string

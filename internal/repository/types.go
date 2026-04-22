@@ -6,7 +6,7 @@ type Instrument struct {
 	ID             int64
 	Symbol         string
 	ProviderSymbol string
-	AssetType      string
+	InstrumentType string
 	QuoteCurrency  string
 	Exchange       string
 }

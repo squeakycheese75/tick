@@ -40,7 +40,7 @@ func (uc *AddPositionToPortfolioUseCase) Execute(
 		return nil, err
 	}
 
-	if in.AssetType == "" || in.Exchange == "" || in.QuoteCurrency == "" {
+	if in.InstrumentType == "" || in.Exchange == "" || in.QuoteCurrency == "" {
 		resolved, err := uc.instrumentResolver.Resolve(ctx, in.Symbol)
 		if err != nil {
 			return nil, fmt.Errorf(
@@ -49,8 +49,8 @@ func (uc *AddPositionToPortfolioUseCase) Execute(
 			)
 		}
 
-		if in.AssetType == "" {
-			in.AssetType = resolved.AssetType
+		if in.InstrumentType == "" {
+			in.InstrumentType = resolved.InstrumentType
 		}
 		if in.Exchange == "" {
 			in.Exchange = resolved.Exchange
@@ -76,7 +76,7 @@ func (uc *AddPositionToPortfolioUseCase) Execute(
 		Symbol:         in.Symbol,
 		ProviderSymbol: in.Symbol,
 		Exchange:       in.Exchange,
-		AssetType:      in.AssetType,
+		InstrumentType: in.InstrumentType,
 		QuoteCurrency:  in.QuoteCurrency,
 	})
 	if err != nil {

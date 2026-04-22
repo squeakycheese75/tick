@@ -13,7 +13,7 @@ func newAddPositionCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 	var avgCost float64
 	var quoteCurrency string
 	var portfolioName string
-	var assetType string
+	var instrumentType string
 	var exchange string
 
 	cmd := &cobra.Command{
@@ -31,7 +31,7 @@ func newAddPositionCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 				portfolioName = "main"
 			}
 
-			assetType = strings.ToLower(strings.TrimSpace(assetType))
+			instrumentType = strings.ToLower(strings.TrimSpace(instrumentType))
 			exchange = strings.ToUpper(strings.TrimSpace(exchange))
 			quoteCurrency = strings.ToUpper(strings.TrimSpace(quoteCurrency))
 
@@ -51,13 +51,13 @@ func newAddPositionCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 			out, err := app.AddPosition.Execute(
 				cmd.Context(),
 				domain.AddPositionToPortfolioInput{
-					PortfolioName: portfolioName,
-					Symbol:        symbol,
-					AssetType:     assetType,
-					Exchange:      exchange,
-					QuoteCurrency: quoteCurrency,
-					AvgCost:       avgCost,
-					Qty:           qty,
+					PortfolioName:  portfolioName,
+					Symbol:         symbol,
+					InstrumentType: instrumentType,
+					Exchange:       exchange,
+					QuoteCurrency:  quoteCurrency,
+					AvgCost:        avgCost,
+					Qty:            qty,
 				},
 			)
 			if err != nil {
@@ -71,7 +71,7 @@ func newAddPositionCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 	cmd.Flags().Float64Var(&qty, "qty", 0, "Position quantity")
 	cmd.Flags().Float64Var(&avgCost, "avg-cost", 0, "Average cost basis per unit")
 	cmd.Flags().StringVar(&quoteCurrency, "quote-currency", "", "Override quote currency, e.g. USD")
-	cmd.Flags().StringVar(&assetType, "asset-type", "", "Override asset type, e.g. equity, etf, crypto")
+	cmd.Flags().StringVar(&instrumentType, "asset-type", "", "Override asset type, e.g. equity, etf, crypto")
 	cmd.Flags().StringVar(&exchange, "exchange", "", "Override exchange, e.g. NASDAQ")
 	cmd.Flags().StringVar(&portfolioName, "portfolio", "main", "Portfolio name")
 
