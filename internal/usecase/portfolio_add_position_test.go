@@ -21,7 +21,7 @@ func TestAddPositionToPortfolioUseCase_Execute_CreatesPosition(t *testing.T) {
 
 	uc := NewAddPositionToPortfolioUseCase(positions, portfolios, instruments, instrumentResolver)
 
-	in := AddPositionToPortfolioInput{
+	in := domain.AddPositionToPortfolioInput{
 		PortfolioName: "main",
 		Symbol:        "NVDA",
 		AssetType:     "equity",
@@ -95,7 +95,7 @@ func TestAddPositionToPortfolioUseCase_Execute_ReturnsErrorWhenPositionExists(t 
 
 	uc := NewAddPositionToPortfolioUseCase(positions, portfolios, instruments, instrumentResolver)
 
-	in := AddPositionToPortfolioInput{
+	in := domain.AddPositionToPortfolioInput{
 		PortfolioName: "main",
 		Symbol:        "NVDA",
 		AssetType:     "equity",

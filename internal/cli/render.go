@@ -5,7 +5,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/squeakycheese75/tick/internal/usecase"
+	"github.com/squeakycheese75/tick/internal/domain"
 )
 
 type writer struct {
@@ -49,7 +49,7 @@ func formatChangePercent(v float64) string {
 	return fmt.Sprintf("%s%s %+.2f%%%s", color, arrow, v, reset)
 }
 
-func RenderGetPortfolioSummary(w io.Writer, s usecase.GetPortfolioSummaryUsecaseOutput) error {
+func RenderGetPortfolioSummary(w io.Writer, s domain.GetPortfolioSummaryUsecaseOutput) error {
 	out := &writer{w: w}
 
 	out.printf("Portfolio: %s\n\n", s.PortfolioName)
@@ -88,7 +88,7 @@ func RenderGetPortfolioSummary(w io.Writer, s usecase.GetPortfolioSummaryUsecase
 	return out.err
 }
 
-func RenderCreatePortfolio(w io.Writer, s usecase.CreatePortfolioUsecaseOutout) error {
+func RenderCreatePortfolio(w io.Writer, s domain.CreatePortfolioUsecaseOutout) error {
 	out := &writer{w: w}
 
 	out.printf(
@@ -99,7 +99,7 @@ func RenderCreatePortfolio(w io.Writer, s usecase.CreatePortfolioUsecaseOutout) 
 	return out.err
 }
 
-func RenderAddPortfolioPosition(w io.Writer, s usecase.AddPositionToPortfolioOutput) error {
+func RenderAddPortfolioPosition(w io.Writer, s domain.AddPositionToPortfolioOutput) error {
 	out := &writer{w: w}
 
 	out.printf("Saved %s in portfolio %s: qty=%.4f avg_cost=%.2f %s\n", s.Symbol, s.PortfolioName, s.Qty, s.AvgCost, s.QuoteCurrency)
@@ -107,7 +107,7 @@ func RenderAddPortfolioPosition(w io.Writer, s usecase.AddPositionToPortfolioOut
 	return out.err
 }
 
-func RenderGetPortfolioRisk(w io.Writer, s usecase.GetPortfolioRiskOutput) error {
+func RenderGetPortfolioRisk(w io.Writer, s domain.GetPortfolioRiskOutput) error {
 	out := &writer{w: w}
 
 	out.printf("Risk summary: %s\n\n", s.PortfolioName)
@@ -129,13 +129,23 @@ func RenderGetPortfolioRisk(w io.Writer, s usecase.GetPortfolioRiskOutput) error
 	return out.err
 }
 
-func RenderGetDailyReport(w io.Writer, s usecase.GetDailyReportOutput) error {
+func RenderGetDailyReport(w io.Writer, s domain.GetDailyReportOutput) error {
 	out := &writer{w: w}
 
-	out.printf("tick daily\n\n")
 	out.printf("Portfolio: %s\n", s.DailyReport.PortfolioName)
-	out.printf("Base currency: %s\n", s.DailyReport.BaseCurrency)
-	out.printf("Total value: %.2f\n\n", s.DailyReport.TotalValue)
+	// out.printf("Base currency: %s\n", s.DailyReport.BaseCurrency)
+	out.printf("Total value: %.2f %s \n", s.DailyReport.TotalValue, s.DailyReport.BaseCurrency)
+
+	if s.DailyReport.ChangeSinceLastSnapshot != nil {
+		out.printf(
+			"Since last snapshot: %+.2f %s (%+.2f%%)\n",
+			s.DailyReport.ChangeSinceLastSnapshot.Absolute,
+			s.DailyReport.BaseCurrency,
+			s.DailyReport.ChangeSinceLastSnapshot.Percent*100,
+		)
+	}
+
+	out.println("")
 
 	out.printf("Top holdings\n")
 	if len(s.DailyReport.TopHoldings) == 0 {
@@ -152,6 +162,15 @@ func RenderGetDailyReport(w io.Writer, s usecase.GetDailyReportOutput) error {
 				h.PriceCurrency,
 				formatChangePercent(h.ChangePercent),
 			)
+
+			if h.SinceLastSnapshot != nil {
+				out.printf(
+					"  Δ snapshot: %+.2f %s (%+.2f%%)\n",
+					h.SinceLastSnapshot.ValueAbsolute,
+					s.DailyReport.BaseCurrency,
+					h.SinceLastSnapshot.ValuePercent*100,
+				)
+			}
 		}
 	}
 
@@ -203,7 +222,7 @@ func RenderGetDailyReport(w io.Writer, s usecase.GetDailyReportOutput) error {
 	return out.err
 }
 
-func renderImportPortfolio(w io.Writer, out usecase.ImportPortfolioOutput) error {
+func renderImportPortfolio(w io.Writer, out domain.ImportPortfolioOutput) error {
 	_, err := fmt.Fprintf(
 		w,
 		"Imported portfolio %q (%s): %d positions%s\n",

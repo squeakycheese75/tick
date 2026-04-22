@@ -19,11 +19,11 @@ type PositionRepository interface {
 }
 
 type PortfolioAnalyzer interface {
-	Analyze(ctx context.Context, in analysis.AnalyzePortfolioInput) (analysis.PortfolioAnalysis, error)
+	Analyze(ctx context.Context, in analysis.AnalyzePortfolioInput) (domain.PortfolioAnalysis, error)
 }
 
 type RiskAnalyzer interface {
-	Analyze(in analysis.PortfolioAnalysis) (analysis.PortfolioRisk, error)
+	Analyze(in domain.PortfolioAnalysis) (analysis.PortfolioRisk, error)
 }
 
 type PortfolioService struct {
@@ -47,22 +47,22 @@ func NewPortfolioService(
 	}
 }
 
-func (s *PortfolioService) GetAnalysis(ctx context.Context, portfolioName string) (analysis.PortfolioAnalysis, error) {
+func (s *PortfolioService) GetAnalysis(ctx context.Context, portfolioName string) (domain.PortfolioAnalysis, error) {
 	pf, err := s.portfolios.GetByName(ctx, portfolioName)
 	if err != nil {
 		if errors.Is(err, domain.ErrPortfolioNotFound) {
-			return analysis.PortfolioAnalysis{}, fmt.Errorf(
+			return domain.PortfolioAnalysis{}, fmt.Errorf(
 				"portfolio %q not found. Create it with:\n  tick portfolio create %s --base-currency EUR",
 				portfolioName,
 				portfolioName,
 			)
 		}
-		return analysis.PortfolioAnalysis{}, fmt.Errorf("get portfolio: %w", err)
+		return domain.PortfolioAnalysis{}, fmt.Errorf("get portfolio: %w", err)
 	}
 
 	positions, err := s.positions.ListByPortfolioID(ctx, pf.ID)
 	if err != nil {
-		return analysis.PortfolioAnalysis{}, fmt.Errorf("list positions: %w", err)
+		return domain.PortfolioAnalysis{}, fmt.Errorf("list positions: %w", err)
 	}
 
 	mappedPositions := make([]domain.Position, 0, len(positions))
@@ -89,22 +89,30 @@ func (s *PortfolioService) GetAnalysis(ctx context.Context, portfolioName string
 		Positions: mappedPositions,
 	})
 	if err != nil {
-		return analysis.PortfolioAnalysis{}, fmt.Errorf("analyze portfolio: %w", err)
+		return domain.PortfolioAnalysis{}, fmt.Errorf("analyze portfolio: %w", err)
 	}
 
 	return result, nil
 }
 
-func (s *PortfolioService) GetRisk(ctx context.Context, portfolioName string) (analysis.PortfolioRisk, error) {
+func (s *PortfolioService) GetRisk(ctx context.Context, portfolioName string) (domain.PortfolioRisk, error) {
 	portfolioAnalysis, err := s.GetAnalysis(ctx, portfolioName)
 	if err != nil {
-		return analysis.PortfolioRisk{}, err
+		return domain.PortfolioRisk{}, err
 	}
 
 	portfolioRisk, err := s.riskAnalyzer.Analyze(portfolioAnalysis)
 	if err != nil {
-		return analysis.PortfolioRisk{}, fmt.Errorf("analyze risk: %w", err)
+		return domain.PortfolioRisk{}, fmt.Errorf("analyze risk: %w", err)
 	}
 
-	return portfolioRisk, nil
+	return domain.PortfolioRisk{
+		PortfolioName:     portfolioRisk.PortfolioName,
+		BaseCurrency:      portfolioRisk.BaseCurrency,
+		LargestPosition:   portfolioRisk.LargestPosition,
+		PositionCount:     portfolioRisk.PositionCount,
+		LargestWeight:     portfolioRisk.LargestWeight,
+		Top3Concentration: portfolioRisk.Top3Concentration,
+		Observations:      portfolioRisk.Observations,
+	}, nil
 }

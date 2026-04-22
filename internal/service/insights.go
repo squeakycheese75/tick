@@ -3,7 +3,7 @@ package service
 import (
 	"fmt"
 
-	"github.com/squeakycheese75/tick/internal/domain/analysis"
+	"github.com/squeakycheese75/tick/internal/domain"
 )
 
 type PortfolioInsights struct{}
@@ -13,9 +13,9 @@ func NewPortfolioInsights() *PortfolioInsights {
 }
 
 func (b *PortfolioInsights) TopHoldings(
-	portfolioAnalysis analysis.PortfolioAnalysis,
+	portfolioAnalysis domain.PortfolioAnalysis,
 	limit int,
-) []analysis.AnalyzedPosition {
+) []domain.AnalyzedPosition {
 	if limit <= 0 {
 		return nil
 	}
@@ -24,7 +24,7 @@ func (b *PortfolioInsights) TopHoldings(
 		limit = len(portfolioAnalysis.AnalyzedPositions)
 	}
 
-	result := make([]analysis.AnalyzedPosition, 0, limit)
+	result := make([]domain.AnalyzedPosition, 0, limit)
 	for i := 0; i < limit; i++ {
 		result = append(result, portfolioAnalysis.AnalyzedPositions[i])
 	}
@@ -33,8 +33,8 @@ func (b *PortfolioInsights) TopHoldings(
 }
 
 func (b *PortfolioInsights) AttentionSignals(
-	portfolioAnalysis analysis.PortfolioAnalysis,
-	portfolioRisk analysis.PortfolioRisk,
+	portfolioAnalysis domain.PortfolioAnalysis,
+	portfolioRisk domain.PortfolioRisk,
 ) []string {
 	attention := make([]string, 0)
 

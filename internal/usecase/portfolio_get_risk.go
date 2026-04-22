@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/squeakycheese75/tick/internal/domain/analysis"
+	"github.com/squeakycheese75/tick/internal/domain"
 )
 
 type GetPortfolioRiskUseCase struct {
@@ -17,23 +17,11 @@ func NewGetPortfolioRiskUseCase(portfolioSvc PortfolioSvc) *GetPortfolioRiskUseC
 	}
 }
 
-func (uc *GetPortfolioRiskUseCase) Execute(ctx context.Context, in GetPortfolioRiskInput) (GetPortfolioRiskOutput, error) {
+func (uc *GetPortfolioRiskUseCase) Execute(ctx context.Context, in domain.GetPortfolioRiskInput) (domain.GetPortfolioRiskOutput, error) {
 	result, err := uc.portfolioSvc.GetRisk(ctx, in.PortfolioName)
 	if err != nil {
-		return GetPortfolioRiskOutput{}, fmt.Errorf("analyze portfolio: %w", err)
+		return domain.GetPortfolioRiskOutput{}, fmt.Errorf("analyze portfolio: %w", err)
 	}
 
-	return mapPortfolioRiskToOutput(result), nil
-}
-
-func mapPortfolioRiskToOutput(a analysis.PortfolioRisk) GetPortfolioRiskOutput {
-	return GetPortfolioRiskOutput{
-		PortfolioName:     a.PortfolioName,
-		BaseCurrency:      a.BaseCurrency,
-		PositionCount:     a.PositionCount,
-		LargestPosition:   a.LargestPosition,
-		LargestWeight:     a.LargestWeight,
-		Top3Concentration: a.Top3Concentration,
-		Observations:      a.Observations,
-	}
+	return domain.GetPortfolioRiskOutput(result), nil
 }

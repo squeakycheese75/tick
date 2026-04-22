@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/squeakycheese75/tick/internal/domain"
 	"github.com/squeakycheese75/tick/internal/llm"
-	"github.com/squeakycheese75/tick/internal/report"
 )
 
 type LLMClient interface {
@@ -25,7 +25,7 @@ func NewLLMDailyReportSummarizer(llmClient LLMClient) *LLMDailyReportSummarizer 
 
 func (s *LLMDailyReportSummarizer) Summarize(
 	ctx context.Context,
-	brief report.DailyReport,
+	brief domain.DailyReport,
 ) (string, error) {
 
 	resp, err := s.client.Complete(ctx, llm.CompletionRequest{
@@ -45,7 +45,7 @@ func (LLMDailyReportSummarizer) Enabled() bool {
 
 type NoopSummarizer struct{}
 
-func (NoopSummarizer) Summarize(ctx context.Context, r report.DailyReport) (string, error) {
+func (NoopSummarizer) Summarize(ctx context.Context, r domain.DailyReport) (string, error) {
 	return "", nil
 }
 

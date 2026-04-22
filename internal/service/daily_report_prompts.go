@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/squeakycheese75/tick/internal/report"
+	"github.com/squeakycheese75/tick/internal/domain"
 )
 
 func buildDailyReportSystemPrompt() string {
@@ -20,7 +20,7 @@ Return 3 to 5 concise bullet points.
 `)
 }
 
-func buildDailyReportUserPrompt(dailyReport report.DailyReport) string {
+func buildDailyReportUserPrompt(dailyReport domain.DailyReport) string {
 	var b strings.Builder
 
 	b.WriteString("Portfolio daily brief\n\n")

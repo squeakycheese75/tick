@@ -21,8 +21,8 @@ func NewPortfolioSnapshotRepository(database *db.DB) *PortfolioSnapshotRepositor
 
 func (r *PortfolioSnapshotRepository) Create(
 	ctx context.Context,
-	in CreatePortfolioSnapshot,
-	positions []CreatePortfolioSnapshotPosition,
+	in PortfolioSnapshot,
+	positions []PortfolioSnapshotPosition,
 ) (int64, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {

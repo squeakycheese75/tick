@@ -78,14 +78,16 @@ type SnapshotPosition struct {
 	Weight             float64
 }
 
-type CreatePortfolioSnapshot struct {
+type PortfolioSnapshot struct {
+	ID            int64
 	PortfolioName string
 	BaseCurrency  string
 	TotalValue    float64
 	CapturedAt    time.Time
 }
 
-type CreatePortfolioSnapshotPosition struct {
+type PortfolioSnapshotPosition struct {
+	SnapshotID         int64
 	Symbol             string
 	Quantity           float64
 	InstrumentCurrency string

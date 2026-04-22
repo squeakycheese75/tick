@@ -28,17 +28,10 @@ func NewImportPortfolioUseCase(
 	}
 }
 
-type ImportPortfolioOutput struct {
-	PortfolioName     string
-	BaseCurrency      string
-	ImportedPositions int
-	CreatedPortfolio  bool
-}
-
 func (uc *ImportPortfolioUseCase) Execute(
 	ctx context.Context,
-	in ImportPortfolioInput,
-) (*ImportPortfolioOutput, error) {
+	in domain.ImportPortfolioInput,
+) (*domain.ImportPortfolioOutput, error) {
 	if err := in.Validate(); err != nil {
 		return nil, err
 	}
@@ -100,7 +93,7 @@ func (uc *ImportPortfolioUseCase) Execute(
 		}
 	}
 
-	return &ImportPortfolioOutput{
+	return &domain.ImportPortfolioOutput{
 		PortfolioName:     portfolio.Name,
 		BaseCurrency:      portfolio.BaseCurrency,
 		ImportedPositions: len(in.Positions),

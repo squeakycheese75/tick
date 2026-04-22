@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/squeakycheese75/tick/internal/usecase"
+	"github.com/squeakycheese75/tick/internal/domain"
 )
 
 func newPortfolioCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
@@ -40,7 +40,7 @@ func newPortfolioSummaryCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 
 			out, err := app.GetPortfolioSummary.Execute(
 				cmd.Context(),
-				usecase.GetPortfolioSummaryUsecaseInput{
+				domain.GetPortfolioSummaryUsecaseInput{
 					PortfolioName: portfolioName,
 				},
 			)
@@ -81,7 +81,7 @@ func newPortfolioCreateCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 
 			out, err := app.CreatePortfolio.Execute(
 				cmd.Context(),
-				usecase.CreatePortfolioUsecaseInput{
+				domain.CreatePortfolioUsecaseInput{
 					PortfolioName: name,
 					BaseCurrency:  base,
 				},
@@ -118,7 +118,7 @@ func newPortfolioRiskCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 
 			out, err := app.GetPortfolioRisk.Execute(
 				cmd.Context(),
-				usecase.GetPortfolioRiskInput{
+				domain.GetPortfolioRiskInput{
 					PortfolioName: portfolioName,
 				},
 			)
@@ -151,7 +151,7 @@ func newPortfolioImportCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 				return fmt.Errorf("read file %q: %w", filePath, err)
 			}
 
-			var in usecase.ImportPortfolioInput
+			var in domain.ImportPortfolioInput
 			if err := json.Unmarshal(data, &in); err != nil {
 				return fmt.Errorf("decode import file %q: %w", filePath, err)
 			}

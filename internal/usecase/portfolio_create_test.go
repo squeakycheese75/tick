@@ -31,7 +31,7 @@ func TestCreatePortfolioUseCase_Execute_CreatesPortfolioWhenNotFound(t *testing.
 		}).
 		Return(nil)
 
-	out, err := uc.Execute(context.Background(), CreatePortfolioUsecaseInput{
+	out, err := uc.Execute(context.Background(), domain.CreatePortfolioUsecaseInput{
 		PortfolioName: "main",
 		BaseCurrency:  "EUR",
 	})
@@ -70,7 +70,7 @@ func TestCreatePortfolioUseCase_Execute_ReturnsErrorWhenPortfolioExists(t *testi
 			BaseCurrency: "EUR",
 		}, nil)
 
-	out, err := uc.Execute(context.Background(), CreatePortfolioUsecaseInput{
+	out, err := uc.Execute(context.Background(), domain.CreatePortfolioUsecaseInput{
 		PortfolioName: "main",
 		BaseCurrency:  "EUR",
 	})

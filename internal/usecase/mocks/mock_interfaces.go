@@ -12,6 +12,7 @@ package mocks
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	domain "github.com/squeakycheese75/tick/internal/domain"
 	analysis "github.com/squeakycheese75/tick/internal/domain/analysis"
@@ -258,33 +259,49 @@ func (m *MockPortfolioSnapshotRepository) EXPECT() *MockPortfolioSnapshotReposit
 	return m.recorder
 }
 
-// CreateSnapshot mocks base method.
-func (m *MockPortfolioSnapshotRepository) CreateSnapshot(ctx context.Context, s repository.Snapshot) (int64, error) {
+// Create mocks base method.
+func (m *MockPortfolioSnapshotRepository) Create(ctx context.Context, in repository.PortfolioSnapshot, positions []repository.PortfolioSnapshotPosition) (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateSnapshot", ctx, s)
+	ret := m.ctrl.Call(m, "Create", ctx, in, positions)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// CreateSnapshot indicates an expected call of CreateSnapshot.
-func (mr *MockPortfolioSnapshotRepositoryMockRecorder) CreateSnapshot(ctx, s any) *gomock.Call {
+// Create indicates an expected call of Create.
+func (mr *MockPortfolioSnapshotRepositoryMockRecorder) Create(ctx, in, positions any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSnapshot", reflect.TypeOf((*MockPortfolioSnapshotRepository)(nil).CreateSnapshot), ctx, s)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockPortfolioSnapshotRepository)(nil).Create), ctx, in, positions)
 }
 
-// CreateSnapshotPositions mocks base method.
-func (m *MockPortfolioSnapshotRepository) CreateSnapshotPositions(ctx context.Context, snapshotID int64, positions []repository.SnapshotPosition) error {
+// GetLatestBefore mocks base method.
+func (m *MockPortfolioSnapshotRepository) GetLatestBefore(ctx context.Context, portfolioName string, before time.Time) (repository.PortfolioSnapshot, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateSnapshotPositions", ctx, snapshotID, positions)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret := m.ctrl.Call(m, "GetLatestBefore", ctx, portfolioName, before)
+	ret0, _ := ret[0].(repository.PortfolioSnapshot)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
-// CreateSnapshotPositions indicates an expected call of CreateSnapshotPositions.
-func (mr *MockPortfolioSnapshotRepositoryMockRecorder) CreateSnapshotPositions(ctx, snapshotID, positions any) *gomock.Call {
+// GetLatestBefore indicates an expected call of GetLatestBefore.
+func (mr *MockPortfolioSnapshotRepositoryMockRecorder) GetLatestBefore(ctx, portfolioName, before any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSnapshotPositions", reflect.TypeOf((*MockPortfolioSnapshotRepository)(nil).CreateSnapshotPositions), ctx, snapshotID, positions)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestBefore", reflect.TypeOf((*MockPortfolioSnapshotRepository)(nil).GetLatestBefore), ctx, portfolioName, before)
+}
+
+// ListPositionsBySnapshotID mocks base method.
+func (m *MockPortfolioSnapshotRepository) ListPositionsBySnapshotID(ctx context.Context, snapshotID int64) ([]repository.PortfolioSnapshotPosition, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListPositionsBySnapshotID", ctx, snapshotID)
+	ret0, _ := ret[0].([]repository.PortfolioSnapshotPosition)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListPositionsBySnapshotID indicates an expected call of ListPositionsBySnapshotID.
+func (mr *MockPortfolioSnapshotRepositoryMockRecorder) ListPositionsBySnapshotID(ctx, snapshotID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPositionsBySnapshotID", reflect.TypeOf((*MockPortfolioSnapshotRepository)(nil).ListPositionsBySnapshotID), ctx, snapshotID)
 }
 
 // MockPriceProvider is a mock of PriceProvider interface.
@@ -391,10 +408,10 @@ func (m *MockPortfolioAnalyzer) EXPECT() *MockPortfolioAnalyzerMockRecorder {
 }
 
 // Analyze mocks base method.
-func (m *MockPortfolioAnalyzer) Analyze(ctx context.Context, in analysis.AnalyzePortfolioInput) (analysis.PortfolioAnalysis, error) {
+func (m *MockPortfolioAnalyzer) Analyze(ctx context.Context, in analysis.AnalyzePortfolioInput) (domain.PortfolioAnalysis, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Analyze", ctx, in)
-	ret0, _ := ret[0].(analysis.PortfolioAnalysis)
+	ret0, _ := ret[0].(domain.PortfolioAnalysis)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -430,7 +447,7 @@ func (m *MockRiskAnalyzer) EXPECT() *MockRiskAnalyzerMockRecorder {
 }
 
 // Analyze mocks base method.
-func (m *MockRiskAnalyzer) Analyze(in analysis.PortfolioAnalysis) (analysis.PortfolioRisk, error) {
+func (m *MockRiskAnalyzer) Analyze(in domain.PortfolioAnalysis) (analysis.PortfolioRisk, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Analyze", in)
 	ret0, _ := ret[0].(analysis.PortfolioRisk)
@@ -508,10 +525,10 @@ func (m *MockPortfolioSvc) EXPECT() *MockPortfolioSvcMockRecorder {
 }
 
 // GetAnalysis mocks base method.
-func (m *MockPortfolioSvc) GetAnalysis(ctx context.Context, portfolioName string) (analysis.PortfolioAnalysis, error) {
+func (m *MockPortfolioSvc) GetAnalysis(ctx context.Context, portfolioName string) (domain.PortfolioAnalysis, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAnalysis", ctx, portfolioName)
-	ret0, _ := ret[0].(analysis.PortfolioAnalysis)
+	ret0, _ := ret[0].(domain.PortfolioAnalysis)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -523,10 +540,10 @@ func (mr *MockPortfolioSvcMockRecorder) GetAnalysis(ctx, portfolioName any) *gom
 }
 
 // GetRisk mocks base method.
-func (m *MockPortfolioSvc) GetRisk(ctx context.Context, portfolioName string) (analysis.PortfolioRisk, error) {
+func (m *MockPortfolioSvc) GetRisk(ctx context.Context, portfolioName string) (domain.PortfolioRisk, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRisk", ctx, portfolioName)
-	ret0, _ := ret[0].(analysis.PortfolioRisk)
+	ret0, _ := ret[0].(domain.PortfolioRisk)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -562,7 +579,7 @@ func (m *MockPortfolioInsights) EXPECT() *MockPortfolioInsightsMockRecorder {
 }
 
 // AttentionSignals mocks base method.
-func (m *MockPortfolioInsights) AttentionSignals(portfolioAnalysis analysis.PortfolioAnalysis, portfolioRisk analysis.PortfolioRisk) []string {
+func (m *MockPortfolioInsights) AttentionSignals(portfolioAnalysis domain.PortfolioAnalysis, portfolioRisk analysis.PortfolioRisk) []string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AttentionSignals", portfolioAnalysis, portfolioRisk)
 	ret0, _ := ret[0].([]string)
@@ -576,10 +593,10 @@ func (mr *MockPortfolioInsightsMockRecorder) AttentionSignals(portfolioAnalysis,
 }
 
 // TopHoldings mocks base method.
-func (m *MockPortfolioInsights) TopHoldings(portfolioAnalysis analysis.PortfolioAnalysis, limit int) []analysis.AnalyzedPosition {
+func (m *MockPortfolioInsights) TopHoldings(portfolioAnalysis domain.PortfolioAnalysis, limit int) []domain.AnalyzedPosition {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TopHoldings", portfolioAnalysis, limit)
-	ret0, _ := ret[0].([]analysis.AnalyzedPosition)
+	ret0, _ := ret[0].([]domain.AnalyzedPosition)
 	return ret0
 }
 
@@ -587,4 +604,96 @@ func (m *MockPortfolioInsights) TopHoldings(portfolioAnalysis analysis.Portfolio
 func (mr *MockPortfolioInsightsMockRecorder) TopHoldings(portfolioAnalysis, limit any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TopHoldings", reflect.TypeOf((*MockPortfolioInsights)(nil).TopHoldings), portfolioAnalysis, limit)
+}
+
+// MockDailyReportSummarizer is a mock of DailyReportSummarizer interface.
+type MockDailyReportSummarizer struct {
+	ctrl     *gomock.Controller
+	recorder *MockDailyReportSummarizerMockRecorder
+	isgomock struct{}
+}
+
+// MockDailyReportSummarizerMockRecorder is the mock recorder for MockDailyReportSummarizer.
+type MockDailyReportSummarizerMockRecorder struct {
+	mock *MockDailyReportSummarizer
+}
+
+// NewMockDailyReportSummarizer creates a new mock instance.
+func NewMockDailyReportSummarizer(ctrl *gomock.Controller) *MockDailyReportSummarizer {
+	mock := &MockDailyReportSummarizer{ctrl: ctrl}
+	mock.recorder = &MockDailyReportSummarizerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockDailyReportSummarizer) EXPECT() *MockDailyReportSummarizerMockRecorder {
+	return m.recorder
+}
+
+// Enabled mocks base method.
+func (m *MockDailyReportSummarizer) Enabled() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Enabled")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Enabled indicates an expected call of Enabled.
+func (mr *MockDailyReportSummarizerMockRecorder) Enabled() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Enabled", reflect.TypeOf((*MockDailyReportSummarizer)(nil).Enabled))
+}
+
+// Summarize mocks base method.
+func (m *MockDailyReportSummarizer) Summarize(ctx context.Context, report domain.DailyReport) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Summarize", ctx, report)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Summarize indicates an expected call of Summarize.
+func (mr *MockDailyReportSummarizerMockRecorder) Summarize(ctx, report any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Summarize", reflect.TypeOf((*MockDailyReportSummarizer)(nil).Summarize), ctx, report)
+}
+
+// MockReportBuilder is a mock of ReportBuilder interface.
+type MockReportBuilder struct {
+	ctrl     *gomock.Controller
+	recorder *MockReportBuilderMockRecorder
+	isgomock struct{}
+}
+
+// MockReportBuilderMockRecorder is the mock recorder for MockReportBuilder.
+type MockReportBuilderMockRecorder struct {
+	mock *MockReportBuilder
+}
+
+// NewMockReportBuilder creates a new mock instance.
+func NewMockReportBuilder(ctrl *gomock.Controller) *MockReportBuilder {
+	mock := &MockReportBuilder{ctrl: ctrl}
+	mock.recorder = &MockReportBuilderMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockReportBuilder) EXPECT() *MockReportBuilderMockRecorder {
+	return m.recorder
+}
+
+// BuildDailyReport mocks base method.
+func (m *MockReportBuilder) BuildDailyReport(ctx context.Context, portfolioName string, newsLimit int) (domain.DailyReportResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BuildDailyReport", ctx, portfolioName, newsLimit)
+	ret0, _ := ret[0].(domain.DailyReportResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BuildDailyReport indicates an expected call of BuildDailyReport.
+func (mr *MockReportBuilderMockRecorder) BuildDailyReport(ctx, portfolioName, newsLimit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BuildDailyReport", reflect.TypeOf((*MockReportBuilder)(nil).BuildDailyReport), ctx, portfolioName, newsLimit)
 }

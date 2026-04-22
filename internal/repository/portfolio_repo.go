@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/squeakycheese75/tick/internal/db"
 	"github.com/squeakycheese75/tick/internal/domain"
@@ -45,4 +46,57 @@ func (r *PortfolioRepository) Create(ctx context.Context, p Portfolio) error {
 	}
 
 	return nil
+}
+
+func (r *PortfolioSnapshotRepository) GetLatestBefore(
+	ctx context.Context,
+	portfolioName string,
+	before time.Time,
+) (PortfolioSnapshot, error) {
+	row, err := r.q.GetLatestPortfolioSnapshotBefore(ctx, db.GetLatestPortfolioSnapshotBeforeParams{
+		PortfolioName: portfolioName,
+		CapturedAt:    before,
+	})
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return PortfolioSnapshot{}, domain.ErrPortfolioSnapshotNotFound
+		}
+		return PortfolioSnapshot{}, fmt.Errorf("get latest portfolio snapshot before: %w", err)
+	}
+
+	return PortfolioSnapshot{
+		ID:            row.ID,
+		PortfolioName: row.PortfolioName,
+		BaseCurrency:  row.BaseCurrency,
+		TotalValue:    row.TotalValue,
+		CapturedAt:    row.CapturedAt,
+	}, nil
+}
+
+func (r *PortfolioSnapshotRepository) ListPositionsBySnapshotID(
+	ctx context.Context,
+	snapshotID int64,
+) ([]PortfolioSnapshotPosition, error) {
+
+	rows, err := r.q.ListPortfolioSnapshotPositionsBySnapshotID(ctx, snapshotID)
+	if err != nil {
+		return nil, fmt.Errorf("list snapshot positions: %w", err)
+	}
+
+	out := make([]PortfolioSnapshotPosition, 0, len(rows))
+
+	for _, row := range rows {
+		out = append(out, PortfolioSnapshotPosition{
+			SnapshotID:         row.SnapshotID,
+			Symbol:             row.Symbol,
+			Quantity:           row.Quantity,
+			InstrumentCurrency: row.InstrumentCurrency,
+			QuotedPrice:        row.QuotedPrice,
+			FXRate:             row.FxRate,
+			MarketValueBase:    row.MarketValueBase,
+			Weight:             row.Weight,
+		})
+	}
+
+	return out, nil
 }
