@@ -1,13 +1,8 @@
 # tick
 
-A terminal-first portfolio tracker for quickly understanding what you hold, how it’s performing, and where your risk is.
+A simple CLI to track your portfolio from the terminal.
 
-Install with:
-
-```bash
-brew tap <your-org>/tap
-brew install tick
-```
+![Demo](./docs/demo/demo.gif)
 
 ---
 
@@ -44,11 +39,19 @@ go build -o tick ./cmd/tick
 ## 🚀 Quick start
 
 ```bash
-tick portfolio create main --base-currency EUR
+tick portfolio create main --base EUR
 
-tick portfolio add BTC   --qty 0.5   --avg-cost 25536.60   --quote-currency USD   --portfolio main
+tick portfolio add BTC   --qty 0.5   --avg-cost 25536.60
 
-tick portfolio add NVDA   --qty 10   --avg-cost 340.49   --quote-currency USD   --portfolio main
+tick portfolio add NVDA   --qty 10   --avg-cost 340.49
+
+tick portfolio add MSTR   --qty 10   --avg-cost 120.00
+
+tick portfolio summary
+
+tick daily
+
+tick news NVDA BTC MSTR
 ```
 
 ---
