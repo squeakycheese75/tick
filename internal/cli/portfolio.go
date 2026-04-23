@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/squeakycheese75/tick/internal/domain"
+	"github.com/squeakycheese75/tick/internal/render"
 )
 
 func newPortfolioCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
@@ -48,7 +49,7 @@ func newPortfolioSummaryCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 				return err
 			}
 
-			return RenderGetPortfolioSummary(cmd.OutOrStdout(), out)
+			return render.RenderPortfolioSummary(cmd.OutOrStdout(), out.Report, render.DefaultPortfolioSummaryOptions())
 		},
 	}
 
@@ -90,7 +91,7 @@ func newPortfolioCreateCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 				return err
 			}
 
-			return RenderCreatePortfolio(cmd.OutOrStdout(), *out)
+			return render.CreatePortfolio(cmd.OutOrStdout(), out.PortfolioName, out.BaseCurrency)
 		},
 	}
 
@@ -126,7 +127,7 @@ func newPortfolioRiskCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 				return err
 			}
 
-			return RenderGetPortfolioRisk(cmd.OutOrStdout(), out)
+			return render.PortfolioRisk(cmd.OutOrStdout(), out, render.DefaultPortfolioRiskOptions())
 		},
 	}
 
@@ -166,7 +167,7 @@ func newPortfolioImportCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 				return err
 			}
 
-			return renderImportPortfolio(cmd.OutOrStdout(), *out)
+			return render.ImportPortfolio(cmd.OutOrStdout(), *out)
 		},
 	}
 

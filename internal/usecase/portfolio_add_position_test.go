@@ -75,12 +75,12 @@ func TestAddPositionToPortfolioUseCase_Execute_CreatesPosition(t *testing.T) {
 		t.Fatal("expected output, got nil")
 	}
 
-	if out.PortfolioName != "main" {
-		t.Fatalf("unexpected portfolio name: %q", out.PortfolioName)
+	if out.Position.PortfolioName != "main" {
+		t.Fatalf("unexpected portfolio name: %q", out.Position.PortfolioName)
 	}
 
-	if out.Symbol != "NVDA" {
-		t.Fatalf("unexpected symbol: %q", out.Symbol)
+	if out.Position.Instrument.Symbol != "NVDA" {
+		t.Fatalf("unexpected symbol: %q", out.Position.Instrument.Symbol)
 	}
 }
 

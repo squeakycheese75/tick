@@ -69,7 +69,7 @@ type GetPortfolioSummaryUsecaseInput struct {
 	PortfolioName string
 }
 
-type GetPortfolioSummaryUsecaseOutput struct {
+type PortfoloSummaryReport struct {
 	PortfolioName string
 	BaseCurrency  string
 	TotalValue    float64
@@ -77,6 +77,10 @@ type GetPortfolioSummaryUsecaseOutput struct {
 	TotalPnL      float64
 	TotalPnLPct   float64
 	Positions     []SummaryPosition
+}
+
+type GetPortfolioSummaryUsecaseOutput struct {
+	Report PortfoloSummaryReport
 }
 
 type GetPortfolioRiskInput struct {
@@ -171,14 +175,7 @@ func (i *AddPositionToPortfolioInput) ValidateResolved() error {
 }
 
 type AddPositionToPortfolioOutput struct {
-	Symbol         string
-	ProviderSymbol string
-	InstrumentType string
-	Exchange       string
-	Qty            float64
-	QuoteCurrency  string
-	AvgCost        float64
-	PortfolioName  string
+	Position Position
 }
 
 type GetDailyReportInput struct {
