@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/squeakycheese75/tick/internal/domain"
+	"github.com/squeakycheese75/tick/internal/render"
 )
 
 func newDailyCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
@@ -37,13 +38,24 @@ func newDailyCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 				return err
 			}
 
-			return RenderGetDailyReport(cmd.OutOrStdout(), out)
+			truncate, _ := cmd.Flags().GetBool("truncate")
+			newsCount, _ := cmd.Flags().GetInt("news-count")
+			showLinks, _ := cmd.Flags().GetBool("links")
+
+			opts := render.DefaultDailyReportOptions()
+			opts.News.TruncateTitles = truncate
+			opts.News.MaxHeadlines = newsCount
+			opts.News.ShowLinks = showLinks
+
+			return render.DailyReport(cmd.OutOrStdout(), out, opts)
 		},
 	}
 
 	cmd.Flags().StringVar(&portfolioName, "portfolio", "main", "Portfolio name")
-	cmd.Flags().IntVar(&newsLimit, "news-limit", 2, "Number of headlines per ticker")
 	cmd.Flags().BoolVar(&ai, "ai", false, "Include AI analysis")
+	cmd.Flags().Bool("truncate", false, "Hide full details")
+	cmd.Flags().Int("news-count", 1, "Number of headlines per ticker")
+	cmd.Flags().Bool("links", false, "Show headline URLs")
 
 	return cmd
 }

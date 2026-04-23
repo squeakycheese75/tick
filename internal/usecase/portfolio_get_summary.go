@@ -28,10 +28,12 @@ func (uc *GetPortfolioSummaryUseCase) Execute(ctx context.Context, in domain.Get
 
 func mapPortfolioAnalysisToSummaryOutput(r domain.PortfolioAnalysis) domain.GetPortfolioSummaryUsecaseOutput {
 	result := domain.GetPortfolioSummaryUsecaseOutput{
-		PortfolioName: r.PortfolioName,
-		BaseCurrency:  r.BaseCurrency,
-		TotalValue:    r.TotalValue,
-		Positions:     make([]domain.SummaryPosition, 0, len(r.AnalyzedPositions)),
+		Report: domain.PortfoloSummaryReport{
+			PortfolioName: r.PortfolioName,
+			BaseCurrency:  r.BaseCurrency,
+			TotalValue:    r.TotalValue,
+			Positions:     make([]domain.SummaryPosition, 0, len(r.AnalyzedPositions)),
+		},
 	}
 
 	var totalCost float64
@@ -46,7 +48,7 @@ func mapPortfolioAnalysisToSummaryOutput(r domain.PortfolioAnalysis) domain.GetP
 			pnlPct = pnl / costBasis
 		}
 
-		result.Positions = append(result.Positions, domain.SummaryPosition{
+		result.Report.Positions = append(result.Report.Positions, domain.SummaryPosition{
 			Symbol:             pos.Symbol,
 			BaseCurrency:       r.BaseCurrency,
 			InstrumentCurrency: pos.InstrumentCurrency,
@@ -70,9 +72,9 @@ func mapPortfolioAnalysisToSummaryOutput(r domain.PortfolioAnalysis) domain.GetP
 		totalPnLPct = totalPnL / totalCost
 	}
 
-	result.TotalCost = totalCost
-	result.TotalPnL = totalPnL
-	result.TotalPnLPct = totalPnLPct
+	result.Report.TotalCost = totalCost
+	result.Report.TotalPnL = totalPnL
+	result.Report.TotalPnLPct = totalPnLPct
 
 	return result
 }

@@ -102,10 +102,17 @@ func (uc *AddPositionToPortfolioUseCase) Execute(
 	}
 
 	return &domain.AddPositionToPortfolioOutput{
-		PortfolioName: portfolio.Name,
-		Symbol:        instrument.Symbol,
-		Qty:           in.Qty,
-		AvgCost:       in.AvgCost,
-		QuoteCurrency: in.QuoteCurrency,
+		Position: domain.Position{
+			PortfolioName: portfolio.Name,
+			Instrument: domain.Instrument{
+				Symbol:         instrument.Symbol,
+				QuoteCurrency:  instrument.QuoteCurrency,
+				ProviderSymbol: instrument.ProviderSymbol,
+				InstrumentType: domain.InstrumentType(instrument.InstrumentType),
+				Exchange:       instrument.Exchange,
+			},
+			Quantity: in.Qty,
+			AvgCost:  in.AvgCost,
+		},
 	}, nil
 }

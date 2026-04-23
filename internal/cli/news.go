@@ -5,19 +5,8 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/squeakycheese75/tick/internal/render"
 )
-
-// func newNewsCmd() *cobra.Command {
-// 	return &cobra.Command{
-// 		Use:   "news <ticker>",
-// 		Short: "Show recent news for an asset",
-// 		Args:  cobra.ExactArgs(1),
-// 		Run: func(cmd *cobra.Command, args []string) {
-// 			ticker := strings.ToUpper(args[0])
-// 			fmt.Printf("Recent news for %s is not implemented yet\n", ticker)
-// 		},
-// 	}
-// }
 
 func newNewsCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 	var limit int
@@ -67,7 +56,10 @@ func newNewsCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 					return err
 				}
 
-				if err := RenderTickerNews(cmd.OutOrStdout(), report); err != nil {
+				if err := render.RenderNewsItem(cmd.OutOrStdout(), report, render.NewsOptions{
+					ShowLinks:      true,
+					TruncateTitles: false,
+				}); err != nil {
 					return err
 				}
 

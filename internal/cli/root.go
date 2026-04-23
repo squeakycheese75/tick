@@ -12,6 +12,9 @@ func NewRootCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 		Use: "tick",
 	}
 
+	rootCmd.SilenceErrors = true
+	rootCmd.SilenceUsage = true
+
 	rootCmd.AddCommand(newVersionCmd())
 	rootCmd.AddCommand(newDailyCmd(runtimeBuilder))
 	rootCmd.AddCommand(newPortfolioCmd(runtimeBuilder))
@@ -19,6 +22,7 @@ func NewRootCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 	rootCmd.AddCommand(newInfoCmd())
 	rootCmd.AddCommand(newNewsCmd(runtimeBuilder))
 	rootCmd.AddCommand(newConfigCmd())
+	rootCmd.AddCommand(newShellCmd(rootCmd))
 
 	return rootCmd
 }

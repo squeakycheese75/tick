@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/squeakycheese75/tick/internal/domain"
+	"github.com/squeakycheese75/tick/internal/render"
 )
 
 func newAddPositionCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
@@ -64,7 +65,7 @@ func newAddPositionCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 				return err
 			}
 
-			return RenderAddPortfolioPosition(cmd.OutOrStdout(), *out)
+			return render.AddPortfolioPosition(cmd.OutOrStdout(), out.Position)
 		},
 	}
 
