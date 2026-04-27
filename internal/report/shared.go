@@ -61,8 +61,10 @@ func (s *ReportBuilder) getNewsSummaries(
 	wg.Wait()
 	close(errCh)
 
-	if err := <-errCh; err != nil {
-		return nil, err
+	for err := range errCh {
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return news, nil
@@ -93,25 +95,36 @@ func assembleRiskSummary(risk domain.PortfolioRisk) domain.RiskSummary {
 // 	return domain.AttentionSummary{}
 // }
 
-func assembleHoldingSummary(postions []domain.AnalyzedPosition) (out domain.HoldingSummary) {
-	for _, pos := range postions {
-		value := positionValue(pos.Quantity, pos.QuotedPrice)
+func assembleHoldingSummary(positions []domain.AnalyzedPosition) (out domain.HoldingSummary) {
+	var totalChange float64
+
+	for _, pos := range positions {
+		value := pos.MarketValueBase
 		change := positionValueChange(pos.Quantity, pos.QuotedChange)
 
 		out.TotalValue += value
-		out.Change = &domain.ValueChangeSummary{
-			Absolute: change,
-		}
+		totalChange += change
 
 		out.Holdings = append(out.Holdings, domain.Holding{
-			Symbol:         pos.Symbol,
-			Quantity:       pos.Quantity,
-			Weight:         pos.Weight,
-			ChangePercent:  pos.QuotedChangePct,
-			ChangeAbsolute: change,
-			PriceCurrency:  pos.PriceCurrency,
+			Symbol:          pos.Symbol,
+			Quantity:        pos.Quantity,
+			MarketValueBase: value,
+			Weight:          pos.Weight,
+			QuotedPrice:     pos.QuotedPrice,
+			ChangePercent:   pos.QuotedChangePct,
+			ChangeAbsolute:  change,
+			PriceCurrency:   pos.PriceCurrency,
 		})
-
 	}
+
+	out.Change = &domain.ValueChangeSummary{
+		Absolute: totalChange,
+	}
+
+	previousValue := out.TotalValue - totalChange
+	if previousValue > 0 {
+		out.Change.Percent = totalChange / previousValue
+	}
+
 	return out
 }

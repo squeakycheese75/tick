@@ -23,20 +23,12 @@ func (s *ReportBuilder) BuildMorningBriefReport(ctx context.Context, in BuildMor
 		Movers:    assembleHoldingSummary(analysis.AnalyzedPositions),
 	}
 
-	for _, pos := range analysis.AnalyzedPositions {
-		newsItems, err := s.newsSvc.GetNews(ctx, pos.Symbol, 1)
-		if err != nil {
-			continue
-		}
-		out.News = append(out.News, newsItems)
+	news, err := s.getNewsSummaries(ctx, out.Movers, 1)
+	if err != nil {
+		return domain.BriefReport{}, fmt.Errorf("get news summaries: %w", err)
 	}
 
-	if out.Movers.TotalValue != out.Movers.Change.Absolute {
-		previousValue := out.Movers.TotalValue - out.Movers.Change.Absolute
-		if previousValue > 0 {
-			out.Movers.Change.Percent = (out.Movers.Change.Percent / previousValue) * 100
-		}
-	}
+	out.News = news
 
 	sortHoldingsByAbsValueChange(out.Movers.Holdings)
 

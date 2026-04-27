@@ -14,7 +14,7 @@ func DailyReport(w io.Writer, s domain.GetDailyReportOutput, opts DailyReportOpt
 	renderPortfolioSummary(out, r.Portfolio, opts.Summary)
 	out.println("")
 
-	renderHoldingSummary(out, r.TopHoldings, opts.Holdings)
+	renderHoldingSummary(out, r.TopHoldings, r.Portfolio.BaseCurrency, opts.Holdings)
 	out.println("")
 
 	renderRiskSummary(out, r.Risk, opts.Risk)
@@ -62,7 +62,12 @@ func renderPortfolioSummary(out *writer, r domain.PortfolioSummary, opts Summary
 	}
 }
 
-func renderHoldingSummary(out *writer, r domain.HoldingSummary, opts HoldingsOptions) {
+func renderHoldingSummary(
+	out *writer,
+	r domain.HoldingSummary,
+	baseCurrency string,
+	opts HoldingsOptions,
+) {
 	out.println("Holdings")
 	if len(r.Holdings) == 0 {
 		out.println("No positions")
@@ -74,7 +79,7 @@ func renderHoldingSummary(out *writer, r domain.HoldingSummary, opts HoldingsOpt
 			"%-5s %7.2f%% %16s  @ %16s  %s",
 			h.Symbol,
 			h.Weight*100,
-			formatMoney(h.MarketValueBase, h.PriceCurrency),
+			formatMoney(h.MarketValueBase, baseCurrency),
 			formatMoney(h.QuotedPrice, h.PriceCurrency),
 			formatChangePercent(h.ChangePercent, opts.Color),
 		)
@@ -87,7 +92,11 @@ func renderHoldingSummary(out *writer, r domain.HoldingSummary, opts HoldingsOpt
 			)) {
 			out.printf(
 				"  Δsnap %s (%s)",
-				formatSignedMoneyColored(h.SinceLastSnapshot.Absolute, h.PriceCurrency, opts.Color),
+				formatSignedMoneyColored(
+					h.SinceLastSnapshot.Absolute,
+					baseCurrency,
+					opts.Color,
+				),
 				formatSignedPercentColored(h.SinceLastSnapshot.Percent, opts.Color),
 			)
 		}

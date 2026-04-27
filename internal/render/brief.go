@@ -11,7 +11,7 @@ func RenderBriefReport(w io.Writer, r domain.BriefReport) error {
 
 	renderPortfolioSummary(out, r.Portfolio, SummaryOptions{})
 	out.println("")
-	renderHoldingSummary(out, r.Movers, HoldingsOptions{})
+	renderHoldingSummary(out, r.Movers, r.Portfolio.BaseCurrency, HoldingsOptions{})
 	out.println("")
 
 	renderNewsSummary(out, r.News, NewsOptions{})
