@@ -8,7 +8,7 @@ import (
 )
 
 type NewsProvider interface {
-	GetNews(ctx context.Context, ticker string, limit int) (domain.TickerNewsReport, error)
+	GetNews(ctx context.Context, ticker string, limit int) (domain.NewsSummary, error)
 }
 
 type NewsService struct {
@@ -25,10 +25,10 @@ func (s *NewsService) GetNews(
 	ctx context.Context,
 	ticker string,
 	newsLimit int,
-) (domain.TickerNewsReport, error) {
+) (domain.NewsSummary, error) {
 	headlines, err := s.provider.GetNews(ctx, ticker, newsLimit)
 	if err != nil {
-		return domain.TickerNewsReport{}, fmt.Errorf("get news for %s: %w", ticker, err)
+		return domain.NewsSummary{}, fmt.Errorf("get news for %s: %w", ticker, err)
 	}
 
 	return headlines, nil

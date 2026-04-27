@@ -38,6 +38,7 @@ func (p *CoinGeckoProvider) GetQuote(ctx context.Context, ticker string) (domain
 	q := u.Query()
 	q.Set("ids", coinID)
 	q.Set("vs_currencies", "usd")
+	q.Set("include_24hr_change", "true")
 	u.RawQuery = q.Encode()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
@@ -72,10 +73,20 @@ func (p *CoinGeckoProvider) GetQuote(ctx context.Context, ticker string) (domain
 		return domain.Quote{}, fmt.Errorf("coingecko returned no usd price for %q", coinID)
 	}
 
+	changePctPercent := coinData["usd_24h_change"]
+	changePctRatio := changePctPercent / 100
+
+	previous := price / (1 + changePctRatio)
+	change := price - previous
+
 	return domain.Quote{
 		Ticker:        strings.ToUpper(strings.TrimSpace(ticker)),
 		Price:         price,
 		PriceCurrency: "USD",
+		PreviousClose: previous,
+		Change:        change,
+		ChangePercent: changePctPercent,
+		Source:        "coingecko",
 	}, nil
 }
 

@@ -36,8 +36,8 @@ func (p *StaticProvider) GetNews(
 	_ context.Context,
 	symbol string,
 	limit int,
-) (domain.TickerNewsReport, error) {
-	report := domain.TickerNewsReport{
+) (domain.NewsSummary, error) {
+	report := domain.NewsSummary{
 		Ticker: symbol,
 	}
 

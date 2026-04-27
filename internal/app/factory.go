@@ -29,7 +29,7 @@ type (
 		Upsert(ctx context.Context, cached repository.CachedFXRate) error
 	}
 	NewsProvider interface {
-		GetNews(ctx context.Context, symbol string, limit int) (domain.TickerNewsReport, error)
+		GetNews(ctx context.Context, symbol string, limit int) (domain.NewsSummary, error)
 	}
 	LLMProvider interface {
 		Complete(ctx context.Context, req llm.CompletionRequest) (llm.CompletionResponse, error)

@@ -184,7 +184,32 @@ type GetDailyReportInput struct {
 	WithAI        bool
 }
 
+func (i *GetDailyReportInput) ApplyDefaults() {
+	if i.PortfolioName == "" {
+		i.PortfolioName = "main"
+	}
+
+	if i.NewsLimit <= 0 {
+		i.NewsLimit = 2
+	}
+}
+
 type GetDailyReportOutput struct {
 	DailyReport DailyReport
 	AISummary   string
+}
+
+type GetMorningBriefUsecaseInput struct {
+	PortfolioName string
+	NewsLimit     int
+}
+
+func (i *GetMorningBriefUsecaseInput) ApplyDefaults() {
+	if i.PortfolioName == "" {
+		i.PortfolioName = "main"
+	}
+}
+
+type GetMorningBriefUsecaseOutput struct {
+	Report BriefReport
 }

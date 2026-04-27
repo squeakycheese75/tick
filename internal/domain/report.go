@@ -37,6 +37,24 @@ type DailyHolding struct {
 	ChangePercent   float64
 }
 
+type Holding struct {
+	Symbol            string
+	Quantity          float64
+	Weight            float64
+	MarketValueBase   float64
+	QuotedPrice       float64
+	PriceCurrency     string
+	ChangeAbsolute    float64
+	ChangePercent     float64
+	SinceLastSnapshot *ValueChangeSummary
+}
+
+type HoldingSummary struct {
+	Holdings   []Holding
+	TotalValue float64
+	Change     *ValueChangeSummary
+}
+
 type DailyRisk struct {
 	LargestPosition   string
 	LargestWeight     float64
@@ -50,29 +68,51 @@ type DailyNews struct {
 }
 
 type DailyReport struct {
-	PortfolioName string
-	BaseCurrency  string
-	TotalValue    float64
-
-	ChangeSinceLastSnapshot *ValueChangeReport
-
-	TopHoldings []TopHoldingReport
-	Risk        RiskReport
-	News        []TickerNewsReport
+	Portfolio   PortfolioSummary
+	TopHoldings HoldingSummary
+	Risk        RiskSummary
+	News        []NewsSummary
 	Attention   []string
 }
 
-type TickerNewsReport struct {
+type BriefReport struct {
+	Greeting  string
+	Portfolio PortfolioSummary
+	Movers    HoldingSummary
+	Markets   []MarketSummary
+	News      []NewsSummary
+}
+
+type PortfolioSummary struct {
+	Name         string
+	BaseCurrency string
+	TotalValue   float64
+	Change       *ValueChangeSummary
+}
+
+type MarketSummary struct {
+	Symbol        string
+	Price         float64
+	Change        float64
+	ChangePercent float64
+	Currency      string
+}
+
+type NewsSummary struct {
 	Ticker    string
 	Headlines []NewsHeadline
 	Summary   string
 }
 
-type RiskReport struct {
+type RiskSummary struct {
 	LargestPosition   string
 	LargestWeight     float64
 	Top3Concentration float64
 	Observations      []string
+}
+
+type AttentionSummary struct {
+	Signal string
 }
 
 type TopHoldingReport struct {
@@ -86,7 +126,7 @@ type TopHoldingReport struct {
 	SinceLastSnapshot *HoldingSnapshotChangeReport
 }
 
-type ValueChangeReport struct {
+type ValueChangeSummary struct {
 	Absolute float64
 	Percent  float64
 }

@@ -20,6 +20,7 @@ type SummaryOptions struct {
 }
 
 type HoldingsOptions struct {
+	Title             string
 	ShowSnapshotDelta bool
 	HideZeroDelta     bool
 	Color             bool
@@ -49,6 +50,7 @@ func DefaultDailyReportOptions() DailyReportOptions {
 			HideZeroDelta:     true,
 		},
 		Holdings: HoldingsOptions{
+			Title:             "Holdings",
 			ShowSnapshotDelta: true,
 			HideZeroDelta:     true,
 			Color:             true,
@@ -93,5 +95,34 @@ type PortfolioRiskOptions struct {
 func DefaultPortfolioRiskOptions() PortfolioRiskOptions {
 	return PortfolioRiskOptions{
 		ShowObservations: true,
+	}
+}
+
+type BriefReportOptions struct {
+	Summary  SummaryOptions
+	Holdings HoldingsOptions
+	News     NewsOptions
+}
+
+func DefaultBriefReportOptions() BriefReportOptions {
+	color := isatty.IsTerminal(os.Stdout.Fd())
+
+	return BriefReportOptions{
+		Summary: SummaryOptions{
+			ShowSnapshotDelta: false,
+			HideZeroDelta:     true,
+		},
+		Holdings: HoldingsOptions{
+			Title:             "Movers",
+			ShowSnapshotDelta: true,
+			HideZeroDelta:     true,
+			Color:             color,
+		},
+		News: NewsOptions{
+			MaxHeadlines:   1,
+			ShowLinks:      false,
+			TruncateTitles: true,
+			HeadlineMaxLen: 100,
+		},
 	}
 }
