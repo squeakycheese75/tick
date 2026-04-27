@@ -91,13 +91,6 @@ func (uc *AddPositionToPortfolioUseCase) Execute(
 		Currency:     in.QuoteCurrency,
 	})
 	if err != nil {
-		if errors.Is(err, domain.ErrPortfolioAlreadyExists) {
-			return nil, fmt.Errorf(
-				"position for %q already exists in portfolio %q",
-				instrument.Symbol,
-				portfolio.Name,
-			)
-		}
 		return nil, fmt.Errorf("create position: %w", err)
 	}
 

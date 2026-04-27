@@ -6,6 +6,7 @@ import (
 
 	"github.com/squeakycheese75/tick/internal/domain"
 	"github.com/squeakycheese75/tick/internal/instruments"
+	"github.com/squeakycheese75/tick/internal/report"
 	"github.com/squeakycheese75/tick/internal/repository"
 )
 
@@ -37,7 +38,7 @@ type (
 
 type (
 	NewsSvc interface {
-		GetNews(ctx context.Context, ticker string, limit int) (domain.TickerNewsReport, error)
+		GetNews(ctx context.Context, ticker string, limit int) (domain.NewsSummary, error)
 	}
 	PortfolioSvc interface {
 		GetAnalysis(ctx context.Context, portfolioName string) (domain.PortfolioAnalysis, error)
@@ -48,6 +49,10 @@ type (
 		Enabled() bool
 	}
 	ReportBuilder interface {
-		BuildDailyReport(ctx context.Context, portfolioName string, newsLimit int) (domain.DailyReportResult, error)
+		BuildDailyReport(ctx context.Context, in report.BuildDailyReportParams) (domain.DailyReport, error)
+		BuildMorningBriefReport(ctx context.Context, in report.BuildMorningBriefReportParams) (domain.BriefReport, error)
+	}
+	PricingSvc interface {
+		GetValuationQuote(ctx context.Context, symbol string, targetCurrency string, instrumentCurrency string, instrumentType string) (domain.ValuationQuote, error)
 	}
 )

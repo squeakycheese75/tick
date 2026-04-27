@@ -25,21 +25,21 @@ func buildDailyReportUserPrompt(dailyReport domain.DailyReport) string {
 
 	b.WriteString("Portfolio daily brief\n\n")
 
-	b.WriteString(fmt.Sprintf("Portfolio: %s\n", dailyReport.PortfolioName))
-	b.WriteString(fmt.Sprintf("Base currency: %s\n", dailyReport.BaseCurrency))
-	b.WriteString(fmt.Sprintf("Total value: %.2f %s\n\n", dailyReport.TotalValue, dailyReport.BaseCurrency))
+	b.WriteString(fmt.Sprintf("Portfolio: %s\n", dailyReport.Portfolio.Name))
+	b.WriteString(fmt.Sprintf("Base currency: %s\n", dailyReport.Portfolio.BaseCurrency))
+	b.WriteString(fmt.Sprintf("Total value: %.2f %s\n\n", dailyReport.Portfolio.TotalValue, dailyReport.Portfolio.BaseCurrency))
 
 	b.WriteString("Top holdings:\n")
-	if len(dailyReport.TopHoldings) == 0 {
+	if len(dailyReport.TopHoldings.Holdings) == 0 {
 		b.WriteString("- No positions\n")
 	} else {
-		for _, h := range dailyReport.TopHoldings {
+		for _, h := range dailyReport.TopHoldings.Holdings {
 			b.WriteString(fmt.Sprintf(
 				"- %s: weight %.2f%%, value %.2f %s, quoted price %.2f %s, daily move %+.2f%%\n",
 				h.Symbol,
 				h.Weight*100,
 				h.MarketValueBase,
-				dailyReport.BaseCurrency,
+				dailyReport.Portfolio.BaseCurrency,
 				h.QuotedPrice,
 				h.PriceCurrency,
 				h.ChangePercent,

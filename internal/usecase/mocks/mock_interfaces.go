@@ -16,6 +16,7 @@ import (
 
 	domain "github.com/squeakycheese75/tick/internal/domain"
 	instruments "github.com/squeakycheese75/tick/internal/instruments"
+	report "github.com/squeakycheese75/tick/internal/report"
 	repository "github.com/squeakycheese75/tick/internal/repository"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -328,10 +329,10 @@ func (m *MockNewsSvc) EXPECT() *MockNewsSvcMockRecorder {
 }
 
 // GetNews mocks base method.
-func (m *MockNewsSvc) GetNews(ctx context.Context, ticker string, limit int) (domain.TickerNewsReport, error) {
+func (m *MockNewsSvc) GetNews(ctx context.Context, ticker string, limit int) (domain.NewsSummary, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetNews", ctx, ticker, limit)
-	ret0, _ := ret[0].(domain.TickerNewsReport)
+	ret0, _ := ret[0].(domain.NewsSummary)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -435,18 +436,18 @@ func (mr *MockDailyReportSummarizerMockRecorder) Enabled() *gomock.Call {
 }
 
 // Summarize mocks base method.
-func (m *MockDailyReportSummarizer) Summarize(ctx context.Context, report domain.DailyReport) (string, error) {
+func (m *MockDailyReportSummarizer) Summarize(ctx context.Context, arg1 domain.DailyReport) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Summarize", ctx, report)
+	ret := m.ctrl.Call(m, "Summarize", ctx, arg1)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Summarize indicates an expected call of Summarize.
-func (mr *MockDailyReportSummarizerMockRecorder) Summarize(ctx, report any) *gomock.Call {
+func (mr *MockDailyReportSummarizerMockRecorder) Summarize(ctx, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Summarize", reflect.TypeOf((*MockDailyReportSummarizer)(nil).Summarize), ctx, report)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Summarize", reflect.TypeOf((*MockDailyReportSummarizer)(nil).Summarize), ctx, arg1)
 }
 
 // MockReportBuilder is a mock of ReportBuilder interface.
@@ -474,16 +475,70 @@ func (m *MockReportBuilder) EXPECT() *MockReportBuilderMockRecorder {
 }
 
 // BuildDailyReport mocks base method.
-func (m *MockReportBuilder) BuildDailyReport(ctx context.Context, portfolioName string, newsLimit int) (domain.DailyReportResult, error) {
+func (m *MockReportBuilder) BuildDailyReport(ctx context.Context, in report.BuildDailyReportParams) (domain.DailyReportResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BuildDailyReport", ctx, portfolioName, newsLimit)
+	ret := m.ctrl.Call(m, "BuildDailyReport", ctx, in)
 	ret0, _ := ret[0].(domain.DailyReportResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // BuildDailyReport indicates an expected call of BuildDailyReport.
-func (mr *MockReportBuilderMockRecorder) BuildDailyReport(ctx, portfolioName, newsLimit any) *gomock.Call {
+func (mr *MockReportBuilderMockRecorder) BuildDailyReport(ctx, in any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BuildDailyReport", reflect.TypeOf((*MockReportBuilder)(nil).BuildDailyReport), ctx, portfolioName, newsLimit)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BuildDailyReport", reflect.TypeOf((*MockReportBuilder)(nil).BuildDailyReport), ctx, in)
+}
+
+// BuildMorningBriefReport mocks base method.
+func (m *MockReportBuilder) BuildMorningBriefReport(ctx context.Context, in report.BuildMorningBriefReportParams) (domain.BriefReport, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BuildMorningBriefReport", ctx, in)
+	ret0, _ := ret[0].(domain.BriefReport)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BuildMorningBriefReport indicates an expected call of BuildMorningBriefReport.
+func (mr *MockReportBuilderMockRecorder) BuildMorningBriefReport(ctx, in any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BuildMorningBriefReport", reflect.TypeOf((*MockReportBuilder)(nil).BuildMorningBriefReport), ctx, in)
+}
+
+// MockPricingSvc is a mock of PricingSvc interface.
+type MockPricingSvc struct {
+	ctrl     *gomock.Controller
+	recorder *MockPricingSvcMockRecorder
+	isgomock struct{}
+}
+
+// MockPricingSvcMockRecorder is the mock recorder for MockPricingSvc.
+type MockPricingSvcMockRecorder struct {
+	mock *MockPricingSvc
+}
+
+// NewMockPricingSvc creates a new mock instance.
+func NewMockPricingSvc(ctrl *gomock.Controller) *MockPricingSvc {
+	mock := &MockPricingSvc{ctrl: ctrl}
+	mock.recorder = &MockPricingSvcMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockPricingSvc) EXPECT() *MockPricingSvcMockRecorder {
+	return m.recorder
+}
+
+// GetValuationQuote mocks base method.
+func (m *MockPricingSvc) GetValuationQuote(ctx context.Context, symbol, targetCurrency, instrumentCurrency, instrumentType string) (domain.ValuationQuote, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetValuationQuote", ctx, symbol, targetCurrency, instrumentCurrency, instrumentType)
+	ret0, _ := ret[0].(domain.ValuationQuote)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetValuationQuote indicates an expected call of GetValuationQuote.
+func (mr *MockPricingSvcMockRecorder) GetValuationQuote(ctx, symbol, targetCurrency, instrumentCurrency, instrumentType any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetValuationQuote", reflect.TypeOf((*MockPricingSvc)(nil).GetValuationQuote), ctx, symbol, targetCurrency, instrumentCurrency, instrumentType)
 }

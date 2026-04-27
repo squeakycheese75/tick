@@ -19,10 +19,10 @@ func (uc *GetTickerNewsUseCase) Execute(
 	ctx context.Context,
 	ticker string,
 	limit int,
-) (domain.TickerNewsReport, error) {
+) (domain.NewsSummary, error) {
 
 	if ticker == "" {
-		return domain.TickerNewsReport{}, fmt.Errorf("ticker required")
+		return domain.NewsSummary{}, fmt.Errorf("ticker required")
 	}
 
 	if limit <= 0 {

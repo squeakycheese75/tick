@@ -18,6 +18,7 @@ type Runtime struct {
 	GetDailyReport      *usecase.GetDailyReportUseCase
 	ImportPortfolio     *usecase.ImportPortfolioUseCase
 	GetTickerNews       *usecase.GetTickerNewsUseCase
+	GetMorningBrief     *usecase.GetMorningBriefUsecase
 }
 
 func BuildRuntime(dbPath string) (*Runtime, error) {
@@ -38,7 +39,7 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 	portfolioRepo := repository.NewPortfolioRepository(database)
 	positionRepo := repository.NewPositionRepository(database)
 	instrumentRepo := repository.NewInstrumentRepository(database)
-	portfolioSnapshotRepo := repository.NewPortfolioSnapshotRepository(database)
+	snapshotRepo := repository.NewSnapshotRepository(database)
 
 	// Caching
 	priceCacher := repository.NewPriceCacheRepository(database)
@@ -79,13 +80,14 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 	portfolioSvc := service.NewPortfolioService(portfolioRepo, positionRepo, portfolioAnalyser, riskAnalyser)
 	portfolioInsights := service.NewPortfolioInsights()
 	newsSvc := service.NewNewsService(newsProvider)
+	snapshotSvc := service.NewSnapshotService(snapshotRepo)
 
 	instrumentResolver, err := instruments.NewStaticResolver()
 	if err != nil {
 		return nil, err
 	}
 
-	reportingBuilder := report.NewReportBuilder(portfolioSvc, newsSvc, portfolioInsights)
+	reportingBuilder := report.NewReportBuilder(portfolioSvc, pricingSvc, newsSvc, portfolioInsights, snapshotSvc)
 
 	var summarizer usecase.DailyReportSummarizer = service.NoopSummarizer{}
 
@@ -102,8 +104,9 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 		GetPortfolioRisk: usecase.NewGetPortfolioRiskUseCase(
 			portfolioSvc,
 		),
-		GetDailyReport:  usecase.NewGetDailyReportUseCase(reportingBuilder, summarizer, portfolioSnapshotRepo),
+		GetDailyReport:  usecase.NewGetDailyReportUseCase(reportingBuilder, summarizer, snapshotRepo),
 		ImportPortfolio: usecase.NewImportPortfolioUseCase(positionRepo, portfolioRepo, instrumentRepo),
 		GetTickerNews:   usecase.NewGetTickerNewsUseCase(newsSvc),
+		GetMorningBrief: usecase.NewGetMorningBriefUsecase(reportingBuilder),
 	}, nil
 }

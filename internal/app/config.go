@@ -142,8 +142,9 @@ func (c Config) String() string {
 	}
 
 	rows := []kv{
-		{"PRICE_PROVIDER", c.EquityPriceProvider},
+		{"EQUITY_PRICE_PROVIDER", c.EquityPriceProvider},
 		{"FX_PROVIDER", c.FXProvider},
+		{"CRYPTO_PRICE_PROVIDER", c.CryptoPriceProvider},
 		{"CACHE_ENABLED", fmt.Sprintf("%t", c.CacheEnabled)},
 		{"CACHE_PRICE_TTL", c.PriceCacheTTL.String()},
 		{"CACHE_FX_TTL", c.FXCacheTTL.String()},
@@ -158,6 +159,7 @@ func (c Config) String() string {
 		{"", ""}, // spacer
 
 		{"FINNHUB_API_KEY", mask(c.FinnhubAPIKey)},
+		{"NEWSAPIORG_API_KEY", mask(c.NewsAPIOrgAPIKey)},
 	}
 
 	// find max key length

@@ -32,7 +32,7 @@ func (p *NewsAPIProvider) GetNews(
 	ctx context.Context,
 	ticker string,
 	limit int,
-) (domain.TickerNewsReport, error) {
+) (domain.NewsSummary, error) {
 
 	query := buildQuery(ticker)
 
@@ -49,7 +49,7 @@ func (p *NewsAPIProvider) GetNews(
 
 	resp, err := p.httpClient.Do(req)
 	if err != nil {
-		return domain.TickerNewsReport{}, err
+		return domain.NewsSummary{}, err
 	}
 	defer func() {
 		_ = resp.Body.Close()
@@ -62,10 +62,10 @@ func (p *NewsAPIProvider) GetNews(
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
-		return domain.TickerNewsReport{}, err
+		return domain.NewsSummary{}, err
 	}
 
-	out := domain.TickerNewsReport{
+	out := domain.NewsSummary{
 		Ticker: ticker,
 	}
 

@@ -11,13 +11,13 @@ func DailyReport(w io.Writer, s domain.GetDailyReportOutput, opts DailyReportOpt
 	out := &writer{w: w}
 	r := s.DailyReport
 
-	renderSummary(out, r, opts.Summary)
+	renderPortfolioSummary(out, r.Portfolio, opts.Summary)
 	out.println("")
 
-	renderHoldings(out, r, opts.Holdings)
+	renderHoldingSummary(out, r.TopHoldings, opts.Holdings)
 	out.println("")
 
-	renderRisk(out, r.Risk, opts.Risk)
+	renderRiskSummary(out, r.Risk, opts.Risk)
 	out.println("")
 
 	renderNewsSummary(out, r.News, opts.News)
@@ -45,36 +45,36 @@ func DailyReport(w io.Writer, s domain.GetDailyReportOutput, opts DailyReportOpt
 	return out.err
 }
 
-func renderSummary(out *writer, r domain.DailyReport, opts SummaryOptions) {
-	out.printf("%s  %s", r.PortfolioName, formatMoney(r.TotalValue, r.BaseCurrency))
+func renderPortfolioSummary(out *writer, r domain.PortfolioSummary, opts SummaryOptions) {
+	out.printf("%s  %s", r.Name, formatMoney(r.TotalValue, r.BaseCurrency))
 
 	if opts.ShowSnapshotDelta &&
-		r.ChangeSinceLastSnapshot != nil &&
+		r.Change != nil &&
 		(!opts.HideZeroDelta || shouldShowChange(
-			r.ChangeSinceLastSnapshot.Absolute,
-			r.ChangeSinceLastSnapshot.Percent,
+			r.Change.Absolute,
+			r.Change.Percent,
 		)) {
 		out.printf(
 			"  Δ %s (%s)",
-			formatSignedMoney(r.ChangeSinceLastSnapshot.Absolute, r.BaseCurrency),
-			formatSignedPercentFromRatio(r.ChangeSinceLastSnapshot.Percent),
+			formatSignedMoney(r.Change.Absolute, r.BaseCurrency),
+			formatSignedPercentFromRatio(r.Change.Percent),
 		)
 	}
 }
 
-func renderHoldings(out *writer, r domain.DailyReport, opts HoldingsOptions) {
+func renderHoldingSummary(out *writer, r domain.HoldingSummary, opts HoldingsOptions) {
 	out.println("Holdings")
-	if len(r.TopHoldings) == 0 {
+	if len(r.Holdings) == 0 {
 		out.println("No positions")
 		return
 	}
 
-	for _, h := range r.TopHoldings {
+	for _, h := range r.Holdings {
 		out.printf(
 			"%-5s %7.2f%% %16s  @ %16s  %s",
 			h.Symbol,
 			h.Weight*100,
-			formatMoney(h.MarketValueBase, r.BaseCurrency),
+			formatMoney(h.MarketValueBase, h.PriceCurrency),
 			formatMoney(h.QuotedPrice, h.PriceCurrency),
 			formatChangePercent(h.ChangePercent, opts.Color),
 		)
@@ -82,13 +82,13 @@ func renderHoldings(out *writer, r domain.DailyReport, opts HoldingsOptions) {
 		if opts.ShowSnapshotDelta &&
 			h.SinceLastSnapshot != nil &&
 			(!opts.HideZeroDelta || shouldShowChange(
-				h.SinceLastSnapshot.ValueAbsolute,
-				h.SinceLastSnapshot.ValuePercent,
+				h.SinceLastSnapshot.Absolute,
+				h.SinceLastSnapshot.Percent,
 			)) {
 			out.printf(
 				"  Δsnap %s (%s)",
-				formatSignedMoneyColored(h.SinceLastSnapshot.ValueAbsolute, r.BaseCurrency, opts.Color),
-				formatSignedPercentColored(h.SinceLastSnapshot.ValuePercent, opts.Color),
+				formatSignedMoneyColored(h.SinceLastSnapshot.Absolute, h.PriceCurrency, opts.Color),
+				formatSignedPercentColored(h.SinceLastSnapshot.Percent, opts.Color),
 			)
 		}
 
@@ -96,7 +96,7 @@ func renderHoldings(out *writer, r domain.DailyReport, opts HoldingsOptions) {
 	}
 }
 
-func renderRisk(out *writer, r domain.RiskReport, opts RiskOptions) {
+func renderRiskSummary(out *writer, r domain.RiskSummary, opts RiskOptions) {
 	if r.LargestPosition == "" {
 		out.println("Risk   No data")
 		return
@@ -128,7 +128,7 @@ func renderRisk(out *writer, r domain.RiskReport, opts RiskOptions) {
 	}
 }
 
-func riskLabel(r domain.RiskReport) string {
+func riskLabel(r domain.RiskSummary) string {
 	switch {
 	case r.LargestWeight >= 0.80:
 		return "High concentration"
@@ -139,7 +139,7 @@ func riskLabel(r domain.RiskReport) string {
 	}
 }
 
-func renderNewsSummary(out *writer, groups []domain.TickerNewsReport, opts NewsOptions) {
+func renderNewsSummary(out *writer, groups []domain.NewsSummary, opts NewsOptions) {
 	out.println("News")
 
 	if len(groups) == 0 {
@@ -185,7 +185,7 @@ func renderNewsSummary(out *writer, groups []domain.TickerNewsReport, opts NewsO
 	}
 }
 
-func RenderNewsItem(w io.Writer, r domain.TickerNewsReport, opts NewsOptions) error {
+func RenderNewsItem(w io.Writer, r domain.NewsSummary, opts NewsOptions) error {
 	out := &writer{w: w}
 
 	out.printf("News for %s\n\n", r.Ticker)
