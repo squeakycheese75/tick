@@ -6,15 +6,15 @@ import (
 	"github.com/squeakycheese75/tick/internal/domain"
 )
 
-func RenderBriefReport(w io.Writer, r domain.BriefReport) error {
+func RenderBriefReport(w io.Writer, r domain.BriefReport, opts BriefReportOptions) error {
 	out := &writer{w: w}
 
-	renderPortfolioSummary(out, r.Portfolio, SummaryOptions{})
+	renderPortfolioSummary(out, r.Portfolio, opts.Summary)
 	out.println("")
-	renderHoldingSummary(out, r.Movers, r.Portfolio.BaseCurrency, HoldingsOptions{})
+	renderMoversSummary(out, r.Movers, r.Portfolio.BaseCurrency, opts.Holdings)
 	out.println("")
 
-	renderNewsSummary(out, r.News, NewsOptions{})
+	renderNewsSummary(out, r.News, opts.News)
 
 	return out.err
 }

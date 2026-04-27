@@ -68,7 +68,26 @@ func renderHoldingSummary(
 	baseCurrency string,
 	opts HoldingsOptions,
 ) {
-	out.println("Holdings")
+	renderHoldingRows(out, r, baseCurrency, opts, false)
+}
+
+func renderMoversSummary(
+	out *writer,
+	r domain.HoldingSummary,
+	baseCurrency string,
+	opts HoldingsOptions,
+) {
+	renderHoldingRows(out, r, baseCurrency, opts, true)
+}
+
+func renderHoldingRows(
+	out *writer,
+	r domain.HoldingSummary,
+	baseCurrency string,
+	opts HoldingsOptions,
+	showAbsChange bool,
+) {
+	out.println(opts.Title)
 	if len(r.Holdings) == 0 {
 		out.println("No positions")
 		return
@@ -84,6 +103,13 @@ func renderHoldingSummary(
 			formatChangePercent(h.ChangePercent, opts.Color),
 		)
 
+		if showAbsChange {
+			out.printf(
+				"  %s",
+				formatSignedMoneyColored(h.ChangeAbsolute, baseCurrency, opts.Color),
+			)
+		}
+
 		if opts.ShowSnapshotDelta &&
 			h.SinceLastSnapshot != nil &&
 			(!opts.HideZeroDelta || shouldShowChange(
@@ -92,11 +118,7 @@ func renderHoldingSummary(
 			)) {
 			out.printf(
 				"  Δsnap %s (%s)",
-				formatSignedMoneyColored(
-					h.SinceLastSnapshot.Absolute,
-					baseCurrency,
-					opts.Color,
-				),
+				formatSignedMoneyColored(h.SinceLastSnapshot.Absolute, baseCurrency, opts.Color),
 				formatSignedPercentColored(h.SinceLastSnapshot.Percent, opts.Color),
 			)
 		}

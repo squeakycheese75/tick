@@ -23,7 +23,9 @@ func newBriefCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 				return err
 			}
 
-			return render.RenderBriefReport(cmd.OutOrStdout(), out.Report)
+			opts := render.DefaultBriefReportOptions()
+
+			return render.RenderBriefReport(cmd.OutOrStdout(), out.Report, opts)
 		},
 	}
 }

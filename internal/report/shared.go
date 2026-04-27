@@ -9,22 +9,9 @@ import (
 	"github.com/squeakycheese75/tick/internal/domain"
 )
 
-func positionValue(quantity, price float64) float64 {
-	return quantity * price
-}
-
 func positionValueChange(quantity, priceChange float64) float64 {
 	return quantity * priceChange
 }
-
-// func changePercent(change, currentValue float64) float64 {
-// 	previousValue := currentValue - change
-// 	if previousValue <= 0 {
-// 		return 0
-// 	}
-
-// 	return (change / previousValue) * 100
-// }
 
 func sortHoldingsByAbsValueChange(holding []domain.Holding) {
 	sort.Slice(holding, func(i, j int) bool {
