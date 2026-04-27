@@ -50,6 +50,7 @@ func DefaultDailyReportOptions() DailyReportOptions {
 			HideZeroDelta:     true,
 		},
 		Holdings: HoldingsOptions{
+			Title:             "Holdings",
 			ShowSnapshotDelta: true,
 			HideZeroDelta:     true,
 			Color:             true,

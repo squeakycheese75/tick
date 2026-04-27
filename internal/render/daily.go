@@ -87,7 +87,12 @@ func renderHoldingRows(
 	opts HoldingsOptions,
 	showAbsChange bool,
 ) {
-	out.println(opts.Title)
+	title := opts.Title
+	if title == "" {
+		title = "Holdings"
+	}
+
+	out.println(title)
 	if len(r.Holdings) == 0 {
 		out.println("No positions")
 		return

@@ -11,6 +11,7 @@ func RenderBriefReport(w io.Writer, r domain.BriefReport, opts BriefReportOption
 
 	renderPortfolioSummary(out, r.Portfolio, opts.Summary)
 	out.println("")
+
 	renderMoversSummary(out, r.Movers, r.Portfolio.BaseCurrency, opts.Holdings)
 	out.println("")
 
