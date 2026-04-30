@@ -12,7 +12,7 @@ type BuildMorningBriefReportParams struct {
 }
 
 func (s *ReportBuilder) BuildMorningBriefReport(ctx context.Context, in BuildMorningBriefReportParams) (domain.BriefReport, error) {
-	analysis, err := s.portfolioSvc.GetAnalysis(ctx, in.PortfolioName)
+	analysis, err := s.analysisSvc.GetAnalysis(ctx, in.PortfolioName)
 	if err != nil {
 		return domain.BriefReport{}, fmt.Errorf("get portfolio analysis: %w", err)
 	}

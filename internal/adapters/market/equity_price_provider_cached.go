@@ -65,7 +65,7 @@ func (p *CachedPriceProvider) GetQuote(ctx context.Context, ticker string) (doma
 
 func toDomainQuote(c repository.CachedPriceQuote) domain.Quote {
 	return domain.Quote{
-		Ticker:        c.PriceQuote.Ticker,
+		Symbol:        c.PriceQuote.Ticker,
 		Price:         c.PriceQuote.Price,
 		PriceCurrency: c.PriceQuote.PriceCurrency,
 		PreviousClose: c.PriceQuote.PreviousClose,
@@ -77,7 +77,7 @@ func toDomainQuote(c repository.CachedPriceQuote) domain.Quote {
 
 func toRepositoryQuote(q domain.Quote) repository.PriceQuote {
 	return repository.PriceQuote{
-		Ticker:        q.Ticker,
+		Ticker:        q.Symbol,
 		Price:         q.Price,
 		PriceCurrency: q.PriceCurrency,
 		PreviousClose: q.PreviousClose,

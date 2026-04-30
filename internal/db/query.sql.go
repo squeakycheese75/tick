@@ -27,7 +27,7 @@ RETURNING id
 type CreateInstrumentParams struct {
 	Symbol         string         `json:"symbol"`
 	ProviderSymbol string         `json:"provider_symbol"`
-	InstrumentType string         `json:"asset_type"`
+	AssetType      string         `json:"asset_type"`
 	Exchange       sql.NullString `json:"exchange"`
 	QuoteCurrency  string         `json:"quote_currency"`
 }
@@ -36,7 +36,7 @@ func (q *Queries) CreateInstrument(ctx context.Context, arg CreateInstrumentPara
 	row := q.db.QueryRowContext(ctx, createInstrument,
 		arg.Symbol,
 		arg.ProviderSymbol,
-		arg.InstrumentType,
+		arg.AssetType,
 		arg.Exchange,
 		arg.QuoteCurrency,
 	)
@@ -184,6 +184,38 @@ func (q *Queries) CreatePosition(ctx context.Context, arg CreatePositionParams) 
 	return err
 }
 
+const createTarget = `-- name: CreateTarget :one
+INSERT INTO portfolio_targets (
+    portfolio_id,
+    symbol,
+    type,
+    target_price,
+    quote_currency
+) VALUES (?, ?, ?, ?, ?)
+RETURNING id
+`
+
+type CreateTargetParams struct {
+	PortfolioID   int64   `json:"portfolio_id"`
+	Symbol        string  `json:"symbol"`
+	Type          string  `json:"type"`
+	TargetPrice   float64 `json:"target_price"`
+	QuoteCurrency string  `json:"quote_currency"`
+}
+
+func (q *Queries) CreateTarget(ctx context.Context, arg CreateTargetParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, createTarget,
+		arg.PortfolioID,
+		arg.Symbol,
+		arg.Type,
+		arg.TargetPrice,
+		arg.QuoteCurrency,
+	)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
 const getFXCacheByPair = `-- name: GetFXCacheByPair :one
 SELECT
     base_currency,
@@ -224,14 +256,25 @@ type GetInstrumentBySymbolAndExchangeParams struct {
 	Exchange sql.NullString `json:"exchange"`
 }
 
-func (q *Queries) GetInstrumentBySymbolAndExchange(ctx context.Context, arg GetInstrumentBySymbolAndExchangeParams) (Instrument, error) {
+type GetInstrumentBySymbolAndExchangeRow struct {
+	ID             int64          `json:"id"`
+	Symbol         string         `json:"symbol"`
+	ProviderSymbol string         `json:"provider_symbol"`
+	AssetType      string         `json:"asset_type"`
+	Exchange       sql.NullString `json:"exchange"`
+	QuoteCurrency  string         `json:"quote_currency"`
+	CreatedAt      time.Time      `json:"created_at"`
+	UpdatedAt      time.Time      `json:"updated_at"`
+}
+
+func (q *Queries) GetInstrumentBySymbolAndExchange(ctx context.Context, arg GetInstrumentBySymbolAndExchangeParams) (GetInstrumentBySymbolAndExchangeRow, error) {
 	row := q.db.QueryRowContext(ctx, getInstrumentBySymbolAndExchange, arg.Symbol, arg.Exchange)
-	var i Instrument
+	var i GetInstrumentBySymbolAndExchangeRow
 	err := row.Scan(
 		&i.ID,
 		&i.Symbol,
 		&i.ProviderSymbol,
-		&i.InstrumentType,
+		&i.AssetType,
 		&i.Exchange,
 		&i.QuoteCurrency,
 		&i.CreatedAt,
@@ -296,9 +339,17 @@ FROM portfolios
 WHERE name = ?
 `
 
-func (q *Queries) GetPortfolioByName(ctx context.Context, name string) (Portfolio, error) {
+type GetPortfolioByNameRow struct {
+	ID           int64     `json:"id"`
+	Name         string    `json:"name"`
+	BaseCurrency string    `json:"base_currency"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+func (q *Queries) GetPortfolioByName(ctx context.Context, name string) (GetPortfolioByNameRow, error) {
 	row := q.db.QueryRowContext(ctx, getPortfolioByName, name)
-	var i Portfolio
+	var i GetPortfolioByNameRow
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
@@ -399,15 +450,15 @@ ORDER BY i.symbol ASC
 `
 
 type ListPositionsByPortfolioRow struct {
-	InstrumentID   int64          `json:"instrument_id"`
-	Name           string         `json:"name"`
-	Symbol         string         `json:"symbol"`
-	Quantity       float64        `json:"quantity"`
-	AvgCost        float64        `json:"avg_cost"`
-	Currency       string         `json:"currency"`
-	InstrumentType string         `json:"asset_type"`
-	Exchange       sql.NullString `json:"exchange"`
-	QuoteCurrency  string         `json:"quote_currency"`
+	InstrumentID  int64          `json:"instrument_id"`
+	Name          string         `json:"name"`
+	Symbol        string         `json:"symbol"`
+	Quantity      float64        `json:"quantity"`
+	AvgCost       float64        `json:"avg_cost"`
+	Currency      string         `json:"currency"`
+	AssetType     string         `json:"asset_type"`
+	Exchange      sql.NullString `json:"exchange"`
+	QuoteCurrency string         `json:"quote_currency"`
 }
 
 func (q *Queries) ListPositionsByPortfolio(ctx context.Context, portfolioID int64) ([]ListPositionsByPortfolioRow, error) {
@@ -426,8 +477,59 @@ func (q *Queries) ListPositionsByPortfolio(ctx context.Context, portfolioID int6
 			&i.Quantity,
 			&i.AvgCost,
 			&i.Currency,
-			&i.InstrumentType,
+			&i.AssetType,
 			&i.Exchange,
+			&i.QuoteCurrency,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listTargetsByPortfolio = `-- name: ListTargetsByPortfolio :many
+SELECT
+    p.name,
+    t.symbol,
+    t.target_price,
+    t.type,
+    t.quote_currency
+FROM portfolio_targets AS t
+JOIN portfolios AS p ON t.portfolio_id = p.id
+WHERE t.portfolio_id = ?
+AND t.deleted_at IS NULL
+ORDER BY t.symbol ASC
+`
+
+type ListTargetsByPortfolioRow struct {
+	Name          string  `json:"name"`
+	Symbol        string  `json:"symbol"`
+	TargetPrice   float64 `json:"target_price"`
+	Type          string  `json:"type"`
+	QuoteCurrency string  `json:"quote_currency"`
+}
+
+func (q *Queries) ListTargetsByPortfolio(ctx context.Context, portfolioID int64) ([]ListTargetsByPortfolioRow, error) {
+	rows, err := q.db.QueryContext(ctx, listTargetsByPortfolio, portfolioID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListTargetsByPortfolioRow
+	for rows.Next() {
+		var i ListTargetsByPortfolioRow
+		if err := rows.Scan(
+			&i.Name,
+			&i.Symbol,
+			&i.TargetPrice,
+			&i.Type,
 			&i.QuoteCurrency,
 		); err != nil {
 			return nil, err

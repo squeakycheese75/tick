@@ -24,6 +24,7 @@ func NewRootCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 	rootCmd.AddCommand(newNewsCmd(runtimeBuilder))
 	rootCmd.AddCommand(newConfigCmd())
 	rootCmd.AddCommand(newShellCmd(rootCmd))
+	rootCmd.AddCommand(newTargetCmd(runtimeBuilder))
 
 	return rootCmd
 }

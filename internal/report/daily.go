@@ -17,17 +17,23 @@ func (s *ReportBuilder) BuildDailyReport(
 	ctx context.Context,
 	in BuildDailyReportParams,
 ) (domain.DailyReport, error) {
-	analysis, err := s.portfolioSvc.GetAnalysis(ctx, in.PortfolioName)
+	analysis, err := s.analysisSvc.GetAnalysis(ctx, in.PortfolioName)
 	if err != nil {
 		return domain.DailyReport{}, fmt.Errorf("get portfolio analysis: %w", err)
 	}
 
-	risk, err := s.portfolioSvc.GetRisk(ctx, in.PortfolioName)
+	risk, err := s.riskSvc.GetRisk(ctx, analysis)
 	if err != nil {
 		return domain.DailyReport{}, fmt.Errorf("get portfolio risk: %w", err)
 	}
 
+	targets, err := s.targetSvc.EvaluateTargets(ctx, in.PortfolioName, analysis)
+	if err != nil {
+		return domain.DailyReport{}, fmt.Errorf("get target evaluation: %w", err)
+	}
+
 	report := s.buildDailyReportFromAnalysis(analysis, risk)
+	report.Targets = targets
 
 	news, err := s.getNewsSummaries(ctx, report.TopHoldings, in.NewsLimit)
 	if err != nil {

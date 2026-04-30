@@ -1,8 +1,8 @@
 package app
 
 import (
+	"github.com/squeakycheese75/tick/internal/analysis"
 	"github.com/squeakycheese75/tick/internal/db"
-	"github.com/squeakycheese75/tick/internal/domain/analysis"
 	"github.com/squeakycheese75/tick/internal/instruments"
 	"github.com/squeakycheese75/tick/internal/report"
 	"github.com/squeakycheese75/tick/internal/repository"
@@ -19,6 +19,8 @@ type Runtime struct {
 	ImportPortfolio     *usecase.ImportPortfolioUseCase
 	GetTickerNews       *usecase.GetTickerNewsUseCase
 	GetMorningBrief     *usecase.GetMorningBriefUsecase
+	SetTarget           *usecase.SetTargetUseCase
+	ListTargets         *usecase.ListTargetsUseCase
 }
 
 func BuildRuntime(dbPath string) (*Runtime, error) {
@@ -40,12 +42,13 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 	positionRepo := repository.NewPositionRepository(database)
 	instrumentRepo := repository.NewInstrumentRepository(database)
 	snapshotRepo := repository.NewSnapshotRepository(database)
+	targetRespository := repository.NewTargetRepository(database)
 
 	// Caching
 	priceCacher := repository.NewPriceCacheRepository(database)
 	fxCacher := repository.NewFXCacheRepository(database)
 
-	// Providers
+	// Adapters/Providers
 	equityPriceProvider, err := BuildEquityPriceProvider(cfg, priceCacher)
 	if err != nil {
 		return nil, err
@@ -76,18 +79,20 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 
 	portfolioAnalyser := analysis.NewPortfolioAnalyzer(pricingSvc)
 	riskAnalyser := analysis.NewRiskAnalyzer()
+	analysisSvc := service.NewPortfolioAnalysisSvc(portfolioRepo, positionRepo, portfolioAnalyser)
+	riskSvc := service.NewPortfolioRiskSvc(portfolioRepo, positionRepo, riskAnalyser)
 
-	portfolioSvc := service.NewPortfolioService(portfolioRepo, positionRepo, portfolioAnalyser, riskAnalyser)
-	portfolioInsights := service.NewPortfolioInsights()
+	portfolioInsights := service.NewInsightsSvc()
 	newsSvc := service.NewNewsService(newsProvider)
 	snapshotSvc := service.NewSnapshotService(snapshotRepo)
+	targetSvc := service.NewTargetSvc(portfolioRepo, targetRespository)
 
 	instrumentResolver, err := instruments.NewStaticResolver()
 	if err != nil {
 		return nil, err
 	}
 
-	reportingBuilder := report.NewReportBuilder(portfolioSvc, pricingSvc, newsSvc, portfolioInsights, snapshotSvc)
+	reportingBuilder := report.NewReportBuilder(analysisSvc, riskSvc, pricingSvc, newsSvc, portfolioInsights, snapshotSvc, targetSvc)
 
 	var summarizer usecase.DailyReportSummarizer = service.NoopSummarizer{}
 
@@ -97,16 +102,19 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 
 	return &Runtime{
 		GetPortfolioSummary: usecase.NewGetPortfolioSummaryUseCase(
-			portfolioSvc,
+			analysisSvc,
 		),
 		CreatePortfolio: usecase.NewCreatePortfolioUseCase(portfolioRepo),
 		AddPosition:     usecase.NewAddPositionToPortfolioUseCase(positionRepo, portfolioRepo, instrumentRepo, instrumentResolver),
 		GetPortfolioRisk: usecase.NewGetPortfolioRiskUseCase(
-			portfolioSvc,
+			analysisSvc,
+			riskSvc,
 		),
 		GetDailyReport:  usecase.NewGetDailyReportUseCase(reportingBuilder, summarizer, snapshotRepo),
 		ImportPortfolio: usecase.NewImportPortfolioUseCase(positionRepo, portfolioRepo, instrumentRepo),
 		GetTickerNews:   usecase.NewGetTickerNewsUseCase(newsSvc),
 		GetMorningBrief: usecase.NewGetMorningBriefUsecase(reportingBuilder),
+		SetTarget:       usecase.NewSetTargetUseCase(portfolioRepo, targetRespository),
+		ListTargets:     usecase.NewListTargetsUseCase(portfolioRepo, targetRespository),
 	}, nil
 }

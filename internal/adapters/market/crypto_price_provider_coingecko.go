@@ -80,7 +80,7 @@ func (p *CoinGeckoProvider) GetQuote(ctx context.Context, ticker string) (domain
 	change := price - previous
 
 	return domain.Quote{
-		Ticker:        strings.ToUpper(strings.TrimSpace(ticker)),
+		Symbol:        strings.ToUpper(strings.TrimSpace(ticker)),
 		Price:         price,
 		PriceCurrency: "USD",
 		PreviousClose: previous,

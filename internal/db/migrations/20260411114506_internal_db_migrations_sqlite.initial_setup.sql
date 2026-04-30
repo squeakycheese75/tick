@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS instruments (
     exchange TEXT,
     quote_currency TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS portfolios (
@@ -16,7 +17,8 @@ CREATE TABLE IF NOT EXISTS portfolios (
     name TEXT NOT NULL UNIQUE,
     base_currency TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS positions (
@@ -28,6 +30,7 @@ CREATE TABLE IF NOT EXISTS positions (
     currency TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP,
     FOREIGN KEY (instrument_id) REFERENCES instruments(id),
     FOREIGN KEY (portfolio_id) REFERENCES portfolios(id),
     UNIQUE (portfolio_id, instrument_id)

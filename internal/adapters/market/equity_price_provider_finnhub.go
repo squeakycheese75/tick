@@ -63,7 +63,7 @@ func (p *FinnhubPriceProvider) GetQuote(ctx context.Context, ticker string) (dom
 	}
 
 	return domain.Quote{
-		Ticker:        ticker,
+		Symbol:        ticker,
 		Price:         data.C,
 		PriceCurrency: "USD",
 		PreviousClose: data.PC,

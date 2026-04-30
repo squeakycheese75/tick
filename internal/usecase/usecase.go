@@ -34,15 +34,22 @@ type (
 		GetLatestBefore(ctx context.Context, portfolioName string, before time.Time) (repository.PortfolioSnapshot, error)
 		ListPositionsBySnapshotID(ctx context.Context, snapshotID int64) ([]repository.PortfolioSnapshotPosition, error)
 	}
+	TargetRepository interface {
+		Save(ctx context.Context, target domain.Target) error
+		ListByPortfolio(ctx context.Context, portfolioID int64) ([]domain.Target, error)
+		// Delete(ctx context.Context, portfolioID int64, symbol string, targetType domain.TargetType) error
+	}
 )
 
 type (
 	NewsSvc interface {
 		GetNews(ctx context.Context, ticker string, limit int) (domain.NewsSummary, error)
 	}
-	PortfolioSvc interface {
+	AnaysisSvc interface {
 		GetAnalysis(ctx context.Context, portfolioName string) (domain.PortfolioAnalysis, error)
-		GetRisk(ctx context.Context, portfolioName string) (domain.PortfolioRisk, error)
+	}
+	RiskSvc interface {
+		GetRisk(ctx context.Context, analysis domain.PortfolioAnalysis) (domain.PortfolioRisk, error)
 	}
 	DailyReportSummarizer interface {
 		Summarize(ctx context.Context, report domain.DailyReport) (string, error)

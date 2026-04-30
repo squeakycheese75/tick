@@ -8,17 +8,17 @@ import (
 )
 
 type GetPortfolioSummaryUseCase struct {
-	portfolioSvc PortfolioSvc
+	anaysisSvc AnaysisSvc
 }
 
-func NewGetPortfolioSummaryUseCase(portfolioSvc PortfolioSvc) *GetPortfolioSummaryUseCase {
+func NewGetPortfolioSummaryUseCase(anaysisSvc AnaysisSvc) *GetPortfolioSummaryUseCase {
 	return &GetPortfolioSummaryUseCase{
-		portfolioSvc: portfolioSvc,
+		anaysisSvc: anaysisSvc,
 	}
 }
 
 func (uc *GetPortfolioSummaryUseCase) Execute(ctx context.Context, in domain.GetPortfolioSummaryUsecaseInput) (domain.GetPortfolioSummaryUsecaseOutput, error) {
-	result, err := uc.portfolioSvc.GetAnalysis(ctx, in.PortfolioName)
+	result, err := uc.anaysisSvc.GetAnalysis(ctx, in.PortfolioName)
 	if err != nil {
 		return domain.GetPortfolioSummaryUsecaseOutput{}, fmt.Errorf("analyze portfolio: %w", err)
 	}

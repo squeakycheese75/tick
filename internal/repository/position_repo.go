@@ -29,7 +29,7 @@ func (r *PositionRepository) ListByPortfolioID(ctx context.Context, portfolioID 
 			Currency: row.Currency,
 			Instrument: Instrument{
 				Symbol:         row.Symbol,
-				InstrumentType: row.InstrumentType,
+				InstrumentType: row.AssetType,
 				QuoteCurrency:  row.QuoteCurrency,
 				Exchange:       row.Exchange.String,
 			},
