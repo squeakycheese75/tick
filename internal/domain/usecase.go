@@ -213,3 +213,19 @@ func (i *GetMorningBriefUsecaseInput) ApplyDefaults() {
 type GetMorningBriefUsecaseOutput struct {
 	Report BriefReport
 }
+
+type SetTargetUsecaseInput struct {
+	PortfolioName string
+	Symbol        string
+	Type          TargetType
+	TargetPrice   float64
+	QuoteCurrency string
+}
+
+type SetTargetUsecaseOutput struct {
+	PortfolioName string
+	Symbol        string
+	Type          TargetType
+	TargetPrice   float64
+	QuoteCurrency string
+}

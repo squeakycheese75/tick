@@ -44,7 +44,7 @@ func (p *StaticCryptoPriceProvider) GetQuote(_ context.Context, ticker string) (
 	}
 
 	return domain.Quote{
-		Ticker:        ticker,
+		Symbol:        ticker,
 		Price:         v.Price,
 		PriceCurrency: v.Currency,
 		PreviousClose: v.PreviousClose,

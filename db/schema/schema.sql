@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS instruments (
     exchange TEXT,
     quote_currency TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS portfolios (
@@ -14,7 +15,8 @@ CREATE TABLE IF NOT EXISTS portfolios (
     name TEXT NOT NULL UNIQUE,
     base_currency TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS positions (
@@ -26,6 +28,7 @@ CREATE TABLE IF NOT EXISTS positions (
     currency TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP,
     FOREIGN KEY (instrument_id) REFERENCES instruments(id),
     FOREIGN KEY (portfolio_id) REFERENCES portfolios(id),
     UNIQUE (portfolio_id, instrument_id)
@@ -75,6 +78,29 @@ CREATE TABLE portfolio_snapshot_positions (
     fx_rate             REAL NOT NULL,
     market_value_base   REAL NOT NULL,
     weight              REAL NOT NULL,
-    created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (snapshot_id) REFERENCES portfolio_snapshots(id) ON DELETE CASCADE
 );
+
+CREATE TABLE portfolio_targets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    portfolio_id INTEGER NOT NULL REFERENCES portfolios(id) ON DELETE CASCADE,
+    symbol TEXT NOT NULL,
+    type TEXT NOT NULL,
+    target_price REAL NOT NULL,
+    quote_currency TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP,
+
+    CONSTRAINT portfolio_targets_type_check
+        CHECK (type IN ('take-profit', 'stop-loss'))
+);
+
+CREATE UNIQUE INDEX idx_portfolio_targets_unique_active
+    ON portfolio_targets (portfolio_id, symbol, type)
+    WHERE deleted_at IS NULL;
+
+CREATE INDEX idx_portfolio_targets_portfolio_id
+    ON portfolio_targets (portfolio_id);
+    

@@ -1,7 +1,7 @@
 package domain
 
 type Quote struct {
-	Ticker        string
+	Symbol        string
 	Price         float64
 	PriceCurrency string
 	PreviousClose float64

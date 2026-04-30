@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/squeakycheese75/tick/internal/analysis/mocks"
 	"github.com/squeakycheese75/tick/internal/domain"
-	"github.com/squeakycheese75/tick/internal/domain/analysis/mocks"
 	"go.uber.org/mock/gomock"
 )
 

@@ -53,7 +53,7 @@ func (r *InstrumentRepository) GetBySymbolAndExchange(
 		Symbol:         row.Symbol,
 		ProviderSymbol: row.ProviderSymbol,
 		Exchange:       row.Exchange.String,
-		InstrumentType: row.InstrumentType,
+		InstrumentType: row.AssetType,
 		QuoteCurrency:  row.QuoteCurrency,
 	}, nil
 }
@@ -62,7 +62,7 @@ func (r *InstrumentRepository) Create(ctx context.Context, in Instrument) (Instr
 	id, err := r.q.CreateInstrument(ctx, db.CreateInstrumentParams{
 		Symbol:         in.Symbol,
 		ProviderSymbol: in.ProviderSymbol,
-		InstrumentType: in.InstrumentType,
+		AssetType:      in.InstrumentType,
 		Exchange: sql.NullString{
 			String: in.Exchange,
 			Valid:  in.Exchange != "",

@@ -8,17 +8,24 @@ import (
 )
 
 type GetPortfolioRiskUseCase struct {
-	portfolioSvc PortfolioSvc
+	anaysisSvc AnaysisSvc
+	riskSvc    RiskSvc
 }
 
-func NewGetPortfolioRiskUseCase(portfolioSvc PortfolioSvc) *GetPortfolioRiskUseCase {
+func NewGetPortfolioRiskUseCase(anaysisSvc AnaysisSvc, riskSvc RiskSvc) *GetPortfolioRiskUseCase {
 	return &GetPortfolioRiskUseCase{
-		portfolioSvc: portfolioSvc,
+		anaysisSvc: anaysisSvc,
+		riskSvc:    riskSvc,
 	}
 }
 
 func (uc *GetPortfolioRiskUseCase) Execute(ctx context.Context, in domain.GetPortfolioRiskInput) (domain.GetPortfolioRiskOutput, error) {
-	result, err := uc.portfolioSvc.GetRisk(ctx, in.PortfolioName)
+	analysis, err := uc.anaysisSvc.GetAnalysis(ctx, in.PortfolioName)
+	if err != nil {
+		return domain.GetPortfolioRiskOutput{}, fmt.Errorf("analyze portfolio: %w", err)
+	}
+
+	result, err := uc.riskSvc.GetRisk(ctx, analysis)
 	if err != nil {
 		return domain.GetPortfolioRiskOutput{}, fmt.Errorf("analyze portfolio: %w", err)
 	}

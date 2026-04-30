@@ -7,9 +7,12 @@ import (
 )
 
 type (
-	PortfolioSvc interface {
+	AnalysisSvc interface {
 		GetAnalysis(ctx context.Context, portfolioName string) (domain.PortfolioAnalysis, error)
-		GetRisk(ctx context.Context, portfolioName string) (domain.PortfolioRisk, error)
+	}
+
+	RiskSvc interface {
+		GetRisk(ctx context.Context, portfolioAnlaysis domain.PortfolioAnalysis) (domain.PortfolioRisk, error)
 	}
 	NewsSvc interface {
 		GetNews(ctx context.Context, ticker string, newsLimit int) (domain.NewsSummary, error)
@@ -24,29 +27,38 @@ type (
 	SnapshotSvc interface {
 		SaveAndEnrichDailyReport(ctx context.Context, dailyReport domain.DailyReport, analysis domain.PortfolioAnalysis) (domain.DailyReport, error)
 	}
+	TargetSvc interface {
+		EvaluateTargets(ctx context.Context, portfolioName string, analysis domain.PortfolioAnalysis) ([]domain.TargetStatus, error)
+	}
 )
 
 type ReportBuilder struct {
-	portfolioSvc PortfolioSvc
-	pricingSvc   PricingSvc
-	newsSvc      NewsSvc
-	insights     PortfolioInsights
-	snapshotSvc  SnapshotSvc
+	analysisSvc AnalysisSvc
+	riskSvc     RiskSvc
+	pricingSvc  PricingSvc
+	newsSvc     NewsSvc
+	insights    PortfolioInsights
+	snapshotSvc SnapshotSvc
+	targetSvc   TargetSvc
 }
 
 func NewReportBuilder(
-	portfolioSvc PortfolioSvc,
+	analysisSvc AnalysisSvc,
+	portfolioRiskSvc RiskSvc,
 	pricingSvc PricingSvc,
 	newsSvc NewsSvc,
 	insights PortfolioInsights,
 	snapshotSvc SnapshotSvc,
+	targetSvc TargetSvc,
 
 ) *ReportBuilder {
 	return &ReportBuilder{
-		portfolioSvc: portfolioSvc,
-		newsSvc:      newsSvc,
-		insights:     insights,
-		pricingSvc:   pricingSvc,
-		snapshotSvc:  snapshotSvc,
+		analysisSvc: analysisSvc,
+		riskSvc:     portfolioRiskSvc,
+		newsSvc:     newsSvc,
+		insights:    insights,
+		pricingSvc:  pricingSvc,
+		snapshotSvc: snapshotSvc,
+		targetSvc:   targetSvc,
 	}
 }

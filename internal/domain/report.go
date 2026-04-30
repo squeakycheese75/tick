@@ -73,6 +73,17 @@ type DailyReport struct {
 	Risk        RiskSummary
 	News        []NewsSummary
 	Attention   []string
+	Targets     []TargetStatus
+}
+
+type TargetStatus struct {
+	Symbol       string
+	Type         TargetType
+	CurrentPrice float64
+	TargetPrice  float64
+	Currency     string
+	Hit          bool
+	DistancePct  float64
 }
 
 type BriefReport struct {

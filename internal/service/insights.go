@@ -6,13 +6,13 @@ import (
 	"github.com/squeakycheese75/tick/internal/domain"
 )
 
-type PortfolioInsights struct{}
+type InsightsSvc struct{}
 
-func NewPortfolioInsights() *PortfolioInsights {
-	return &PortfolioInsights{}
+func NewInsightsSvc() *InsightsSvc {
+	return &InsightsSvc{}
 }
 
-func (b *PortfolioInsights) TopHoldings(
+func (b *InsightsSvc) TopHoldings(
 	portfolioAnalysis domain.PortfolioAnalysis,
 	limit int,
 ) []domain.AnalyzedPosition {
@@ -32,7 +32,7 @@ func (b *PortfolioInsights) TopHoldings(
 	return result
 }
 
-func (b *PortfolioInsights) AttentionSignals(
+func (b *InsightsSvc) AttentionSignals(
 	portfolioAnalysis domain.PortfolioAnalysis,
 	portfolioRisk domain.PortfolioRisk,
 ) []string {

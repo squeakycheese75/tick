@@ -157,3 +157,27 @@ SELECT *
 FROM portfolio_snapshot_positions
 WHERE snapshot_id = ?
 ORDER BY symbol ASC;
+
+
+-- name: CreateTarget :one
+INSERT INTO portfolio_targets (
+    portfolio_id,
+    symbol,
+    type,
+    target_price,
+    quote_currency
+) VALUES (?, ?, ?, ?, ?)
+RETURNING id;
+
+-- name: ListTargetsByPortfolio :many
+SELECT
+    p.name,
+    t.symbol,
+    t.target_price,
+    t.type,
+    t.quote_currency
+FROM portfolio_targets AS t
+JOIN portfolios AS p ON t.portfolio_id = p.id
+WHERE t.portfolio_id = ?
+AND t.deleted_at IS NULL
+ORDER BY t.symbol ASC;

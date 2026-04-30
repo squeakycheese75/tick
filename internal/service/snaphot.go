@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/squeakycheese75/tick/internal/domain"
-	"github.com/squeakycheese75/tick/internal/domain/snapshot"
+	snapshot "github.com/squeakycheese75/tick/internal/mappers"
 	"github.com/squeakycheese75/tick/internal/repository"
 )
 

@@ -21,19 +21,21 @@ type Instrument struct {
 	ID             int64          `json:"id"`
 	Symbol         string         `json:"symbol"`
 	ProviderSymbol string         `json:"provider_symbol"`
-	InstrumentType string         `json:"asset_type"`
+	AssetType      string         `json:"asset_type"`
 	Exchange       sql.NullString `json:"exchange"`
 	QuoteCurrency  string         `json:"quote_currency"`
 	CreatedAt      time.Time      `json:"created_at"`
 	UpdatedAt      time.Time      `json:"updated_at"`
+	DeletedAt      sql.NullTime   `json:"deleted_at"`
 }
 
 type Portfolio struct {
-	ID           int64     `json:"id"`
-	Name         string    `json:"name"`
-	BaseCurrency string    `json:"base_currency"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
+	ID           int64        `json:"id"`
+	Name         string       `json:"name"`
+	BaseCurrency string       `json:"base_currency"`
+	CreatedAt    time.Time    `json:"created_at"`
+	UpdatedAt    time.Time    `json:"updated_at"`
+	DeletedAt    sql.NullTime `json:"deleted_at"`
 }
 
 type PortfolioSnapshot struct {
@@ -57,15 +59,28 @@ type PortfolioSnapshotPosition struct {
 	CreatedAt          time.Time `json:"created_at"`
 }
 
+type PortfolioTarget struct {
+	ID            int64        `json:"id"`
+	PortfolioID   int64        `json:"portfolio_id"`
+	Symbol        string       `json:"symbol"`
+	Type          string       `json:"type"`
+	TargetPrice   float64      `json:"target_price"`
+	QuoteCurrency string       `json:"quote_currency"`
+	CreatedAt     time.Time    `json:"created_at"`
+	UpdatedAt     time.Time    `json:"updated_at"`
+	DeletedAt     sql.NullTime `json:"deleted_at"`
+}
+
 type Position struct {
-	ID           int64     `json:"id"`
-	InstrumentID int64     `json:"instrument_id"`
-	PortfolioID  int64     `json:"portfolio_id"`
-	Quantity     float64   `json:"quantity"`
-	AvgCost      float64   `json:"avg_cost"`
-	Currency     string    `json:"currency"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
+	ID           int64        `json:"id"`
+	InstrumentID int64        `json:"instrument_id"`
+	PortfolioID  int64        `json:"portfolio_id"`
+	Quantity     float64      `json:"quantity"`
+	AvgCost      float64      `json:"avg_cost"`
+	Currency     string       `json:"currency"`
+	CreatedAt    time.Time    `json:"created_at"`
+	UpdatedAt    time.Time    `json:"updated_at"`
+	DeletedAt    sql.NullTime `json:"deleted_at"`
 }
 
 type PriceCache struct {
