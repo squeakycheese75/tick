@@ -20,6 +20,7 @@ type Runtime struct {
 	GetTickerNews       *usecase.GetTickerNewsUseCase
 	GetMorningBrief     *usecase.GetMorningBriefUsecase
 	SetTarget           *usecase.SetTargetUseCase
+	ListTargets         *usecase.ListTargetsUseCase
 }
 
 func BuildRuntime(dbPath string) (*Runtime, error) {
@@ -114,5 +115,6 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 		GetTickerNews:   usecase.NewGetTickerNewsUseCase(newsSvc),
 		GetMorningBrief: usecase.NewGetMorningBriefUsecase(reportingBuilder),
 		SetTarget:       usecase.NewSetTargetUseCase(portfolioRepo, targetRespository),
+		ListTargets:     usecase.NewListTargetsUseCase(portfolioRepo, targetRespository),
 	}, nil
 }

@@ -40,7 +40,7 @@ func (r *TargetRepository) Save(ctx context.Context, t domain.Target) error {
 	return nil
 }
 
-func (r *TargetRepository) ListByPortfolioID(ctx context.Context, portfolioID int64) ([]domain.Target, error) {
+func (r *TargetRepository) ListByPortfolio(ctx context.Context, portfolioID int64) ([]domain.Target, error) {
 	rows, err := r.q.ListTargetsByPortfolio(ctx, portfolioID)
 	if err != nil {
 		return nil, fmt.Errorf("list positions by portfolio id %d: %w", portfolioID, err)

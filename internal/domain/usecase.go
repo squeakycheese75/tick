@@ -214,7 +214,7 @@ type GetMorningBriefUsecaseOutput struct {
 	Report BriefReport
 }
 
-type SetTargetUsecaseInput struct {
+type SetTargetUseCaseInput struct {
 	PortfolioName string
 	Symbol        string
 	Type          TargetType
@@ -222,10 +222,19 @@ type SetTargetUsecaseInput struct {
 	QuoteCurrency string
 }
 
-type SetTargetUsecaseOutput struct {
+type SetTargetUseCaseOutput struct {
 	PortfolioName string
 	Symbol        string
 	Type          TargetType
 	TargetPrice   float64
 	QuoteCurrency string
+}
+
+type ListTargetsUseCaseInput struct {
+	PortfolioName string
+}
+
+type ListTargetsUseCaseOutput struct {
+	PortfolioName string
+	Targets       []Target
 }

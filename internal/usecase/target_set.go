@@ -19,7 +19,7 @@ func NewSetTargetUseCase(portfolios PortfolioRepository, targets TargetRepositor
 	}
 }
 
-func (uc *SetTargetUseCase) Execute(ctx context.Context, in domain.SetTargetUsecaseInput) (*domain.SetTargetUsecaseOutput, error) {
+func (uc *SetTargetUseCase) Execute(ctx context.Context, in domain.SetTargetUseCaseInput) (*domain.SetTargetUseCaseOutput, error) {
 	portfolio, err := uc.portfolios.GetByName(ctx, in.PortfolioName)
 	if err != nil {
 		return nil, err
@@ -33,7 +33,7 @@ func (uc *SetTargetUseCase) Execute(ctx context.Context, in domain.SetTargetUsec
 		QuoteCurrency: strings.ToUpper(in.QuoteCurrency),
 	}
 
-	return &domain.SetTargetUsecaseOutput{
+	return &domain.SetTargetUseCaseOutput{
 		PortfolioName: in.PortfolioName,
 		Symbol:        in.Symbol,
 		QuoteCurrency: in.QuoteCurrency,

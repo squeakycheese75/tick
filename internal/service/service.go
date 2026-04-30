@@ -16,7 +16,7 @@ type (
 		ListByPortfolioID(ctx context.Context, portfolioID int64) ([]repository.Position, error)
 	}
 	TargetRepository interface {
-		ListByPortfolioID(ctx context.Context, portfolioID int64) ([]domain.Target, error)
+		ListByPortfolio(ctx context.Context, portfolioID int64) ([]domain.Target, error)
 	}
 )
 

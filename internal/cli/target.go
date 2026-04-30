@@ -16,7 +16,7 @@ func newTargetCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 	}
 
 	cmd.AddCommand(newTargetSetCmd(runtimeBuilder))
-	// cmd.AddCommand(newTargetListCmd(runtimeBuilder))
+	cmd.AddCommand(newTargetListCmd(runtimeBuilder))
 	// cmd.AddCommand(newTargetDeleteCmd(runtimeBuilder))
 
 	return cmd
@@ -54,7 +54,7 @@ func newTargetSetCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 				return err
 			}
 
-			out, err := rt.SetTarget.Execute(cmd.Context(), domain.SetTargetUsecaseInput{
+			out, err := rt.SetTarget.Execute(cmd.Context(), domain.SetTargetUseCaseInput{
 				PortfolioName: portfolioName,
 				Symbol:        strings.ToUpper(args[0]),
 				Type:          targetType,
@@ -73,6 +73,34 @@ func newTargetSetCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 	cmd.Flags().Float64Var(&takeProfit, "take-profit", 0, "Take-profit price")
 	cmd.Flags().Float64Var(&stopLoss, "stop-loss", 0, "Stop-loss price")
 	cmd.Flags().StringVar(&quoteCurrency, "currency", "USD", "Quote currency")
+
+	return cmd
+}
+
+func newTargetListCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
+	var portfolioName string
+
+	cmd := &cobra.Command{
+		Use:   "list",
+		Short: "List portfolio targets",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			rt, err := runtimeBuilder()
+			if err != nil {
+				return err
+			}
+
+			out, err := rt.ListTargets.Execute(cmd.Context(), domain.ListTargetsUseCaseInput{
+				PortfolioName: portfolioName,
+			})
+			if err != nil {
+				return err
+			}
+
+			return render.RenderListTargets(cmd.OutOrStdout(), out)
+		},
+	}
+
+	cmd.Flags().StringVar(&portfolioName, "portfolio", "main", "Portfolio name")
 
 	return cmd
 }

@@ -37,3 +37,5 @@ internal/adapters/market/finnhub_test.go
 PLAN.md
 .DS_Store
 /dist
+docs/demo
+tick2

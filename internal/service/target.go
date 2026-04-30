@@ -33,7 +33,7 @@ func (s *TargetSvc) EvaluateTargets(
 		return nil, fmt.Errorf("get portfolio: %w", err)
 	}
 
-	targets, err := s.targets.ListByPortfolioID(ctx, portfolio.ID)
+	targets, err := s.targets.ListByPortfolio(ctx, portfolio.ID)
 	if err != nil {
 		return nil, fmt.Errorf("list targets: %w", err)
 	}
