@@ -22,28 +22,30 @@ Return 3 to 5 concise bullet points.
 
 func buildDailyReportUserPrompt(dailyReport domain.DailyReport) string {
 	var b strings.Builder
+	p := dailyReport.Portfolio
 
 	b.WriteString("Portfolio daily brief\n\n")
 
-	b.WriteString(fmt.Sprintf("Portfolio: %s\n", dailyReport.Portfolio.Name))
-	b.WriteString(fmt.Sprintf("Base currency: %s\n", dailyReport.Portfolio.BaseCurrency))
-	b.WriteString(fmt.Sprintf("Total value: %.2f %s\n\n", dailyReport.Portfolio.TotalValue, dailyReport.Portfolio.BaseCurrency))
+	fmt.Fprintf(&b, "Portfolio: %s\n", p.Name)
+	fmt.Fprintf(&b, "Base currency: %s\n", p.BaseCurrency)
+	fmt.Fprintf(&b, "Total value: %.2f %s\n\n", p.TotalValue, p.BaseCurrency)
 
 	b.WriteString("Top holdings:\n")
 	if len(dailyReport.TopHoldings.Holdings) == 0 {
 		b.WriteString("- No positions\n")
 	} else {
 		for _, h := range dailyReport.TopHoldings.Holdings {
-			b.WriteString(fmt.Sprintf(
+			fmt.Fprintf(
+				&b,
 				"- %s: weight %.2f%%, value %.2f %s, quoted price %.2f %s, daily move %+.2f%%\n",
 				h.Symbol,
 				h.Weight*100,
 				h.MarketValueBase,
-				dailyReport.Portfolio.BaseCurrency,
+				p.BaseCurrency,
 				h.QuotedPrice,
 				h.PriceCurrency,
 				h.ChangePercent,
-			))
+			)
 		}
 	}
 	b.WriteString("\n")
@@ -52,10 +54,11 @@ func buildDailyReportUserPrompt(dailyReport domain.DailyReport) string {
 	if dailyReport.Risk.LargestPosition == "" {
 		b.WriteString("- No risk data available\n")
 	} else {
-		b.WriteString(fmt.Sprintf("- Largest position: %s (%.2f%%)\n", dailyReport.Risk.LargestPosition, dailyReport.Risk.LargestWeight*100))
-		b.WriteString(fmt.Sprintf("- Top 3 concentration: %.2f%%\n", dailyReport.Risk.Top3Concentration*100))
+		fmt.Fprintf(&b, "- Largest position: %s (%.2f%%)\n", dailyReport.Risk.LargestPosition, dailyReport.Risk.LargestWeight*100)
+		fmt.Fprintf(&b, "- Top 3 concentration: %.2f%%\n", dailyReport.Risk.Top3Concentration*100)
+
 		for _, obs := range dailyReport.Risk.Observations {
-			b.WriteString(fmt.Sprintf("- %s\n", obs))
+			fmt.Fprintf(&b, "- %s\n", obs)
 		}
 	}
 	b.WriteString("\n")
@@ -66,12 +69,13 @@ func buildDailyReportUserPrompt(dailyReport domain.DailyReport) string {
 	} else {
 		for _, group := range dailyReport.News {
 			if len(group.Headlines) == 0 {
-				b.WriteString(fmt.Sprintf("- %s: no recent headlines\n", group.Ticker))
+				fmt.Fprintf(&b, "- %s: no recent headlines\n", group.Ticker)
 				continue
 			}
-			b.WriteString(fmt.Sprintf("- %s:\n", group.Ticker))
+
+			fmt.Fprintf(&b, "- %s:\n", group.Ticker)
 			for _, headline := range group.Headlines {
-				b.WriteString(fmt.Sprintf("  - %s\n", headline.Title))
+				fmt.Fprintf(&b, "  - %s\n", headline.Title)
 			}
 		}
 	}
@@ -82,7 +86,7 @@ func buildDailyReportUserPrompt(dailyReport domain.DailyReport) string {
 		b.WriteString("- None\n")
 	} else {
 		for _, item := range dailyReport.Attention {
-			b.WriteString(fmt.Sprintf("- %s\n", item))
+			fmt.Fprintf(&b, "- %s\n", item)
 		}
 	}
 	b.WriteString("\n")
