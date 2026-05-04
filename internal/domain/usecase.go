@@ -228,6 +228,7 @@ type SetTargetUseCaseOutput struct {
 	Type          TargetType
 	TargetPrice   float64
 	QuoteCurrency string
+	TargetID      int64
 }
 
 type ListTargetsUseCaseInput struct {
@@ -237,4 +238,9 @@ type ListTargetsUseCaseInput struct {
 type ListTargetsUseCaseOutput struct {
 	PortfolioName string
 	Targets       []Target
+}
+
+type DeleteTargetUseCaseInput struct {
+	TargetID      int64
+	PortfolioName string
 }

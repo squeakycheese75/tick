@@ -12,4 +12,5 @@ var (
 	ErrPriceCacheNotFound        = errors.New("price cache not found")
 	ErrFXCacheNotFound           = errors.New("fx cache not found")
 	ErrPortfolioSnapshotNotFound = errors.New("portfolio snapshot not found")
+	ErrTargetNotFound            = errors.New("target not found")
 )
