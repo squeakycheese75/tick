@@ -37,7 +37,7 @@ type (
 	TargetRepository interface {
 		Save(ctx context.Context, target domain.Target) error
 		ListByPortfolio(ctx context.Context, portfolioID int64) ([]domain.Target, error)
-		// Delete(ctx context.Context, portfolioID int64, symbol string, targetType domain.TargetType) error
+		Delete(ctx context.Context, targetID, portfolioID int64) error
 	}
 )
 

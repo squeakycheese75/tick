@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -17,7 +18,7 @@ func newTargetCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 
 	cmd.AddCommand(newTargetSetCmd(runtimeBuilder))
 	cmd.AddCommand(newTargetListCmd(runtimeBuilder))
-	// cmd.AddCommand(newTargetDeleteCmd(runtimeBuilder))
+	cmd.AddCommand(newTargetDeleteCmd(runtimeBuilder))
 
 	return cmd
 }
@@ -97,6 +98,42 @@ func newTargetListCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 			}
 
 			return render.RenderListTargets(cmd.OutOrStdout(), out)
+		},
+	}
+
+	cmd.Flags().StringVar(&portfolioName, "portfolio", "main", "Portfolio name")
+
+	return cmd
+}
+
+func newTargetDeleteCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
+	var portfolioName string
+
+	cmd := &cobra.Command{
+		Use:   "remove TARGET_ID",
+		Short: "Remove a portfolio price target",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			targetID, err := strconv.ParseInt(args[0], 10, 64)
+			if err != nil {
+				return fmt.Errorf("invalid target ID %q", args[0])
+			}
+
+			rt, err := runtimeBuilder()
+			if err != nil {
+				return err
+			}
+
+			err = rt.RemoveTarget.Execute(cmd.Context(), domain.DeleteTargetUseCaseInput{
+				PortfolioName: portfolioName,
+				TargetID:      targetID,
+			})
+			if err != nil {
+				return err
+			}
+
+			_, err = fmt.Fprintf(cmd.OutOrStdout(), "Removed target %d\n", targetID)
+			return err
 		},
 	}
 

@@ -216,6 +216,21 @@ func (q *Queries) CreateTarget(ctx context.Context, arg CreateTargetParams) (int
 	return id, err
 }
 
+const deleteTarget = `-- name: DeleteTarget :execresult
+DELETE FROM portfolio_targets
+WHERE id = ?
+AND portfolio_id = ?
+`
+
+type DeleteTargetParams struct {
+	ID          int64 `json:"id"`
+	PortfolioID int64 `json:"portfolio_id"`
+}
+
+func (q *Queries) DeleteTarget(ctx context.Context, arg DeleteTargetParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, deleteTarget, arg.ID, arg.PortfolioID)
+}
+
 const getFXCacheByPair = `-- name: GetFXCacheByPair :one
 SELECT
     base_currency,
@@ -500,7 +515,8 @@ SELECT
     t.symbol,
     t.target_price,
     t.type,
-    t.quote_currency
+    t.quote_currency,
+    t.id
 FROM portfolio_targets AS t
 JOIN portfolios AS p ON t.portfolio_id = p.id
 WHERE t.portfolio_id = ?
@@ -514,6 +530,7 @@ type ListTargetsByPortfolioRow struct {
 	TargetPrice   float64 `json:"target_price"`
 	Type          string  `json:"type"`
 	QuoteCurrency string  `json:"quote_currency"`
+	ID            int64   `json:"id"`
 }
 
 func (q *Queries) ListTargetsByPortfolio(ctx context.Context, portfolioID int64) ([]ListTargetsByPortfolioRow, error) {
@@ -531,6 +548,7 @@ func (q *Queries) ListTargetsByPortfolio(ctx context.Context, portfolioID int64)
 			&i.TargetPrice,
 			&i.Type,
 			&i.QuoteCurrency,
+			&i.ID,
 		); err != nil {
 			return nil, err
 		}

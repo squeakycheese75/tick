@@ -53,8 +53,29 @@ func (r *TargetRepository) ListByPortfolio(ctx context.Context, portfolioID int6
 			Type:          domain.TargetType(row.Type),
 			QuoteCurrency: row.QuoteCurrency,
 			TargetPrice:   row.TargetPrice,
+			ID:            row.ID,
 		})
 	}
 
 	return targets, nil
+}
+
+func (r *TargetRepository) Delete(ctx context.Context, targetID, portfolioID int64) error {
+	result, err := r.q.DeleteTarget(ctx, db.DeleteTargetParams{
+		ID:          targetID,
+		PortfolioID: portfolioID,
+	})
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return domain.ErrTargetNotFound
+	}
+
+	return nil
 }
