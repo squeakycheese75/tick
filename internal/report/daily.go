@@ -57,7 +57,7 @@ func (s *ReportBuilder) buildDailyReportFromAnalysis(
 	analysis domain.PortfolioAnalysis,
 	risk domain.PortfolioRisk,
 ) domain.DailyReport {
-	topPositions := s.insights.TopHoldings(analysis, 3)
+	topPositions := s.insights.TopHoldings(analysis, 10)
 
 	return domain.DailyReport{
 		Portfolio:   assemblePortfolioSummary(analysis),

@@ -14,28 +14,25 @@ import (
 const createInstrument = `-- name: CreateInstrument :one
 INSERT INTO instruments (
   symbol,
-  provider_symbol,
   asset_type,
   exchange,
   quote_currency
 ) VALUES (
-  ?, ?, ?, ?, ?
+  ?, ?, ?, ?
 )
 RETURNING id
 `
 
 type CreateInstrumentParams struct {
-	Symbol         string         `json:"symbol"`
-	ProviderSymbol string         `json:"provider_symbol"`
-	AssetType      string         `json:"asset_type"`
-	Exchange       sql.NullString `json:"exchange"`
-	QuoteCurrency  string         `json:"quote_currency"`
+	Symbol        string         `json:"symbol"`
+	AssetType     string         `json:"asset_type"`
+	Exchange      sql.NullString `json:"exchange"`
+	QuoteCurrency string         `json:"quote_currency"`
 }
 
 func (q *Queries) CreateInstrument(ctx context.Context, arg CreateInstrumentParams) (int64, error) {
 	row := q.db.QueryRowContext(ctx, createInstrument,
 		arg.Symbol,
-		arg.ProviderSymbol,
 		arg.AssetType,
 		arg.Exchange,
 		arg.QuoteCurrency,
@@ -261,7 +258,7 @@ func (q *Queries) GetFXCacheByPair(ctx context.Context, arg GetFXCacheByPairPara
 }
 
 const getInstrumentBySymbolAndExchange = `-- name: GetInstrumentBySymbolAndExchange :one
-SELECT id, symbol, provider_symbol, asset_type, exchange, quote_currency, created_at, updated_at
+SELECT id, symbol, asset_type, exchange, quote_currency, created_at, updated_at
 FROM instruments
 WHERE symbol = ? AND exchange = ?
 `
@@ -272,14 +269,13 @@ type GetInstrumentBySymbolAndExchangeParams struct {
 }
 
 type GetInstrumentBySymbolAndExchangeRow struct {
-	ID             int64          `json:"id"`
-	Symbol         string         `json:"symbol"`
-	ProviderSymbol string         `json:"provider_symbol"`
-	AssetType      string         `json:"asset_type"`
-	Exchange       sql.NullString `json:"exchange"`
-	QuoteCurrency  string         `json:"quote_currency"`
-	CreatedAt      time.Time      `json:"created_at"`
-	UpdatedAt      time.Time      `json:"updated_at"`
+	ID            int64          `json:"id"`
+	Symbol        string         `json:"symbol"`
+	AssetType     string         `json:"asset_type"`
+	Exchange      sql.NullString `json:"exchange"`
+	QuoteCurrency string         `json:"quote_currency"`
+	CreatedAt     time.Time      `json:"created_at"`
+	UpdatedAt     time.Time      `json:"updated_at"`
 }
 
 func (q *Queries) GetInstrumentBySymbolAndExchange(ctx context.Context, arg GetInstrumentBySymbolAndExchangeParams) (GetInstrumentBySymbolAndExchangeRow, error) {
@@ -288,7 +284,6 @@ func (q *Queries) GetInstrumentBySymbolAndExchange(ctx context.Context, arg GetI
 	err := row.Scan(
 		&i.ID,
 		&i.Symbol,
-		&i.ProviderSymbol,
 		&i.AssetType,
 		&i.Exchange,
 		&i.QuoteCurrency,
@@ -377,7 +372,8 @@ func (q *Queries) GetPortfolioByName(ctx context.Context, name string) (GetPortf
 
 const getPriceCacheByTicker = `-- name: GetPriceCacheByTicker :one
 SELECT
-    ticker,
+    symbol,
+    provider_symbol,
     price,
     price_currency,
     previous_close,
@@ -386,14 +382,15 @@ SELECT
     source,
     fetched_at
 FROM price_cache
-WHERE ticker = ?
+WHERE symbol = ?
 `
 
-func (q *Queries) GetPriceCacheByTicker(ctx context.Context, ticker string) (PriceCache, error) {
-	row := q.db.QueryRowContext(ctx, getPriceCacheByTicker, ticker)
+func (q *Queries) GetPriceCacheByTicker(ctx context.Context, symbol string) (PriceCache, error) {
+	row := q.db.QueryRowContext(ctx, getPriceCacheByTicker, symbol)
 	var i PriceCache
 	err := row.Scan(
-		&i.Ticker,
+		&i.Symbol,
+		&i.ProviderSymbol,
 		&i.Price,
 		&i.PriceCurrency,
 		&i.PreviousClose,
@@ -598,7 +595,8 @@ func (q *Queries) UpsertFXCache(ctx context.Context, arg UpsertFXCacheParams) er
 
 const upsertPriceCache = `-- name: UpsertPriceCache :exec
 INSERT INTO price_cache (
-    ticker,
+    symbol,
+    provider_symbol,
     price,
     price_currency,
     previous_close,
@@ -606,31 +604,34 @@ INSERT INTO price_cache (
     change_percent,
     source,
     fetched_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-ON CONFLICT(ticker) DO UPDATE SET
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(symbol) DO UPDATE SET
     price = excluded.price,
     price_currency = excluded.price_currency,
     previous_close = excluded.previous_close,
     change = excluded.change,
     change_percent = excluded.change_percent,
     source = excluded.source,
+    provider_symbol = excluded.provider_symbol,
     fetched_at = excluded.fetched_at
 `
 
 type UpsertPriceCacheParams struct {
-	Ticker        string    `json:"ticker"`
-	Price         float64   `json:"price"`
-	PriceCurrency string    `json:"price_currency"`
-	PreviousClose float64   `json:"previous_close"`
-	Change        float64   `json:"change"`
-	ChangePercent float64   `json:"change_percent"`
-	Source        string    `json:"source"`
-	FetchedAt     time.Time `json:"fetched_at"`
+	Symbol         string         `json:"symbol"`
+	ProviderSymbol sql.NullString `json:"provider_symbol"`
+	Price          float64        `json:"price"`
+	PriceCurrency  string         `json:"price_currency"`
+	PreviousClose  float64        `json:"previous_close"`
+	Change         float64        `json:"change"`
+	ChangePercent  float64        `json:"change_percent"`
+	Source         string         `json:"source"`
+	FetchedAt      time.Time      `json:"fetched_at"`
 }
 
 func (q *Queries) UpsertPriceCache(ctx context.Context, arg UpsertPriceCacheParams) error {
 	_, err := q.db.ExecContext(ctx, upsertPriceCache,
-		arg.Ticker,
+		arg.Symbol,
+		arg.ProviderSymbol,
 		arg.Price,
 		arg.PriceCurrency,
 		arg.PreviousClose,

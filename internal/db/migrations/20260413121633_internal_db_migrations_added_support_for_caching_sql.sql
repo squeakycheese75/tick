@@ -1,7 +1,8 @@
 -- +goose Up
 -- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS price_cache (
-    ticker TEXT PRIMARY KEY,
+    symbol TEXT PRIMARY KEY,
+    provider_symbol TEXT,
     price REAL NOT NULL,
     price_currency TEXT NOT NULL,
     previous_close REAL NOT NULL,

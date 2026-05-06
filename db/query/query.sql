@@ -43,25 +43,25 @@ ON CONFLICT(name) DO UPDATE SET
     base_currency = excluded.base_currency;
 
 -- name: GetInstrumentBySymbolAndExchange :one
-SELECT id, symbol, provider_symbol, asset_type, exchange, quote_currency, created_at, updated_at
+SELECT id, symbol, asset_type, exchange, quote_currency, created_at, updated_at
 FROM instruments
 WHERE symbol = ? AND exchange = ?;
 
 -- name: CreateInstrument :one
 INSERT INTO instruments (
   symbol,
-  provider_symbol,
   asset_type,
   exchange,
   quote_currency
 ) VALUES (
-  ?, ?, ?, ?, ?
+  ?, ?, ?, ?
 )
 RETURNING id;
 
 -- name: GetPriceCacheByTicker :one
 SELECT
-    ticker,
+    symbol,
+    provider_symbol,
     price,
     price_currency,
     previous_close,
@@ -70,11 +70,12 @@ SELECT
     source,
     fetched_at
 FROM price_cache
-WHERE ticker = ?;
+WHERE symbol = ?;
 
 -- name: UpsertPriceCache :exec
 INSERT INTO price_cache (
-    ticker,
+    symbol,
+    provider_symbol,
     price,
     price_currency,
     previous_close,
@@ -82,14 +83,15 @@ INSERT INTO price_cache (
     change_percent,
     source,
     fetched_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-ON CONFLICT(ticker) DO UPDATE SET
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(symbol) DO UPDATE SET
     price = excluded.price,
     price_currency = excluded.price_currency,
     previous_close = excluded.previous_close,
     change = excluded.change,
     change_percent = excluded.change_percent,
     source = excluded.source,
+    provider_symbol = excluded.provider_symbol,
     fetched_at = excluded.fetched_at;
 
 -- name: GetFXCacheByPair :one

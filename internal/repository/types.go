@@ -39,7 +39,8 @@ type CreatePositionParams struct {
 }
 
 type PriceQuote struct {
-	Ticker        string
+	Symbol        string
+	SourceSymbol  string
 	Price         float64
 	PriceCurrency string
 	PreviousClose float64

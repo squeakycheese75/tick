@@ -31,6 +31,17 @@ func formatSignedMoney(v float64, ccy string) string {
 	return fmt.Sprintf("%s %s", formatSignedAmount(v), ccy)
 }
 
+func formatQuantity(q float64) string {
+	switch {
+	case q >= 100:
+		return fmt.Sprintf("%.0f", q)
+	case q >= 1:
+		return fmt.Sprintf("%.4f", q)
+	default:
+		return fmt.Sprintf("%.6f", q)
+	}
+}
+
 // func formatPercentFromRatio(v float64) string {
 // 	return printer.Sprintf("%.2f%%", v*100)
 // }

@@ -20,8 +20,7 @@ type ResolvedInstrument struct {
 
 type instrumentJSON struct {
 	Symbol         string `json:"symbol"`
-	InstrumentType string `json:"asset_type"`
-	Exchange       string `json:"exchange"`
+	InstrumentType string `json:"instrument_type"`
 	QuoteCurrency  string `json:"quote_currency"`
 }
 
@@ -44,8 +43,8 @@ func NewStaticResolver() (*StaticResolver, error) {
 		m[symbol] = ResolvedInstrument{
 			Symbol:         symbol,
 			InstrumentType: strings.ToLower(r.InstrumentType),
-			Exchange:       strings.ToUpper(r.Exchange),
-			QuoteCurrency:  strings.ToUpper(r.QuoteCurrency),
+			// Exchange:       strings.ToUpper(r.Exchange),
+			QuoteCurrency: strings.ToUpper(r.QuoteCurrency),
 		}
 	}
 

@@ -18,7 +18,7 @@ type (
 		GetNews(ctx context.Context, ticker string, newsLimit int) (domain.NewsSummary, error)
 	}
 	PricingSvc interface {
-		GetValuationQuote(ctx context.Context, symbol string, targetCurrency string, instrumentCurrency string, instrumentType string) (domain.ValuationQuote, error)
+		GetValuationQuote(ctx context.Context, symbol, providerSymbol string, targetCurrency string, instrumentCurrency string, instrumentType string) (domain.ValuationQuote, error)
 	}
 	PortfolioInsights interface {
 		TopHoldings(portfolioAnalysis domain.PortfolioAnalysis, limit int) []domain.AnalyzedPosition

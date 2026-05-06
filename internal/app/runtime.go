@@ -3,7 +3,9 @@ package app
 import (
 	"github.com/squeakycheese75/tick/internal/analysis"
 	"github.com/squeakycheese75/tick/internal/db"
+	"github.com/squeakycheese75/tick/internal/domain"
 	"github.com/squeakycheese75/tick/internal/instruments"
+	marketdata "github.com/squeakycheese75/tick/internal/market"
 	"github.com/squeakycheese75/tick/internal/report"
 	"github.com/squeakycheese75/tick/internal/repository"
 	"github.com/squeakycheese75/tick/internal/service"
@@ -49,13 +51,20 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 	priceCacher := repository.NewPriceCacheRepository(database)
 	fxCacher := repository.NewFXCacheRepository(database)
 
+	symbolResolver := marketdata.NewStaticSymbolResolver(marketdata.DefaultSymbols)
+
 	// Adapters/Providers
-	equityPriceProvider, err := BuildEquityPriceProvider(cfg, priceCacher)
+	equityPriceProviders, err := BuildEquityPriceProvider(cfg, priceCacher, symbolResolver)
 	if err != nil {
 		return nil, err
 	}
 
-	cryptoPriceProvider, err := BuildCryptoPriceProvider(cfg, priceCacher)
+	cryptoPriceProviders, err := BuildCryptoPriceProvider(cfg, priceCacher, symbolResolver)
+	if err != nil {
+		return nil, err
+	}
+
+	commodityPriceProviders, err := BuildCommodityPriceProvider(cfg, priceCacher, symbolResolver)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +85,11 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 	}
 
 	// Services
-	pricingSvc := service.NewPricingService(equityPriceProvider, cryptoPriceProvider, fxProvider)
+	pricingSvc := service.NewPricingService(map[string]service.PriceProvider{
+		string(domain.InstrumentTypeEquity):    equityPriceProviders,
+		string(domain.InstrumentTypeCrypto):    cryptoPriceProviders,
+		string(domain.InstrumentTypeCommodity): commodityPriceProviders,
+	}, fxProvider)
 
 	portfolioAnalyser := analysis.NewPortfolioAnalyzer(pricingSvc)
 	riskAnalyser := analysis.NewRiskAnalyzer()

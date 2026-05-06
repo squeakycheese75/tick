@@ -43,10 +43,16 @@ type Instrument struct {
 	Exchange       string
 }
 
+type ProviderSymbol struct {
+	Provider string
+	Symbol   string
+}
+
 const (
-	InstrumentTypeEquity InstrumentType = "equity"
-	InstrumentTypeCrypto InstrumentType = "crypto"
-	InstrumentTypeFX     InstrumentType = "fx"
-	InstrumentTypeETF    InstrumentType = "etf"
-	InstrumentTypeBond   InstrumentType = "bond"
+	InstrumentTypeEquity    InstrumentType = "equity"
+	InstrumentTypeCrypto    InstrumentType = "crypto"
+	InstrumentTypeFX        InstrumentType = "fx"
+	InstrumentTypeETF       InstrumentType = "etf"
+	InstrumentTypeBond      InstrumentType = "bond"
+	InstrumentTypeCommodity InstrumentType = "commodity"
 )

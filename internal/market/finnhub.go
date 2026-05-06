@@ -26,10 +26,10 @@ type finnhubQuoteResponse struct {
 	PC float64 `json:"pc"` // previous close
 }
 
-func (p *FinnhubPriceProvider) GetQuote(ctx context.Context, ticker string) (domain.Quote, error) {
+func (p *FinnhubPriceProvider) GetQuote(ctx context.Context, in GetQuoteParams) (domain.Quote, error) {
 	url := fmt.Sprintf(
 		"https://finnhub.io/api/v1/quote?symbol=%s&token=%s",
-		ticker,
+		in.ProviderSymbol,
 		p.apiKey,
 	)
 
@@ -52,7 +52,7 @@ func (p *FinnhubPriceProvider) GetQuote(ctx context.Context, ticker string) (dom
 	}
 
 	if data.C == 0 {
-		return domain.Quote{}, fmt.Errorf("no price returned for %s", ticker)
+		return domain.Quote{}, fmt.Errorf("no price returned for %s", in.ProviderSymbol)
 	}
 
 	change := 0.0
@@ -63,7 +63,7 @@ func (p *FinnhubPriceProvider) GetQuote(ctx context.Context, ticker string) (dom
 	}
 
 	return domain.Quote{
-		Symbol:        ticker,
+		Symbol:        in.ProviderSymbol,
 		Price:         data.C,
 		PriceCurrency: "USD",
 		PreviousClose: data.PC,

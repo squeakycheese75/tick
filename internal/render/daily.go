@@ -1,6 +1,7 @@
 package render
 
 import (
+	"fmt"
 	"io"
 	"strings"
 
@@ -116,7 +117,11 @@ func renderHoldingRows(
 ) {
 	title := opts.Title
 	if title == "" {
-		title = "Holdings"
+		if opts.ShowTop > 0 {
+			title = "Top Holdings"
+		} else {
+			title = "Holdings"
+		}
 	}
 
 	out.println(title)
@@ -126,36 +131,39 @@ func renderHoldingRows(
 	}
 
 	for _, h := range r.Holdings {
-		out.printf(
-			"%-5s %7.2f%% %16s  @ %16s  %s",
-			h.Symbol,
-			h.Weight*100,
-			formatMoney(h.MarketValueBase, baseCurrency),
-			formatMoney(h.QuotedPrice, h.PriceCurrency),
-			formatChangePercent(h.ChangePercent, opts.Color),
-		)
-
+		absChange := ""
 		if showAbsChange {
-			out.printf(
+			absChange = fmt.Sprintf(
 				"  %s",
 				formatSignedMoneyColored(h.ChangeAbsolute, baseCurrency, opts.Color),
 			)
 		}
 
+		snapshot := ""
 		if opts.ShowSnapshotDelta &&
 			h.SinceLastSnapshot != nil &&
 			(!opts.HideZeroDelta || shouldShowChange(
 				h.SinceLastSnapshot.Absolute,
 				h.SinceLastSnapshot.Percent,
 			)) {
-			out.printf(
+			snapshot = fmt.Sprintf(
 				"  Δsnap %s (%s)",
 				formatSignedMoneyColored(h.SinceLastSnapshot.Absolute, baseCurrency, opts.Color),
 				formatSignedPercentColored(h.SinceLastSnapshot.Percent, opts.Color),
 			)
 		}
 
-		out.println("")
+		out.printf(
+			"%-6s %10s %7.2f%% %16s  @ %13s  %s%s%s\n",
+			h.Symbol,
+			formatQuantity(h.Quantity),
+			h.Weight*100,
+			formatMoney(h.MarketValueBase, baseCurrency),
+			formatMoney(h.QuotedPrice, h.PriceCurrency),
+			formatChangePercent(h.ChangePercent, opts.Color),
+			absChange,
+			snapshot,
+		)
 	}
 }
 
