@@ -1,7 +1,6 @@
 CREATE TABLE IF NOT EXISTS instruments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     symbol TEXT NOT NULL UNIQUE,
-    provider_symbol TEXT NOT NULL,
     asset_type TEXT NOT NULL,
     exchange TEXT,
     quote_currency TEXT NOT NULL,
@@ -41,7 +40,8 @@ CREATE INDEX IF NOT EXISTS idx_positions_instrument_id
 ON positions(instrument_id);
 
 CREATE TABLE IF NOT EXISTS price_cache (
-    ticker TEXT PRIMARY KEY,
+    symbol TEXT PRIMARY KEY,
+    provider_symbol TEXT,
     price REAL NOT NULL,
     price_currency TEXT NOT NULL,
     previous_close REAL NOT NULL,

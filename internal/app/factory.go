@@ -6,16 +6,17 @@ import (
 	"time"
 
 	"github.com/squeakycheese75/tick/data"
-	"github.com/squeakycheese75/tick/internal/adapters/market"
-	"github.com/squeakycheese75/tick/internal/adapters/news"
 	"github.com/squeakycheese75/tick/internal/domain"
 	"github.com/squeakycheese75/tick/internal/llm"
+	"github.com/squeakycheese75/tick/internal/market"
+	"github.com/squeakycheese75/tick/internal/news"
 	"github.com/squeakycheese75/tick/internal/repository"
+	"github.com/squeakycheese75/tick/internal/service"
 )
 
 type (
 	PriceProvider interface {
-		GetQuote(ctx context.Context, ticker string) (domain.Quote, error)
+		GetQuote(ctx context.Context, p market.GetQuoteParams) (domain.Quote, error)
 	}
 	FXProvider interface {
 		GetRate(ctx context.Context, from string, to string) (domain.FXRate, error)
@@ -35,54 +36,121 @@ type (
 		Complete(ctx context.Context, req llm.CompletionRequest) (llm.CompletionResponse, error)
 		Ping(ctx context.Context) error
 	}
+	SymbolResolver interface {
+		Resolve(symbol, provider string) (string, error)
+	}
 )
 
-func BuildEquityPriceProvider(cfg Config, priceCacheStore PriceCacheStore) (PriceProvider, error) {
-	var provider PriceProvider
+func BuildEquityPriceProvider(
+	cfg Config,
+	priceCacheStore PriceCacheStore,
+	symbolResolver SymbolResolver,
+) (PriceProvider, error) {
+	providers := make([]market.NamedPriceProvider, 0)
 
-	switch cfg.EquityPriceProvider {
+	for _, name := range cfg.EquityPriceProviders {
+		provider, err := buildSingleEquityPriceProvider(cfg, name, priceCacheStore)
+		if err != nil {
+			return nil, err
+		}
+
+		providers = append(providers, market.NamedPriceProvider{
+			Name:     name,
+			Provider: provider,
+		})
+	}
+
+	return market.NewChainPriceProvider(providers, symbolResolver), nil
+}
+
+func buildSingleEquityPriceProvider(
+	cfg Config,
+	name string,
+	priceCacheStore PriceCacheStore,
+) (PriceProvider, error) {
+	var provider service.PriceProvider
+
+	switch name {
 	case "static":
 		provider = market.NewStaticPriceProvider()
 
 	case "finnhub":
 		provider = market.NewFinnhubPriceProvider(cfg.FinnhubAPIKey)
 
-		if cfg.CacheEnabled && priceCacheStore != nil {
-			return market.NewCachedPriceProvider(provider, priceCacheStore, cfg.PriceCacheTTL), nil
-		}
+	case "yahoo":
+		provider = market.NewYahooPriceProvider(nil)
 
 	default:
-		return nil, fmt.Errorf("unsupported EQUITY_PRICE_PROVIDER %q", cfg.EquityPriceProvider)
+		return nil, fmt.Errorf("unsupported EQUITY_PRICE_PROVIDER %q", name)
+	}
+
+	if cfg.CacheEnabled && priceCacheStore != nil {
+		provider = market.NewCachedPriceProvider(provider, priceCacheStore, cfg.PriceCacheTTL)
 	}
 
 	return provider, nil
 }
 
-func BuildCryptoPriceProvider(cfg Config, priceCacheStore PriceCacheStore) (PriceProvider, error) {
+func BuildCryptoPriceProvider(
+	cfg Config,
+	priceCacheStore PriceCacheStore,
+	symbolResolver SymbolResolver,
+) (PriceProvider, error) {
+	providers := make([]market.NamedPriceProvider, 0, len(cfg.CryptoPriceProviders))
+
+	for _, name := range cfg.CryptoPriceProviders {
+		provider, err := buildSingleCryptoPriceProvider(cfg, name, priceCacheStore)
+		if err != nil {
+			return nil, err
+		}
+
+		providers = append(providers, market.NamedPriceProvider{
+			Name:     name,
+			Provider: provider,
+		})
+	}
+
+	return market.NewChainPriceProvider(providers, symbolResolver), nil
+}
+
+func buildSingleCryptoPriceProvider(
+	cfg Config,
+	name string,
+	priceCacheStore PriceCacheStore,
+) (PriceProvider, error) {
 	var provider PriceProvider
 
-	switch cfg.CryptoPriceProvider {
+	switch name {
 	case "static":
 		provider = market.NewStaticCryptoPriceProvider()
 
 	case "coingecko":
 		provider = market.NewCoinGeckoProvider()
 
-		if cfg.CacheEnabled && priceCacheStore != nil {
-			return market.NewCachedPriceProvider(provider, priceCacheStore, cfg.PriceCacheTTL), nil
-		}
+	case "yahoo":
+		provider = market.NewYahooPriceProvider(nil)
 
 	default:
-		return nil, fmt.Errorf("unsupported CRYPTO_PRICE_PROVIDER %q", cfg.EquityPriceProvider)
+		return nil, fmt.Errorf("unsupported CRYPTO_PRICE_PROVIDER %q", name)
+	}
+
+	if cfg.CacheEnabled && priceCacheStore != nil {
+		provider = market.NewCachedPriceProvider(provider, priceCacheStore, cfg.PriceCacheTTL)
 	}
 
 	return provider, nil
 }
 
 func BuildFXProvider(cfg Config, fxCacheStore FXCacheStore) (FXProvider, error) {
+	if len(cfg.FXProviders) == 0 {
+		return nil, fmt.Errorf("no FX providers configured")
+	}
+
+	name := cfg.FXProviders[0]
+
 	var provider FXProvider
 
-	switch cfg.FXProvider {
+	switch name {
 	case "static":
 		provider = market.NewStaticFXProvider()
 
@@ -90,11 +158,10 @@ func BuildFXProvider(cfg Config, fxCacheStore FXCacheStore) (FXProvider, error) 
 		provider = market.NewFrankfurterFXProvider()
 
 	default:
-		return nil, fmt.Errorf("unsupported FX_PROVIDER %q", cfg.FXProvider)
+		return nil, fmt.Errorf("unsupported FX_PROVIDER %q", name)
 	}
 
-	// apply cache conditionally
-	if cfg.CacheEnabled {
+	if cfg.CacheEnabled && fxCacheStore != nil {
 		provider = market.NewCachedFXProvider(provider, fxCacheStore, cfg.FXCacheTTL)
 	}
 
@@ -124,9 +191,15 @@ func BuildLLMClient(cfg Config) (LLMProvider, error) {
 }
 
 func BuildNewsProvider(cfg Config) (NewsProvider, error) {
+	if len(cfg.NewsProviders) == 0 {
+		return nil, fmt.Errorf("no news providers configured")
+	}
+
+	name := cfg.NewsProviders[0]
+
 	var provider NewsProvider
 
-	switch cfg.NewsProvider {
+	switch name {
 	case "static":
 		provider = news.NewStaticProvider()
 
@@ -135,9 +208,58 @@ func BuildNewsProvider(cfg Config) (NewsProvider, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		provider = news.NewNewsAPIProvider(cfg.NewsAPIOrgAPIKey, keywordHints)
+
 	default:
-		return nil, fmt.Errorf("unsupported NEWS_PROVIDER %q", cfg.NewsProvider)
+		return nil, fmt.Errorf("unsupported NEWS_PROVIDER %q", name)
+	}
+
+	return provider, nil
+}
+
+func BuildCommodityPriceProvider(
+	cfg Config,
+	priceCacheStore PriceCacheStore,
+	symbolResolver SymbolResolver,
+) (PriceProvider, error) {
+	providers := make([]market.NamedPriceProvider, 0, len(cfg.CommodityPriceProviders))
+
+	for _, name := range cfg.CommodityPriceProviders {
+		provider, err := buildSingleCommodityPriceProvider(cfg, name, priceCacheStore)
+		if err != nil {
+			return nil, err
+		}
+
+		providers = append(providers, market.NamedPriceProvider{
+			Name:     name,
+			Provider: provider,
+		})
+	}
+
+	return market.NewChainPriceProvider(providers, symbolResolver), nil
+}
+
+func buildSingleCommodityPriceProvider(
+	cfg Config,
+	name string,
+	priceCacheStore PriceCacheStore,
+) (PriceProvider, error) {
+	var provider PriceProvider
+
+	switch name {
+	case "static":
+		provider = market.NewStaticCommodityPriceProvider()
+
+	case "yahoo":
+		provider = market.NewYahooPriceProvider(nil)
+
+	default:
+		return nil, fmt.Errorf("unsupported COMMODITY_PRICE_PROVIDER %q", name)
+	}
+
+	if cfg.CacheEnabled && priceCacheStore != nil {
+		provider = market.NewCachedPriceProvider(provider, priceCacheStore, cfg.PriceCacheTTL)
 	}
 
 	return provider, nil

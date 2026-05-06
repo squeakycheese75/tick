@@ -31,7 +31,8 @@ func (r *PriceCacheRepository) Get(ctx context.Context, ticker string) (CachedPr
 
 	return CachedPriceQuote{
 		PriceQuote: PriceQuote{
-			Ticker:        row.Ticker,
+			Symbol:        row.Symbol,
+			SourceSymbol:  row.ProviderSymbol.String,
 			Price:         row.Price,
 			PriceCurrency: row.PriceCurrency,
 			PreviousClose: row.PreviousClose,
@@ -45,7 +46,11 @@ func (r *PriceCacheRepository) Get(ctx context.Context, ticker string) (CachedPr
 
 func (r *PriceCacheRepository) Upsert(ctx context.Context, quote PriceQuote, fetchedAt time.Time) error {
 	err := r.q.UpsertPriceCache(ctx, db.UpsertPriceCacheParams{
-		Ticker:        strings.ToUpper(strings.TrimSpace(quote.Ticker)),
+		Symbol: strings.ToUpper(strings.TrimSpace(quote.Symbol)),
+		ProviderSymbol: sql.NullString{
+			Valid:  true,
+			String: strings.ToUpper(strings.TrimSpace(quote.SourceSymbol)),
+		},
 		Price:         quote.Price,
 		PriceCurrency: quote.PriceCurrency,
 		PreviousClose: quote.PreviousClose,
@@ -55,7 +60,7 @@ func (r *PriceCacheRepository) Upsert(ctx context.Context, quote PriceQuote, fet
 		FetchedAt:     fetchedAt,
 	})
 	if err != nil {
-		return fmt.Errorf("upsert price cache for %q: %w", quote.Ticker, err)
+		return fmt.Errorf("upsert price cache for %q: %w", quote.Symbol, err)
 	}
 
 	return nil

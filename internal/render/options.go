@@ -24,6 +24,7 @@ type HoldingsOptions struct {
 	ShowSnapshotDelta bool
 	HideZeroDelta     bool
 	Color             bool
+	ShowTop           int
 }
 
 type RiskOptions struct {

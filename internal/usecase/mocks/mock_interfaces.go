@@ -304,6 +304,73 @@ func (mr *MockPortfolioSnapshotRepositoryMockRecorder) ListPositionsBySnapshotID
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPositionsBySnapshotID", reflect.TypeOf((*MockPortfolioSnapshotRepository)(nil).ListPositionsBySnapshotID), ctx, snapshotID)
 }
 
+// MockTargetRepository is a mock of TargetRepository interface.
+type MockTargetRepository struct {
+	ctrl     *gomock.Controller
+	recorder *MockTargetRepositoryMockRecorder
+	isgomock struct{}
+}
+
+// MockTargetRepositoryMockRecorder is the mock recorder for MockTargetRepository.
+type MockTargetRepositoryMockRecorder struct {
+	mock *MockTargetRepository
+}
+
+// NewMockTargetRepository creates a new mock instance.
+func NewMockTargetRepository(ctrl *gomock.Controller) *MockTargetRepository {
+	mock := &MockTargetRepository{ctrl: ctrl}
+	mock.recorder = &MockTargetRepositoryMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockTargetRepository) EXPECT() *MockTargetRepositoryMockRecorder {
+	return m.recorder
+}
+
+// Delete mocks base method.
+func (m *MockTargetRepository) Delete(ctx context.Context, targetID, portfolioID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Delete", ctx, targetID, portfolioID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Delete indicates an expected call of Delete.
+func (mr *MockTargetRepositoryMockRecorder) Delete(ctx, targetID, portfolioID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockTargetRepository)(nil).Delete), ctx, targetID, portfolioID)
+}
+
+// ListByPortfolio mocks base method.
+func (m *MockTargetRepository) ListByPortfolio(ctx context.Context, portfolioID int64) ([]domain.Target, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListByPortfolio", ctx, portfolioID)
+	ret0, _ := ret[0].([]domain.Target)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListByPortfolio indicates an expected call of ListByPortfolio.
+func (mr *MockTargetRepositoryMockRecorder) ListByPortfolio(ctx, portfolioID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByPortfolio", reflect.TypeOf((*MockTargetRepository)(nil).ListByPortfolio), ctx, portfolioID)
+}
+
+// Save mocks base method.
+func (m *MockTargetRepository) Save(ctx context.Context, target domain.Target) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Save", ctx, target)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Save indicates an expected call of Save.
+func (mr *MockTargetRepositoryMockRecorder) Save(ctx, target any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Save", reflect.TypeOf((*MockTargetRepository)(nil).Save), ctx, target)
+}
+
 // MockNewsSvc is a mock of NewsSvc interface.
 type MockNewsSvc struct {
 	ctrl     *gomock.Controller
@@ -343,32 +410,32 @@ func (mr *MockNewsSvcMockRecorder) GetNews(ctx, ticker, limit any) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNews", reflect.TypeOf((*MockNewsSvc)(nil).GetNews), ctx, ticker, limit)
 }
 
-// MockPortfolioSvc is a mock of PortfolioSvc interface.
-type MockPortfolioSvc struct {
+// MockAnaysisSvc is a mock of AnaysisSvc interface.
+type MockAnaysisSvc struct {
 	ctrl     *gomock.Controller
-	recorder *MockPortfolioSvcMockRecorder
+	recorder *MockAnaysisSvcMockRecorder
 	isgomock struct{}
 }
 
-// MockPortfolioSvcMockRecorder is the mock recorder for MockPortfolioSvc.
-type MockPortfolioSvcMockRecorder struct {
-	mock *MockPortfolioSvc
+// MockAnaysisSvcMockRecorder is the mock recorder for MockAnaysisSvc.
+type MockAnaysisSvcMockRecorder struct {
+	mock *MockAnaysisSvc
 }
 
-// NewMockPortfolioSvc creates a new mock instance.
-func NewMockPortfolioSvc(ctrl *gomock.Controller) *MockPortfolioSvc {
-	mock := &MockPortfolioSvc{ctrl: ctrl}
-	mock.recorder = &MockPortfolioSvcMockRecorder{mock}
+// NewMockAnaysisSvc creates a new mock instance.
+func NewMockAnaysisSvc(ctrl *gomock.Controller) *MockAnaysisSvc {
+	mock := &MockAnaysisSvc{ctrl: ctrl}
+	mock.recorder = &MockAnaysisSvcMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockPortfolioSvc) EXPECT() *MockPortfolioSvcMockRecorder {
+func (m *MockAnaysisSvc) EXPECT() *MockAnaysisSvcMockRecorder {
 	return m.recorder
 }
 
 // GetAnalysis mocks base method.
-func (m *MockPortfolioSvc) GetAnalysis(ctx context.Context, portfolioName string) (domain.PortfolioAnalysis, error) {
+func (m *MockAnaysisSvc) GetAnalysis(ctx context.Context, portfolioName string) (domain.PortfolioAnalysis, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAnalysis", ctx, portfolioName)
 	ret0, _ := ret[0].(domain.PortfolioAnalysis)
@@ -377,24 +444,48 @@ func (m *MockPortfolioSvc) GetAnalysis(ctx context.Context, portfolioName string
 }
 
 // GetAnalysis indicates an expected call of GetAnalysis.
-func (mr *MockPortfolioSvcMockRecorder) GetAnalysis(ctx, portfolioName any) *gomock.Call {
+func (mr *MockAnaysisSvcMockRecorder) GetAnalysis(ctx, portfolioName any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAnalysis", reflect.TypeOf((*MockPortfolioSvc)(nil).GetAnalysis), ctx, portfolioName)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAnalysis", reflect.TypeOf((*MockAnaysisSvc)(nil).GetAnalysis), ctx, portfolioName)
+}
+
+// MockRiskSvc is a mock of RiskSvc interface.
+type MockRiskSvc struct {
+	ctrl     *gomock.Controller
+	recorder *MockRiskSvcMockRecorder
+	isgomock struct{}
+}
+
+// MockRiskSvcMockRecorder is the mock recorder for MockRiskSvc.
+type MockRiskSvcMockRecorder struct {
+	mock *MockRiskSvc
+}
+
+// NewMockRiskSvc creates a new mock instance.
+func NewMockRiskSvc(ctrl *gomock.Controller) *MockRiskSvc {
+	mock := &MockRiskSvc{ctrl: ctrl}
+	mock.recorder = &MockRiskSvcMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockRiskSvc) EXPECT() *MockRiskSvcMockRecorder {
+	return m.recorder
 }
 
 // GetRisk mocks base method.
-func (m *MockPortfolioSvc) GetRisk(ctx context.Context, portfolioName string) (domain.PortfolioRisk, error) {
+func (m *MockRiskSvc) GetRisk(ctx context.Context, analysis domain.PortfolioAnalysis) (domain.PortfolioRisk, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRisk", ctx, portfolioName)
+	ret := m.ctrl.Call(m, "GetRisk", ctx, analysis)
 	ret0, _ := ret[0].(domain.PortfolioRisk)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetRisk indicates an expected call of GetRisk.
-func (mr *MockPortfolioSvcMockRecorder) GetRisk(ctx, portfolioName any) *gomock.Call {
+func (mr *MockRiskSvcMockRecorder) GetRisk(ctx, analysis any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRisk", reflect.TypeOf((*MockPortfolioSvc)(nil).GetRisk), ctx, portfolioName)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRisk", reflect.TypeOf((*MockRiskSvc)(nil).GetRisk), ctx, analysis)
 }
 
 // MockDailyReportSummarizer is a mock of DailyReportSummarizer interface.
@@ -475,10 +566,10 @@ func (m *MockReportBuilder) EXPECT() *MockReportBuilderMockRecorder {
 }
 
 // BuildDailyReport mocks base method.
-func (m *MockReportBuilder) BuildDailyReport(ctx context.Context, in report.BuildDailyReportParams) (domain.DailyReportResult, error) {
+func (m *MockReportBuilder) BuildDailyReport(ctx context.Context, in report.BuildDailyReportParams) (domain.DailyReport, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BuildDailyReport", ctx, in)
-	ret0, _ := ret[0].(domain.DailyReportResult)
+	ret0, _ := ret[0].(domain.DailyReport)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

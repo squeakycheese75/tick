@@ -51,7 +51,6 @@ func (r *InstrumentRepository) GetBySymbolAndExchange(
 	return Instrument{
 		ID:             row.ID,
 		Symbol:         row.Symbol,
-		ProviderSymbol: row.ProviderSymbol,
 		Exchange:       row.Exchange.String,
 		InstrumentType: row.AssetType,
 		QuoteCurrency:  row.QuoteCurrency,
@@ -60,9 +59,8 @@ func (r *InstrumentRepository) GetBySymbolAndExchange(
 
 func (r *InstrumentRepository) Create(ctx context.Context, in Instrument) (Instrument, error) {
 	id, err := r.q.CreateInstrument(ctx, db.CreateInstrumentParams{
-		Symbol:         in.Symbol,
-		ProviderSymbol: in.ProviderSymbol,
-		AssetType:      in.InstrumentType,
+		Symbol:    in.Symbol,
+		AssetType: in.InstrumentType,
 		Exchange: sql.NullString{
 			String: in.Exchange,
 			Valid:  in.Exchange != "",

@@ -24,8 +24,8 @@ func NewCoinGeckoProvider() *CoinGeckoProvider {
 	}
 }
 
-func (p *CoinGeckoProvider) GetQuote(ctx context.Context, ticker string) (domain.Quote, error) {
-	coinID, err := mapCryptoTickerToCoinGeckoID(ticker)
+func (p *CoinGeckoProvider) GetQuote(ctx context.Context, in GetQuoteParams) (domain.Quote, error) {
+	coinID, err := mapCryptoTickerToCoinGeckoID(in.ProviderSymbol)
 	if err != nil {
 		return domain.Quote{}, err
 	}
@@ -80,7 +80,7 @@ func (p *CoinGeckoProvider) GetQuote(ctx context.Context, ticker string) (domain
 	change := price - previous
 
 	return domain.Quote{
-		Symbol:        strings.ToUpper(strings.TrimSpace(ticker)),
+		Symbol:        strings.ToUpper(strings.TrimSpace(in.ProviderSymbol)),
 		Price:         price,
 		PriceCurrency: "USD",
 		PreviousClose: previous,

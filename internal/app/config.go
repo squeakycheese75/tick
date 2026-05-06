@@ -11,10 +11,11 @@ import (
 )
 
 type Config struct {
-	EquityPriceProvider string
-	CryptoPriceProvider string
-	FXProvider          string
-	NewsProvider        string
+	EquityPriceProviders    []string
+	CryptoPriceProviders    []string
+	CommodityPriceProviders []string
+	FXProviders             []string
+	NewsProviders           []string
 
 	FinnhubAPIKey    string
 	NewsAPIOrgAPIKey string
@@ -42,13 +43,14 @@ func LoadConfig() (Config, error) {
 	}
 
 	cfg := Config{
-		EquityPriceProvider: getenvDefault("EQUITY_PRICE_PROVIDER", "static"),
-		CryptoPriceProvider: getenvDefault("CRYPTO_PRICE_PROVIDER", "static"),
-		FXProvider:          getenvDefault("FX_PROVIDER", "static"),
-		NewsProvider:        getenvDefault("NEWS_PROVIDER", "static"),
-		FinnhubAPIKey:       os.Getenv("FINNHUB_API_KEY"),
-		NewsAPIOrgAPIKey:    os.Getenv("NEWSAPIORG_API_KEY"),
-		CacheEnabled:        getenvDefault("CACHE_ENABLED", "true") == "true",
+		EquityPriceProviders:    splitEnvDefault("EQUITY_PRICE_PROVIDERS", "static"),
+		CryptoPriceProviders:    splitEnvDefault("CRYPTO_PRICE_PROVIDERS", "static"),
+		CommodityPriceProviders: splitEnvDefault("COMMODITY_PRICE_PROVIDERS", "static"),
+		FXProviders:             splitEnvDefault("FX_PROVIDERS", "static"),
+		NewsProviders:           splitEnvDefault("NEWS_PROVIDERS", "static"),
+		FinnhubAPIKey:           os.Getenv("FINNHUB_API_KEY"),
+		NewsAPIOrgAPIKey:        os.Getenv("NEWSAPIORG_API_KEY"),
+		CacheEnabled:            getenvDefault("CACHE_ENABLED", "true") == "true",
 
 		LLMEnabled:  getenvDefault("LLM_ENABLED", "false") == "true",
 		LLMProvider: getenvDefault("LLM_PROVIDER", "ollama"),
@@ -70,36 +72,52 @@ func LoadConfig() (Config, error) {
 }
 
 func (c Config) Validate() error {
-	switch c.EquityPriceProvider {
-	case "static", "finnhub":
-	default:
-		return fmt.Errorf("unsupported EQUITY_PRICE_PROVIDER %q", c.EquityPriceProvider)
+	for _, provider := range c.EquityPriceProviders {
+		switch provider {
+		case "static", "finnhub", "yahoo":
+		default:
+			return fmt.Errorf("unsupported EQUITY_PRICE_PROVIDER %q", provider)
+		}
+
+		if provider == "finnhub" && c.FinnhubAPIKey == "" {
+			return fmt.Errorf("FINNHUB_API_KEY is required when EQUITY_PRICE_PROVIDER includes finnhub")
+		}
 	}
 
-	switch c.CryptoPriceProvider {
-	case "static", "coingecko":
-	default:
-		return fmt.Errorf("unsupported CRYPTO_PRICE_PROVIDER %q", c.CryptoPriceProvider)
+	for _, provider := range c.CryptoPriceProviders {
+		switch provider {
+		case "static", "coingecko", "yahoo":
+		default:
+			return fmt.Errorf("unsupported CRYPTO_PRICE_PROVIDER %q", provider)
+		}
 	}
 
-	switch c.FXProvider {
-	case "static", "frankfurter":
-	default:
-		return fmt.Errorf("unsupported FX_PROVIDER %q", c.FXProvider)
+	for _, provider := range c.FXProviders {
+		switch provider {
+		case "static", "frankfurter":
+		default:
+			return fmt.Errorf("unsupported FX_PROVIDER %q", provider)
+		}
 	}
 
-	switch c.NewsProvider {
-	case "static", "newsapiorg":
-	default:
-		return fmt.Errorf("unsupported FX_PROVIDER %q", c.FXProvider)
+	for _, provider := range c.CommodityPriceProviders {
+		switch provider {
+		case "static", "yahoo", "goldapi":
+		default:
+			return fmt.Errorf("unsupported FX_PROVIDER %q", provider)
+		}
 	}
 
-	if c.EquityPriceProvider == "finnhub" && c.FinnhubAPIKey == "" {
-		return fmt.Errorf("FINNHUB_API_KEY is required when PRICE_PROVIDER=finnhub")
-	}
+	for _, provider := range c.NewsProviders {
+		switch provider {
+		case "static", "newsapiorg":
+		default:
+			return fmt.Errorf("unsupported NEWS_PROVIDER %q", provider)
+		}
 
-	if c.NewsProvider == "newsapiorg" && c.NewsAPIOrgAPIKey == "" {
-		return fmt.Errorf("NEWSAPIORG_API_KEY is required when PRICE_PROVIDER=newsapiorg")
+		if provider == "newsapiorg" && c.NewsAPIOrgAPIKey == "" {
+			return fmt.Errorf("NEWSAPIORG_API_KEY is required when NEWS_PROVIDER includes newsapiorg")
+		}
 	}
 
 	if c.LLMEnabled {
@@ -142,9 +160,12 @@ func (c Config) String() string {
 	}
 
 	rows := []kv{
-		{"EQUITY_PRICE_PROVIDER", c.EquityPriceProvider},
-		{"FX_PROVIDER", c.FXProvider},
-		{"CRYPTO_PRICE_PROVIDER", c.CryptoPriceProvider},
+		{"EQUITY_PRICE_PROVIDERS", strings.Join(c.EquityPriceProviders, ",")},
+		{"FX_PROVIDERS", strings.Join(c.FXProviders, ",")},
+		{"CRYPTO_PRICE_PROVIDERS", strings.Join(c.CryptoPriceProviders, ",")},
+		{"COMMODITY_PRICE_PROVIDERS", strings.Join(c.CommodityPriceProviders, ",")},
+		{"NEWS_PROVIDERS", strings.Join(c.NewsProviders, ",")},
+
 		{"CACHE_ENABLED", fmt.Sprintf("%t", c.CacheEnabled)},
 		{"CACHE_PRICE_TTL", c.PriceCacheTTL.String()},
 		{"CACHE_FX_TTL", c.FXCacheTTL.String()},
@@ -195,16 +216,20 @@ func mask(s string) string {
 	return s[:4] + "****"
 }
 
-// func LoadKeywordHints(path string) (map[string][]string, error) {
-// 	b, err := os.ReadFile(path)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("read keyword hints: %w", err)
-// 	}
+func splitEnvDefault(key, fallback string) []string {
+	v := getenvDefault(key, fallback)
 
-// 	var hints map[string][]string
-// 	if err := json.Unmarshal(b, &hints); err != nil {
-// 		return nil, fmt.Errorf("unmarshal keyword hints: %w", err)
-// 	}
+	parts := strings.Split(v, ",")
+	out := make([]string, 0, len(parts))
 
-// 	return hints, nil
-// }
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+
+		out = append(out, p)
+	}
+
+	return out
+}

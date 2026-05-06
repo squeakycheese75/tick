@@ -18,15 +18,14 @@ type FxCache struct {
 }
 
 type Instrument struct {
-	ID             int64          `json:"id"`
-	Symbol         string         `json:"symbol"`
-	ProviderSymbol string         `json:"provider_symbol"`
-	AssetType      string         `json:"asset_type"`
-	Exchange       sql.NullString `json:"exchange"`
-	QuoteCurrency  string         `json:"quote_currency"`
-	CreatedAt      time.Time      `json:"created_at"`
-	UpdatedAt      time.Time      `json:"updated_at"`
-	DeletedAt      sql.NullTime   `json:"deleted_at"`
+	ID            int64          `json:"id"`
+	Symbol        string         `json:"symbol"`
+	AssetType     string         `json:"asset_type"`
+	Exchange      sql.NullString `json:"exchange"`
+	QuoteCurrency string         `json:"quote_currency"`
+	CreatedAt     time.Time      `json:"created_at"`
+	UpdatedAt     time.Time      `json:"updated_at"`
+	DeletedAt     sql.NullTime   `json:"deleted_at"`
 }
 
 type Portfolio struct {
@@ -84,12 +83,13 @@ type Position struct {
 }
 
 type PriceCache struct {
-	Ticker        string    `json:"ticker"`
-	Price         float64   `json:"price"`
-	PriceCurrency string    `json:"price_currency"`
-	PreviousClose float64   `json:"previous_close"`
-	Change        float64   `json:"change"`
-	ChangePercent float64   `json:"change_percent"`
-	Source        string    `json:"source"`
-	FetchedAt     time.Time `json:"fetched_at"`
+	Symbol         string         `json:"symbol"`
+	ProviderSymbol sql.NullString `json:"provider_symbol"`
+	Price          float64        `json:"price"`
+	PriceCurrency  string         `json:"price_currency"`
+	PreviousClose  float64        `json:"previous_close"`
+	Change         float64        `json:"change"`
+	ChangePercent  float64        `json:"change_percent"`
+	Source         string         `json:"source"`
+	FetchedAt      time.Time      `json:"fetched_at"`
 }

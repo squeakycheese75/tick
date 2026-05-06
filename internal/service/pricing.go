@@ -6,39 +6,43 @@ import (
 	"strings"
 
 	"github.com/squeakycheese75/tick/internal/domain"
+	"github.com/squeakycheese75/tick/internal/market"
 )
 
 type (
 	PriceProvider interface {
-		GetQuote(ctx context.Context, ticker string) (domain.Quote, error)
+		GetQuote(ctx context.Context, in market.GetQuoteParams) (domain.Quote, error)
 	}
+
 	FXProvider interface {
 		GetRate(ctx context.Context, from string, to string) (domain.FXRate, error)
 	}
 )
 
 type PricingService struct {
-	priceProvider       PriceProvider
-	cryptoPriceProvider PriceProvider
-	fx                  FXProvider
+	providers map[string]PriceProvider
+	fx        FXProvider
 }
 
-func NewPricingService(equityPrices PriceProvider, cryptoPrices PriceProvider, fx FXProvider) *PricingService {
+func NewPricingService(
+	providers map[string]PriceProvider,
+	fx FXProvider,
+) *PricingService {
 	return &PricingService{
-		priceProvider:       equityPrices,
-		cryptoPriceProvider: cryptoPrices,
-		fx:                  fx,
+		providers: providers,
+		fx:        fx,
 	}
 }
 
 func (s *PricingService) GetValuationQuote(
 	ctx context.Context,
 	symbol string,
+	providerSymbol string,
 	targetCurrency string,
 	instrumentCurrency string,
 	instrumentType string,
 ) (domain.ValuationQuote, error) {
-	quote, err := s.getQuote(ctx, symbol, instrumentType)
+	quote, err := s.getQuote(ctx, symbol, providerSymbol, instrumentType)
 	if err != nil {
 		return domain.ValuationQuote{}, err
 	}
@@ -82,13 +86,22 @@ func (s *PricingService) GetValuationQuote(
 	}, nil
 }
 
-func (s *PricingService) getQuote(ctx context.Context, symbol, instrumentType string) (domain.Quote, error) {
-	switch instrumentType {
-	case string(domain.InstrumentTypeCrypto):
-		return s.cryptoPriceProvider.GetQuote(ctx, symbol)
-	case string(domain.InstrumentTypeEquity):
-		return s.priceProvider.GetQuote(ctx, symbol)
-	default:
-		return domain.Quote{}, fmt.Errorf("unsupported ASSET_TYPE %q", instrumentType)
+func (s *PricingService) getQuote(
+	ctx context.Context,
+	symbol string,
+	providerSymbol string,
+	instrumentType string,
+) (domain.Quote, error) {
+	provider, ok := s.providers[instrumentType]
+	if !ok {
+		return domain.Quote{}, fmt.Errorf(
+			"unsupported instrument type %q",
+			instrumentType,
+		)
 	}
+
+	return provider.GetQuote(ctx, market.GetQuoteParams{
+		Symbol:         symbol,
+		ProviderSymbol: providerSymbol,
+	})
 }
