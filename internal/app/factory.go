@@ -29,6 +29,11 @@ type (
 		Get(ctx context.Context, baseCurrency, quoteCurrency string) (repository.CachedFXRate, error)
 		Upsert(ctx context.Context, cached repository.CachedFXRate) error
 	}
+	ConsumedPriceStore interface {
+		Create(ctx context.Context, price repository.ConsumedPrice) error
+		GetLatest(ctx context.Context, symbol string) (repository.ConsumedPrice, error)
+	}
+
 	NewsProvider interface {
 		GetNews(ctx context.Context, symbol string, limit int) (domain.NewsSummary, error)
 	}
@@ -263,4 +268,46 @@ func buildSingleCommodityPriceProvider(
 	}
 
 	return provider, nil
+}
+
+func BuildFundPriceProvider(
+	cfg Config,
+	consumedPriceStore ConsumedPriceStore,
+	symbolResolver SymbolResolver,
+) (PriceProvider, error) {
+	providers := make([]market.NamedPriceProvider, 0, len(cfg.FundPriceProviders))
+
+	for _, name := range cfg.FundPriceProviders {
+		provider, err := buildSingleFundPriceProvider(cfg, name, consumedPriceStore)
+		if err != nil {
+			return nil, err
+		}
+
+		providers = append(providers, market.NamedPriceProvider{
+			Name:     name,
+			Provider: provider,
+		})
+	}
+
+	return market.NewChainPriceProvider(providers, symbolResolver), nil
+}
+
+func buildSingleFundPriceProvider(
+	cfg Config,
+	name string,
+	consumedPriceStore ConsumedPriceStore,
+) (PriceProvider, error) {
+	switch name {
+	case "consumed":
+		return market.NewConsumedPriceProvider(
+			consumedPriceStore,
+			cfg.ConsumedPriceMaxAge,
+		), nil
+
+	// case "static":
+	// 	return market.NewStaticFundPriceProvider(), nil
+
+	default:
+		return nil, fmt.Errorf("unsupported FUND_PRICE_PROVIDER %q", name)
+	}
 }

@@ -104,3 +104,14 @@ CREATE UNIQUE INDEX idx_portfolio_targets_unique_active
 CREATE INDEX idx_portfolio_targets_portfolio_id
     ON portfolio_targets (portfolio_id);
     
+CREATE TABLE consumed_prices (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    symbol          TEXT NOT NULL,
+    source          TEXT NOT NULL,
+    price           REAL NOT NULL,
+    currency        TEXT NOT NULL,
+    as_of           TIMESTAMP NOT NULL,
+    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE(symbol, source, as_of)
+);

@@ -189,3 +189,24 @@ ORDER BY t.symbol ASC;
 DELETE FROM portfolio_targets
 WHERE id = ?
 AND portfolio_id = ?;
+
+
+-- name: GetLatestConsumerPrice :one
+SELECT *
+FROM consumed_prices
+WHERE symbol = ?
+ORDER BY as_of DESC
+LIMIT 1;
+
+-- name: UpsertConsumedPrice :exec
+INSERT INTO consumed_prices (
+    symbol,
+    source,
+    price,
+    currency,
+    as_of
+) VALUES (?, ?, ?, ?, ?)
+ON CONFLICT(symbol, source, as_of)
+DO UPDATE SET
+    price = excluded.price,
+    currency = excluded.currency;

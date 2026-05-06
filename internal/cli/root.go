@@ -25,6 +25,7 @@ func NewRootCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 	rootCmd.AddCommand(newConfigCmd())
 	rootCmd.AddCommand(newShellCmd(rootCmd))
 	rootCmd.AddCommand(newTargetCmd(runtimeBuilder))
+	rootCmd.AddCommand(newPricesCommand(runtimeBuilder))
 
 	return rootCmd
 }

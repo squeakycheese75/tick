@@ -55,4 +55,5 @@ const (
 	InstrumentTypeETF       InstrumentType = "etf"
 	InstrumentTypeBond      InstrumentType = "bond"
 	InstrumentTypeCommodity InstrumentType = "commodity"
+	InstrumentTypeFund      InstrumentType = "fund"
 )

@@ -293,6 +293,29 @@ func (q *Queries) GetInstrumentBySymbolAndExchange(ctx context.Context, arg GetI
 	return i, err
 }
 
+const getLatestConsumerPrice = `-- name: GetLatestConsumerPrice :one
+SELECT id, symbol, source, price, currency, as_of, created_at
+FROM consumed_prices
+WHERE symbol = ?
+ORDER BY as_of DESC
+LIMIT 1
+`
+
+func (q *Queries) GetLatestConsumerPrice(ctx context.Context, symbol string) (ConsumedPrice, error) {
+	row := q.db.QueryRowContext(ctx, getLatestConsumerPrice, symbol)
+	var i ConsumedPrice
+	err := row.Scan(
+		&i.ID,
+		&i.Symbol,
+		&i.Source,
+		&i.Price,
+		&i.Currency,
+		&i.AsOf,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getLatestPortfolioSnapshot = `-- name: GetLatestPortfolioSnapshot :one
 SELECT id, portfolio_name, base_currency, total_value, captured_at
 FROM portfolio_snapshots
@@ -558,6 +581,39 @@ func (q *Queries) ListTargetsByPortfolio(ctx context.Context, portfolioID int64)
 		return nil, err
 	}
 	return items, nil
+}
+
+const upsertConsumedPrice = `-- name: UpsertConsumedPrice :exec
+INSERT INTO consumed_prices (
+    symbol,
+    source,
+    price,
+    currency,
+    as_of
+) VALUES (?, ?, ?, ?, ?)
+ON CONFLICT(symbol, source, as_of)
+DO UPDATE SET
+    price = excluded.price,
+    currency = excluded.currency
+`
+
+type UpsertConsumedPriceParams struct {
+	Symbol   string    `json:"symbol"`
+	Source   string    `json:"source"`
+	Price    float64   `json:"price"`
+	Currency string    `json:"currency"`
+	AsOf     time.Time `json:"as_of"`
+}
+
+func (q *Queries) UpsertConsumedPrice(ctx context.Context, arg UpsertConsumedPriceParams) error {
+	_, err := q.db.ExecContext(ctx, upsertConsumedPrice,
+		arg.Symbol,
+		arg.Source,
+		arg.Price,
+		arg.Currency,
+		arg.AsOf,
+	)
+	return err
 }
 
 const upsertFXCache = `-- name: UpsertFXCache :exec

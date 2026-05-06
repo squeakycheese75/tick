@@ -39,6 +39,10 @@ type (
 		ListByPortfolio(ctx context.Context, portfolioID int64) ([]domain.Target, error)
 		Delete(ctx context.Context, targetID, portfolioID int64) error
 	}
+	ConsumedPriceRepository interface {
+		Create(ctx context.Context, price repository.ConsumedPrice) error
+		GetLatest(ctx context.Context, symbol string) (repository.ConsumedPrice, error)
+	}
 )
 
 type (

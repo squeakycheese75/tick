@@ -97,3 +97,11 @@ type PortfolioSnapshotPosition struct {
 	MarketValueBase    float64
 	Weight             float64
 }
+
+type ConsumedPrice struct {
+	Symbol   string
+	Price    float64
+	Currency string
+	AsOf     time.Time
+	Source   string
+}

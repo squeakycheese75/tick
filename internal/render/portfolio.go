@@ -163,3 +163,19 @@ func ImportPortfolio(w io.Writer, out domain.ImportPortfolioOutput) error {
 
 	return writer.err
 }
+
+func ConsumedPrices(w io.Writer, out domain.ConsumePriceUsecaseOutput) error {
+	writer := &writer{w: w}
+
+	writer.printf(
+		"Consumed %s %.4f %s (%s)\n",
+		out.Symbol,
+		out.Price,
+		out.Currency,
+		out.AsOf.Format("2006-01-02"),
+	)
+
+	writer.println("")
+
+	return writer.err
+}

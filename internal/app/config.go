@@ -16,6 +16,7 @@ type Config struct {
 	CommodityPriceProviders []string
 	FXProviders             []string
 	NewsProviders           []string
+	FundPriceProviders      []string
 
 	FinnhubAPIKey    string
 	NewsAPIOrgAPIKey string
@@ -23,6 +24,8 @@ type Config struct {
 	CacheEnabled  bool
 	PriceCacheTTL time.Duration
 	FXCacheTTL    time.Duration
+
+	ConsumedPriceMaxAge time.Duration
 
 	LLMEnabled  bool
 	LLMProvider string
@@ -48,9 +51,11 @@ func LoadConfig() (Config, error) {
 		CommodityPriceProviders: splitEnvDefault("COMMODITY_PRICE_PROVIDERS", "static"),
 		FXProviders:             splitEnvDefault("FX_PROVIDERS", "static"),
 		NewsProviders:           splitEnvDefault("NEWS_PROVIDERS", "static"),
-		FinnhubAPIKey:           os.Getenv("FINNHUB_API_KEY"),
-		NewsAPIOrgAPIKey:        os.Getenv("NEWSAPIORG_API_KEY"),
-		CacheEnabled:            getenvDefault("CACHE_ENABLED", "true") == "true",
+		FundPriceProviders:      splitEnvDefault("FUND_PRICES_PROVIDERS", "static"),
+
+		FinnhubAPIKey:    os.Getenv("FINNHUB_API_KEY"),
+		NewsAPIOrgAPIKey: os.Getenv("NEWSAPIORG_API_KEY"),
+		CacheEnabled:     getenvDefault("CACHE_ENABLED", "true") == "true",
 
 		LLMEnabled:  getenvDefault("LLM_ENABLED", "false") == "true",
 		LLMProvider: getenvDefault("LLM_PROVIDER", "ollama"),
@@ -66,6 +71,11 @@ func LoadConfig() (Config, error) {
 	cfg.FXCacheTTL, err = durationEnv("CACHE_FX_TTL", 12*time.Hour)
 	if err != nil {
 		return Config{}, fmt.Errorf("CACHE_FX_TTL: %w", err)
+	}
+
+	cfg.ConsumedPriceMaxAge, err = durationEnv("CONSUMED_PRICE_MAX_AGE", 720*time.Hour)
+	if err != nil {
+		return Config{}, fmt.Errorf("CONSUMED_PRICE_MAX_AGE: %w", err)
 	}
 
 	return cfg, nil
@@ -102,9 +112,17 @@ func (c Config) Validate() error {
 
 	for _, provider := range c.CommodityPriceProviders {
 		switch provider {
-		case "static", "yahoo", "goldapi":
+		case "static", "yahoo":
 		default:
-			return fmt.Errorf("unsupported FX_PROVIDER %q", provider)
+			return fmt.Errorf("unsupported COMMODITY_PRICE_PROVIDERS %q", provider)
+		}
+	}
+
+	for _, provider := range c.FundPriceProviders {
+		switch provider {
+		case "static", "consumed":
+		default:
+			return fmt.Errorf("unsupported FUND_PRICE_PROVIDERS %q", provider)
 		}
 	}
 

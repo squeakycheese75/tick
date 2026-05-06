@@ -3,6 +3,7 @@ package domain
 import (
 	"fmt"
 	"strings"
+	"time"
 )
 
 type ImportPortfolioInput struct {
@@ -243,4 +244,20 @@ type ListTargetsUseCaseOutput struct {
 type DeleteTargetUseCaseInput struct {
 	TargetID      int64
 	PortfolioName string
+}
+
+type ConsumePriceUsecaseInput struct {
+	Symbol   string    `json:"symbol"`
+	Price    float64   `json:"price"`
+	Currency string    `json:"currency"`
+	AsOf     time.Time `json:"as_of"`
+	Source   string    `json:"source"`
+}
+
+type ConsumePriceUsecaseOutput struct {
+	Symbol   string
+	Price    float64
+	Currency string
+	AsOf     time.Time
+	Source   string
 }
