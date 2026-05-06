@@ -27,5 +27,5 @@ CREATE INDEX idx_portfolio_targets_portfolio_id
 -- +goose StatementBegin
 DROP INDEX IF EXISTS idx_portfolio_targets_portfolio_id;
 DROP INDEX IF EXISTS idx_portfolio_targets_unique_active;
-DROP TABLE IF EXISTS portfolio_targetss;
+DROP TABLE IF EXISTS portfolio_targets;
 -- +goose StatementEnd

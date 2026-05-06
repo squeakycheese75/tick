@@ -24,6 +24,7 @@ type Runtime struct {
 	SetTarget           *usecase.SetTargetUseCase
 	ListTargets         *usecase.ListTargetsUseCase
 	RemoveTarget        *usecase.RemoveTargetUsecase
+	ConsumePrices       *usecase.ConsumePriceUsecase
 }
 
 func BuildRuntime(dbPath string) (*Runtime, error) {
@@ -45,7 +46,8 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 	positionRepo := repository.NewPositionRepository(database)
 	instrumentRepo := repository.NewInstrumentRepository(database)
 	snapshotRepo := repository.NewSnapshotRepository(database)
-	targetRespository := repository.NewTargetRepository(database)
+	targetRepo := repository.NewTargetRepository(database)
+	internalPricesRepo := repository.NewConsumedPriceRepository(database)
 
 	// Caching
 	priceCacher := repository.NewPriceCacheRepository(database)
@@ -65,6 +67,11 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 	}
 
 	commodityPriceProviders, err := BuildCommodityPriceProvider(cfg, priceCacher, symbolResolver)
+	if err != nil {
+		return nil, err
+	}
+
+	internalPricesProviders, err := BuildFundPriceProvider(cfg, internalPricesRepo, symbolResolver)
 	if err != nil {
 		return nil, err
 	}
@@ -89,6 +96,7 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 		string(domain.InstrumentTypeEquity):    equityPriceProviders,
 		string(domain.InstrumentTypeCrypto):    cryptoPriceProviders,
 		string(domain.InstrumentTypeCommodity): commodityPriceProviders,
+		string(domain.InstrumentTypeFund):      internalPricesProviders,
 	}, fxProvider)
 
 	portfolioAnalyser := analysis.NewPortfolioAnalyzer(pricingSvc)
@@ -99,7 +107,7 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 	portfolioInsights := service.NewInsightsSvc()
 	newsSvc := service.NewNewsService(newsProvider)
 	snapshotSvc := service.NewSnapshotService(snapshotRepo)
-	targetSvc := service.NewTargetSvc(portfolioRepo, targetRespository)
+	targetSvc := service.NewTargetSvc(portfolioRepo, targetRepo)
 
 	instrumentResolver, err := instruments.NewStaticResolver()
 	if err != nil {
@@ -128,8 +136,9 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 		ImportPortfolio: usecase.NewImportPortfolioUseCase(positionRepo, portfolioRepo, instrumentRepo),
 		GetTickerNews:   usecase.NewGetTickerNewsUseCase(newsSvc),
 		GetMorningBrief: usecase.NewGetMorningBriefUsecase(reportingBuilder),
-		SetTarget:       usecase.NewSetTargetUseCase(portfolioRepo, targetRespository),
-		ListTargets:     usecase.NewListTargetsUseCase(portfolioRepo, targetRespository),
-		RemoveTarget:    usecase.NewRemoveTargetUsecase(portfolioRepo, targetRespository),
+		SetTarget:       usecase.NewSetTargetUseCase(portfolioRepo, targetRepo),
+		ListTargets:     usecase.NewListTargetsUseCase(portfolioRepo, targetRepo),
+		RemoveTarget:    usecase.NewRemoveTargetUsecase(portfolioRepo, targetRepo),
+		ConsumePrices:   usecase.NewConsumePriceUsecase(internalPricesRepo),
 	}, nil
 }

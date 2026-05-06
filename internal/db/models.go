@@ -9,6 +9,16 @@ import (
 	"time"
 )
 
+type ConsumedPrice struct {
+	ID        int64     `json:"id"`
+	Symbol    string    `json:"symbol"`
+	Source    string    `json:"source"`
+	Price     float64   `json:"price"`
+	Currency  string    `json:"currency"`
+	AsOf      time.Time `json:"as_of"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
 type FxCache struct {
 	BaseCurrency  string    `json:"base_currency"`
 	QuoteCurrency string    `json:"quote_currency"`

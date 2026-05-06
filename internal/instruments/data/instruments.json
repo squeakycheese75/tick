@@ -27,5 +27,7 @@
   { "symbol": "ETH",   "instrument_type": "crypto",   "quote_currency": "USD" },
 
   { "symbol": "GOLD",  "instrument_type": "commodity","quote_currency": "USD" },
-  { "symbol": "SILVER","instrument_type": "commodity","quote_currency": "USD" }
+  { "symbol": "SILVER","instrument_type": "commodity","quote_currency": "USD" },
+
+  { "symbol": "AEGON_DEFAULT_EB_LIFESTYLE","instrument_type": "fund","quote_currency": "GBP" }
 ]

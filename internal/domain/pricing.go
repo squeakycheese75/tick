@@ -1,5 +1,7 @@
 package domain
 
+import "time"
+
 type Quote struct {
 	Symbol        string
 	Price         float64
@@ -8,6 +10,8 @@ type Quote struct {
 	Change        float64
 	ChangePercent float64
 	Source        string
+	Stale         bool
+	AsOf          time.Time
 }
 
 type FXRate struct {

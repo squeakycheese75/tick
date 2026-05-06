@@ -27,4 +27,3 @@ CREATE TABLE IF NOT EXISTS fx_cache (
 DROP TABLE IF EXISTS fx_cache;
 DROP TABLE IF EXISTS price_cache;
 -- +goose StatementEnd
-
