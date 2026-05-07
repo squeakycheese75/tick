@@ -41,7 +41,7 @@ func (p *CachedFXProvider) GetRate(ctx context.Context, baseCurrency, quoteCurre
 			return toDomainFXRate(cached), nil
 		}
 
-	case !errors.Is(err, domain.ErrFXCacheNotFound):
+	case !errors.Is(err, domain.ErrFXRateNotFound):
 		return domain.FXRate{}, fmt.Errorf("get cached fx rate for %s/%s: %w", base, quote, err)
 	}
 

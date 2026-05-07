@@ -68,12 +68,13 @@ type DailyNews struct {
 }
 
 type DailyReport struct {
-	Portfolio   PortfolioSummary
-	TopHoldings HoldingSummary
-	Risk        RiskSummary
-	News        []NewsSummary
-	Attention   []string
-	Targets     []TargetStatus
+	Portfolio       PortfolioSummary
+	TopHoldings     HoldingSummary
+	Risk            RiskSummary
+	News            []NewsSummary
+	Attention       []string
+	Targets         []TargetStatus
+	ValuationIssues []ValuationIssue
 }
 
 type TargetStatus struct {

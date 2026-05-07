@@ -2,6 +2,8 @@ package market
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/squeakycheese75/tick/internal/domain"
@@ -32,6 +34,13 @@ func (p *ConsumedPriceProvider) GetQuote(
 ) (domain.Quote, error) {
 	price, err := p.repo.GetLatest(ctx, in.Symbol)
 	if err != nil {
+		if errors.Is(err, domain.ErrConsumedPriceNotFound) {
+			return domain.Quote{}, fmt.Errorf(
+				"no consumed price found for %s; run `tick prices consume --file <file>`",
+				in.Symbol,
+			)
+		}
+
 		return domain.Quote{}, err
 	}
 
