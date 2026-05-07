@@ -44,7 +44,7 @@ func (r *ConsumedPriceRepository) GetLatest(
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return ConsumedPrice{}, domain.ErrPriceCacheNotFound
+			return ConsumedPrice{}, domain.ErrConsumedPriceNotFound
 		}
 
 		return ConsumedPrice{}, err

@@ -38,15 +38,26 @@ func (b *InsightsSvc) AttentionSignals(
 ) []string {
 	attention := make([]string, 0)
 
-	if len(portfolioAnalysis.AnalyzedPositions) == 0 {
+	if len(portfolioAnalysis.AnalyzedPositions) == 0 &&
+		len(portfolioAnalysis.ValuationIssues) == 0 {
 		return append(attention, "Portfolio is empty")
+	}
+
+	if len(portfolioAnalysis.ValuationIssues) > 0 {
+		attention = append(
+			attention,
+			fmt.Sprintf(
+				"%d position(s) could not be valued",
+				len(portfolioAnalysis.ValuationIssues),
+			),
+		)
 	}
 
 	if portfolioRisk.LargestWeight >= 0.20 {
 		attention = append(
 			attention,
 			fmt.Sprintf(
-				"%s is %.2f%% of the portfolio",
+				"%s is %.2f%% of the priced portfolio",
 				portfolioRisk.LargestPosition,
 				portfolioRisk.LargestWeight*100,
 			),
@@ -57,14 +68,14 @@ func (b *InsightsSvc) AttentionSignals(
 		attention = append(
 			attention,
 			fmt.Sprintf(
-				"Top 3 positions are %.2f%% of the portfolio",
+				"Top 3 positions are %.2f%% of the priced portfolio",
 				portfolioRisk.Top3Concentration*100,
 			),
 		)
 	}
 
 	if len(attention) == 0 {
-		attention = append(attention, "No major portfolio concentration issues detected")
+		attention = append(attention, "No major portfolio issues detected")
 	}
 
 	return attention

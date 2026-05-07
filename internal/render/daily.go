@@ -13,67 +13,22 @@ func DailyReport(w io.Writer, s domain.GetDailyReportOutput, opts DailyReportOpt
 	r := s.DailyReport
 
 	renderPortfolioSummary(out, r.Portfolio, opts.Summary)
-	out.println("")
-
 	renderHoldingSummary(out, r.TopHoldings, r.Portfolio.BaseCurrency, opts.Holdings)
-	out.println("")
-
+	renderValuationIssuesSummary(out, r.ValuationIssues)
 	renderRiskSummary(out, r.Risk, opts.Risk)
-	out.println("")
-
 	renderNewsSummary(out, r.News, opts.News)
 	renderTargets(out, r.Targets)
-
-	if opts.ShowAttention && len(r.Attention) > 0 {
-		out.println("")
-		out.println("Attention")
-		for _, item := range r.Attention {
-			out.printf("- %s\n", item)
-		}
-	}
-
-	if opts.AI.Show && s.AISummary != "" {
-		out.println("")
-		out.println("AI Summary")
-		for _, line := range strings.Split(s.AISummary, "\n") {
-			line = strings.TrimSpace(line)
-			if line == "" {
-				continue
-			}
-			out.println(line)
-		}
-	}
+	renderAttentionSummary(out, r.Attention)
+	renderAISummary(out, s.AISummary, opts.AI)
 
 	return out.err
 }
 
-func renderTargets(out *writer, targets []domain.TargetStatus) {
-	if len(targets) == 0 {
-		return
-	}
-
-	out.printf("\nTargets\n")
-
-	for _, t := range targets {
-		marker := ""
-		if t.Hit {
-			marker = "  ! hit"
-		}
-
-		out.printf(
-			"%-6s %-11s target %12.2f %s  current %12.2f %s%s\n",
-			t.Symbol,
-			t.Type,
-			t.TargetPrice,
-			t.Currency,
-			t.CurrentPrice,
-			t.Currency,
-			marker,
-		)
-	}
-}
-
-func renderPortfolioSummary(out *writer, r domain.PortfolioSummary, opts SummaryOptions) {
+func renderPortfolioSummary(
+	out *writer,
+	r domain.PortfolioSummary,
+	opts SummaryOptions,
+) {
 	out.printf("%s  %s", r.Name, formatMoney(r.TotalValue, r.BaseCurrency))
 
 	if opts.ShowSnapshotDelta &&
@@ -82,12 +37,23 @@ func renderPortfolioSummary(out *writer, r domain.PortfolioSummary, opts Summary
 			r.Change.Absolute,
 			r.Change.Percent,
 		)) {
-		out.printf(
-			"  Δ %s (%s)",
-			formatSignedMoney(r.Change.Absolute, r.BaseCurrency),
-			formatSignedPercentFromRatio(r.Change.Percent),
-		)
+
+		// Likely first snapshot / no baseline.
+		if r.Change.Absolute != 0 && r.Change.Percent == 0 {
+			out.printf(
+				"  new snapshot (%s)",
+				formatSignedMoney(r.Change.Absolute, r.BaseCurrency),
+			)
+		} else {
+			out.printf(
+				"  Δ %s (%s)",
+				formatSignedMoney(r.Change.Absolute, r.BaseCurrency),
+				formatSignedPercentFromRatio(r.Change.Percent),
+			)
+		}
 	}
+
+	out.println("")
 }
 
 func renderHoldingSummary(
@@ -115,6 +81,8 @@ func renderHoldingRows(
 	opts HoldingsOptions,
 	showAbsChange bool,
 ) {
+	out.println("")
+
 	title := opts.Title
 	if title == "" {
 		if opts.ShowTop > 0 {
@@ -126,7 +94,7 @@ func renderHoldingRows(
 
 	out.println(title)
 	if len(r.Holdings) == 0 {
-		out.println("No positions")
+		out.println("No priced positions")
 		return
 	}
 
@@ -167,7 +135,28 @@ func renderHoldingRows(
 	}
 }
 
+func renderValuationIssuesSummary(out *writer, issues []domain.ValuationIssue) {
+	if len(issues) == 0 {
+		return
+	}
+
+	out.println("")
+	out.println("Unpriced")
+
+	for _, issue := range issues {
+		out.printf(
+			"%-28s %12s %-8s %s\n",
+			issue.Symbol,
+			formatQuantity(issue.Quantity),
+			issue.InstrumentType,
+			issue.Message,
+		)
+	}
+}
+
 func renderRiskSummary(out *writer, r domain.RiskSummary, opts RiskOptions) {
+	out.println("")
+
 	if r.LargestPosition == "" {
 		out.println("Risk   No data")
 		return
@@ -184,6 +173,7 @@ func renderRiskSummary(out *writer, r domain.RiskSummary, opts RiskOptions) {
 		if label := riskLabel(r); label != "" {
 			out.printf("   ! %s", label)
 		}
+
 		out.println("")
 		return
 	}
@@ -199,18 +189,8 @@ func renderRiskSummary(out *writer, r domain.RiskSummary, opts RiskOptions) {
 	}
 }
 
-func riskLabel(r domain.RiskSummary) string {
-	switch {
-	case r.LargestWeight >= 0.80:
-		return "High concentration"
-	case r.Top3Concentration >= 0.80:
-		return "Concentrated portfolio"
-	default:
-		return ""
-	}
-}
-
 func renderNewsSummary(out *writer, groups []domain.NewsSummary, opts NewsOptions) {
+	out.println("")
 	out.println("News")
 
 	if len(groups) == 0 {
@@ -253,5 +233,74 @@ func renderNewsSummary(out *writer, groups []domain.NewsSummary, opts NewsOption
 
 	if !any {
 		out.println("No news")
+	}
+}
+
+func renderTargets(out *writer, targets []domain.TargetStatus) {
+	if len(targets) == 0 {
+		return
+	}
+
+	out.println("")
+	out.println("Targets")
+
+	for _, t := range targets {
+		marker := ""
+		if t.Hit {
+			marker = "  ! hit"
+		}
+
+		out.printf(
+			"%-6s %-11s target %12.2f %s  current %12.2f %s%s\n",
+			t.Symbol,
+			t.Type,
+			t.TargetPrice,
+			t.Currency,
+			t.CurrentPrice,
+			t.Currency,
+			marker,
+		)
+	}
+}
+
+func renderAttentionSummary(out *writer, attention []string) {
+	if len(attention) == 0 {
+		return
+	}
+
+	out.println("")
+	out.println("Attention")
+
+	for _, item := range attention {
+		out.printf("- %s\n", item)
+	}
+}
+
+func renderAISummary(out *writer, summary string, opts AIOptions) {
+	if !opts.Show || strings.TrimSpace(summary) == "" {
+		return
+	}
+
+	out.println("")
+	out.println("AI Summary")
+
+	for _, line := range strings.Split(summary, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		out.println(line)
+	}
+}
+
+func riskLabel(r domain.RiskSummary) string {
+	switch {
+	case r.LargestWeight >= 0.80:
+		return "High concentration"
+	case r.Top3Concentration >= 0.80:
+		return "Concentrated portfolio"
+	default:
+		return ""
 	}
 }
