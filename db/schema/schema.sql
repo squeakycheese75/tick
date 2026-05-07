@@ -1,12 +1,13 @@
 CREATE TABLE IF NOT EXISTS instruments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    symbol TEXT NOT NULL UNIQUE,
+    symbol TEXT NOT NULL,
     asset_type TEXT NOT NULL,
     exchange TEXT,
     quote_currency TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    deleted_at TIMESTAMP
+    deleted_at TIMESTAMP,
+    UNIQUE(symbol, exchange)
 );
 
 CREATE TABLE IF NOT EXISTS portfolios (

@@ -73,7 +73,7 @@ func (r *InstrumentRepository) Create(ctx context.Context, in Instrument) (Instr
 				"instrument %q on exchange %q: %w",
 				in.Symbol,
 				in.Exchange,
-				domain.ErrPositionAlreadyExists,
+				domain.ErrInstrumentAlreadyExists,
 			)
 		}
 
