@@ -5,27 +5,29 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"sync"
 
 	"github.com/squeakycheese75/tick/internal/domain"
 	"github.com/squeakycheese75/tick/internal/repository"
 )
 
 type (
-	tradePortfolios interface {
-		GetByName(ctx context.Context, name string) (repository.Portfolio, error)
+	// TradeStore is everything importing trades reads and writes.
+	TradeStore interface {
+		GetPortfolio(ctx context.Context, name string) (repository.Portfolio, error)
+		GetInstrument(ctx context.Context, symbol, exchange string) (repository.Instrument, error)
+		GetOrCreateInstrument(ctx context.Context, in repository.Instrument) (repository.Instrument, error)
+		GetPosition(ctx context.Context, portfolioID, instrumentID int64) (repository.Position, error)
+		SavePosition(ctx context.Context, p repository.CreatePositionParams) error
+		DeletePosition(ctx context.Context, portfolioID, instrumentID int64) error
+		TradeRecorded(ctx context.Context, portfolioID int64, key string) (bool, error)
+		RecordTrade(ctx context.Context, t repository.Trade) error
 	}
-	tradeInstruments interface {
-		GetBySymbolAndExchange(ctx context.Context, symbol, exchange string) (repository.Instrument, error)
-		GetOrCreate(ctx context.Context, in repository.Instrument) (repository.Instrument, error)
-	}
-	tradePositions interface {
-		Get(ctx context.Context, portfolioID, instrumentID int64) (repository.Position, error)
-		Create(ctx context.Context, p repository.CreatePositionParams) error
-		Delete(ctx context.Context, portfolioID, instrumentID int64) error
-	}
-	tradeLedger interface {
-		Exists(ctx context.Context, portfolioID int64, key string) (bool, error)
-		Create(ctx context.Context, t repository.Trade) error
+	// TradeUnitOfWork gives a TradeStore that reads freely, and runs groups of operations
+	// atomically: all of them are kept or none are.
+	TradeUnitOfWork interface {
+		Reader() TradeStore
+		Within(ctx context.Context, fn func(TradeStore) error) error
 	}
 	tradeFXRates interface {
 		GetRate(ctx context.Context, from, to string) (domain.FXRate, error)
@@ -35,31 +37,18 @@ type (
 // ImportTradesUseCase applies a batch of executed trades to a portfolio's positions
 // and records them in the trade ledger.
 type ImportTradesUseCase struct {
-	portfolios  tradePortfolios
-	instruments tradeInstruments
-	positions   tradePositions
-	ledger      tradeLedger
-	resolver    InstrumentResolver
-	fx          tradeFXRates
+	uow      TradeUnitOfWork
+	resolver InstrumentResolver
+	fx       tradeFXRates
 }
 
 // NewImportTradesUseCase builds an ImportTradesUseCase.
 func NewImportTradesUseCase(
-	portfolios tradePortfolios,
-	instruments tradeInstruments,
-	positions tradePositions,
-	ledger tradeLedger,
+	uow TradeUnitOfWork,
 	resolver InstrumentResolver,
 	fx tradeFXRates,
 ) *ImportTradesUseCase {
-	return &ImportTradesUseCase{
-		portfolios:  portfolios,
-		instruments: instruments,
-		positions:   positions,
-		ledger:      ledger,
-		resolver:    resolver,
-		fx:          fx,
-	}
+	return &ImportTradesUseCase{uow: uow, resolver: resolver, fx: fx}
 }
 
 // plannedTrade is a validated trade together with the position it leaves behind.
@@ -77,8 +66,19 @@ type tracked struct {
 	position   domain.TradePosition
 }
 
-// Execute validates and plans every trade first, so a bad row fails the whole file
-// before anything is written. Trades already in the ledger are skipped.
+// tradePlan is the outcome of planning a batch against some state of the store.
+type tradePlan struct {
+	portfolio repository.Portfolio
+	trades    []plannedTrade
+	skipped   int
+}
+
+// Execute imports the trades in two phases. First it plans the whole batch against the
+// current state without holding any lock, which fetches every exchange rate it needs and
+// rejects a bad row before anything is written. Then, in one write transaction, it plans
+// again against the state it now holds exclusively, from the rates already fetched, and
+// writes the result. Nothing can change between that second plan and the write, and a
+// failure at any point leaves nothing behind. Trades already in the ledger are skipped.
 func (uc *ImportTradesUseCase) Execute(
 	ctx context.Context,
 	in domain.ImportTradesInput,
@@ -91,72 +91,91 @@ func (uc *ImportTradesUseCase) Execute(
 		return nil, err
 	}
 
-	portfolio, err := uc.portfolios.GetByName(ctx, in.PortfolioName)
-	if err != nil {
-		if errors.Is(err, domain.ErrPortfolioNotFound) {
-			return nil, fmt.Errorf("%w: %q", domain.ErrPortfolioNotFound, in.PortfolioName)
-		}
-		return nil, fmt.Errorf("get portfolio %q: %w", in.PortfolioName, err)
+	rates := &recordedRates{live: uc.fx, seen: map[string]domain.FXRate{}}
+
+	if _, err := uc.plan(ctx, uc.uow.Reader(), in, rates.fetching()); err != nil {
+		return nil, err
 	}
 
-	plan, skipped, err := uc.plan(ctx, portfolio, in.Trades)
+	var out *domain.ImportTradesOutput
+
+	err := uc.uow.Within(ctx, func(store TradeStore) error {
+		plan, err := uc.plan(ctx, store, in, rates.replaying())
+		if err != nil {
+			return err
+		}
+
+		for _, p := range plan.trades {
+			if err := uc.apply(ctx, store, plan.portfolio.ID, p); err != nil {
+				return err
+			}
+		}
+
+		out = &domain.ImportTradesOutput{
+			PortfolioName: plan.portfolio.Name,
+			Applied:       len(plan.trades),
+			Skipped:       plan.skipped,
+		}
+
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	for _, p := range plan {
-		if err := uc.apply(ctx, portfolio.ID, p); err != nil {
-			return nil, err
-		}
-	}
-
-	return &domain.ImportTradesOutput{
-		PortfolioName: portfolio.Name,
-		Applied:       len(plan),
-		Skipped:       skipped,
-	}, nil
+	return out, nil
 }
 
 func (uc *ImportTradesUseCase) plan(
 	ctx context.Context,
-	portfolio repository.Portfolio,
-	trades []domain.TradeInput,
-) ([]plannedTrade, int, error) {
-	ordered := append([]domain.TradeInput(nil), trades...)
+	store TradeStore,
+	in domain.ImportTradesInput,
+	rates tradeFXRates,
+) (tradePlan, error) {
+	portfolio, err := store.GetPortfolio(ctx, in.PortfolioName)
+	if errors.Is(err, domain.ErrPortfolioNotFound) {
+		return tradePlan{}, fmt.Errorf("%w: %q", domain.ErrPortfolioNotFound, in.PortfolioName)
+	}
+	if err != nil {
+		return tradePlan{}, fmt.Errorf("get portfolio %q: %w", in.PortfolioName, err)
+	}
+
+	ordered := append([]domain.TradeInput(nil), in.Trades...)
 	sort.SliceStable(ordered, func(i, j int) bool { return ordered[i].Date.Before(ordered[j].Date) })
 
 	keys := tradeKeys(ordered)
 	state := map[string]tracked{}
-	plan := make([]plannedTrade, 0, len(ordered))
-	skipped := 0
+	plan := tradePlan{portfolio: portfolio, trades: make([]plannedTrade, 0, len(ordered))}
 
 	for i, t := range ordered {
-		exists, err := uc.ledger.Exists(ctx, portfolio.ID, keys[i])
+		recorded, err := store.TradeRecorded(ctx, portfolio.ID, keys[i])
 		if err != nil {
-			return nil, 0, err
+			return tradePlan{}, err
 		}
-		if exists {
-			skipped++
+		if recorded {
+			plan.skipped++
 			continue
 		}
 
-		p, err := uc.planTrade(ctx, portfolio, t, keys[i], state)
+		p, err := uc.planTrade(ctx, store, portfolio, t, keys[i], state, rates)
 		if err != nil {
-			return nil, 0, fmt.Errorf("%s %s on %s: %w", t.Side, t.Symbol, t.Date.Format("2006-01-02"), err)
+			return tradePlan{}, fmt.Errorf("%s %s on %s: %w", t.Side, t.Symbol, t.Date.Format("2006-01-02"), err)
 		}
 
-		plan = append(plan, p)
+		plan.trades = append(plan.trades, p)
 	}
 
-	return plan, skipped, nil
+	return plan, nil
 }
 
 func (uc *ImportTradesUseCase) planTrade(
 	ctx context.Context,
+	store TradeStore,
 	portfolio repository.Portfolio,
 	t domain.TradeInput,
 	key string,
 	state map[string]tracked,
+	rates tradeFXRates,
 ) (plannedTrade, error) {
 	t, err := uc.resolveMetadata(ctx, t)
 	if err != nil {
@@ -167,7 +186,7 @@ func (uc *ImportTradesUseCase) planTrade(
 
 	cur, seen := state[stateKey]
 	if !seen {
-		cur, err = uc.load(ctx, portfolio.ID, t)
+		cur, err = load(ctx, store, portfolio.ID, t)
 		if err != nil {
 			return plannedTrade{}, err
 		}
@@ -175,12 +194,12 @@ func (uc *ImportTradesUseCase) planTrade(
 
 	t.QuoteCurrency = cur.instrument.QuoteCurrency
 
-	fxRate, err := uc.fxRate(ctx, t)
+	fxRate, err := tradeToQuoteRate(ctx, rates, t)
 	if err != nil {
 		return plannedTrade{}, err
 	}
 
-	after, err := uc.applyTrade(ctx, cur.position, t, fxRate, portfolio.BaseCurrency)
+	after, err := applyTrade(ctx, rates, cur.position, t, fxRate, portfolio.BaseCurrency)
 	if err != nil {
 		return plannedTrade{}, err
 	}
@@ -190,8 +209,9 @@ func (uc *ImportTradesUseCase) planTrade(
 	return plannedTrade{trade: t, key: key, instrument: cur.instrument, fxRate: fxRate, after: after}, nil
 }
 
-func (uc *ImportTradesUseCase) applyTrade(
+func applyTrade(
 	ctx context.Context,
+	rates tradeFXRates,
 	current domain.TradePosition,
 	t domain.TradeInput,
 	fxRate float64,
@@ -201,7 +221,7 @@ func (uc *ImportTradesUseCase) applyTrade(
 		return current.ApplySell(t.Quantity)
 	}
 
-	baseRate, err := uc.baseRate(ctx, t, fxRate, baseCurrency)
+	baseRate, err := tradeToBaseRate(ctx, rates, t, fxRate, baseCurrency)
 	if err != nil {
 		return domain.TradePosition{}, err
 	}
@@ -211,10 +231,11 @@ func (uc *ImportTradesUseCase) applyTrade(
 	return current.ApplyBuy(t.Quantity, gross*fxRate, gross*baseRate), nil
 }
 
-// baseRate converts the trade currency to the portfolio base currency, so the cost in base
+// tradeToBaseRate converts the trade currency to the portfolio base currency, so the cost in base
 // currency is recorded as it was when bought. Only a trade in a different currency needs a lookup.
-func (uc *ImportTradesUseCase) baseRate(
+func tradeToBaseRate(
 	ctx context.Context,
+	rates tradeFXRates,
 	t domain.TradeInput,
 	fxRate float64,
 	baseCurrency string,
@@ -226,9 +247,9 @@ func (uc *ImportTradesUseCase) baseRate(
 		return fxRate, nil
 	}
 
-	rate, err := uc.fx.GetRate(ctx, t.Currency, baseCurrency)
+	rate, err := rates.GetRate(ctx, t.Currency, baseCurrency)
 	if err != nil {
-		return 0, fmt.Errorf("fx rate %s to %s: %w", t.Currency, baseCurrency, err)
+		return 0, fmt.Errorf("%w: fx rate %s to %s: %w", domain.ErrUpstream, t.Currency, baseCurrency, err)
 	}
 
 	return rate.Rate, nil
@@ -236,8 +257,9 @@ func (uc *ImportTradesUseCase) baseRate(
 
 // load returns the instrument and what is held of it. An unknown instrument or position means
 // nothing is held; a known instrument's stored identity replaces the one derived from the trade.
-func (uc *ImportTradesUseCase) load(
+func load(
 	ctx context.Context,
+	store TradeStore,
 	portfolioID int64,
 	t domain.TradeInput,
 ) (tracked, error) {
@@ -249,7 +271,7 @@ func (uc *ImportTradesUseCase) load(
 		QuoteCurrency:  t.QuoteCurrency,
 	}}
 
-	existing, err := uc.instruments.GetBySymbolAndExchange(ctx, t.Symbol, t.Exchange)
+	existing, err := store.GetInstrument(ctx, t.Symbol, t.Exchange)
 	if errors.Is(err, domain.ErrInstrumentNotFound) {
 		return fresh, nil
 	}
@@ -257,7 +279,7 @@ func (uc *ImportTradesUseCase) load(
 		return tracked{}, err
 	}
 
-	pos, err := uc.positions.Get(ctx, portfolioID, existing.ID)
+	pos, err := store.GetPosition(ctx, portfolioID, existing.ID)
 	if errors.Is(err, domain.ErrPositionNotFound) {
 		return tracked{instrument: existing}, nil
 	}
@@ -281,8 +303,8 @@ func (uc *ImportTradesUseCase) resolveMetadata(
 
 	resolved, err := uc.resolver.Resolve(ctx, t.Symbol)
 	if err != nil {
-		return t, fmt.Errorf(
-			"could not resolve instrument metadata for %q; add instrument_type, exchange and quote_currency columns",
+		return t, domain.Invalid(
+			"could not resolve instrument metadata for %q; give its instrument_type, exchange and quote_currency",
 			t.Symbol,
 		)
 	}
@@ -300,9 +322,9 @@ func (uc *ImportTradesUseCase) resolveMetadata(
 	return t, nil
 }
 
-// fxRate converts the trade currency to the instrument's quote currency.
+// tradeToQuoteRate converts the trade currency to the instrument's quote currency.
 // An explicit rate on the trade wins; otherwise the current rate is used.
-func (uc *ImportTradesUseCase) fxRate(ctx context.Context, t domain.TradeInput) (float64, error) {
+func tradeToQuoteRate(ctx context.Context, rates tradeFXRates, t domain.TradeInput) (float64, error) {
 	if t.Currency == t.QuoteCurrency {
 		return 1, nil
 	}
@@ -310,25 +332,25 @@ func (uc *ImportTradesUseCase) fxRate(ctx context.Context, t domain.TradeInput) 
 		return t.FXRate, nil
 	}
 
-	rate, err := uc.fx.GetRate(ctx, t.Currency, t.QuoteCurrency)
+	rate, err := rates.GetRate(ctx, t.Currency, t.QuoteCurrency)
 	if err != nil {
-		return 0, fmt.Errorf("fx rate %s to %s: %w", t.Currency, t.QuoteCurrency, err)
+		return 0, fmt.Errorf("%w: fx rate %s to %s: %w", domain.ErrUpstream, t.Currency, t.QuoteCurrency, err)
 	}
 
 	return rate.Rate, nil
 }
 
-func (uc *ImportTradesUseCase) apply(ctx context.Context, portfolioID int64, p plannedTrade) error {
-	instrument, err := uc.instruments.GetOrCreate(ctx, p.instrument)
+func (uc *ImportTradesUseCase) apply(ctx context.Context, store TradeStore, portfolioID int64, p plannedTrade) error {
+	instrument, err := store.GetOrCreateInstrument(ctx, p.instrument)
 	if err != nil {
 		return fmt.Errorf("get or create instrument %q: %w", p.trade.Symbol, err)
 	}
 
-	if err := uc.savePosition(ctx, portfolioID, instrument, p.after); err != nil {
+	if err := savePosition(ctx, store, portfolioID, instrument, p.after); err != nil {
 		return err
 	}
 
-	return uc.ledger.Create(ctx, repository.Trade{
+	return store.RecordTrade(ctx, repository.Trade{
 		PortfolioID:  portfolioID,
 		InstrumentID: instrument.ID,
 		Key:          p.key,
@@ -342,20 +364,21 @@ func (uc *ImportTradesUseCase) apply(ctx context.Context, portfolioID int64, p p
 	})
 }
 
-func (uc *ImportTradesUseCase) savePosition(
+func savePosition(
 	ctx context.Context,
+	store TradeStore,
 	portfolioID int64,
 	instrument repository.Instrument,
 	after domain.TradePosition,
 ) error {
 	if after.IsClosed() {
-		if err := uc.positions.Delete(ctx, portfolioID, instrument.ID); err != nil {
+		if err := store.DeletePosition(ctx, portfolioID, instrument.ID); err != nil {
 			return fmt.Errorf("close position %q: %w", instrument.Symbol, err)
 		}
 		return nil
 	}
 
-	err := uc.positions.Create(ctx, repository.CreatePositionParams{
+	err := store.SavePosition(ctx, repository.CreatePositionParams{
 		InstrumentID: instrument.ID,
 		PortfolioID:  portfolioID,
 		Quantity:     after.Quantity,
@@ -396,4 +419,54 @@ func tradeKeys(trades []domain.TradeInput) []string {
 	}
 
 	return keys
+}
+
+// recordedRates fetches exchange rates from the live source and remembers them, so the plan
+// made inside the write transaction can use exactly those rates without calling out again:
+// the provider's cache is written through another connection, which would wait on the very
+// lock the transaction holds.
+type recordedRates struct {
+	live tradeFXRates
+	mu   sync.Mutex
+	seen map[string]domain.FXRate
+}
+
+// fetching returns a rate source that calls the live provider and records each answer.
+func (r *recordedRates) fetching() tradeFXRates { return fetchingRates{r} }
+
+// replaying returns a rate source that only answers with what was recorded.
+func (r *recordedRates) replaying() tradeFXRates { return replayingRates{r} }
+
+type fetchingRates struct{ r *recordedRates }
+
+func (f fetchingRates) GetRate(ctx context.Context, from, to string) (domain.FXRate, error) {
+	rate, err := f.r.live.GetRate(ctx, from, to)
+	if err != nil {
+		return domain.FXRate{}, err
+	}
+
+	f.r.mu.Lock()
+	f.r.seen[from+"/"+to] = rate
+	f.r.mu.Unlock()
+
+	return rate, nil
+}
+
+type replayingRates struct{ r *recordedRates }
+
+func (p replayingRates) GetRate(_ context.Context, from, to string) (domain.FXRate, error) {
+	p.r.mu.Lock()
+	defer p.r.mu.Unlock()
+
+	rate, ok := p.r.seen[from+"/"+to]
+	if !ok {
+		return domain.FXRate{}, fmt.Errorf(
+			"%w: exchange rate %s to %s was not fetched before writing, so run it again",
+			domain.ErrConcurrentChange,
+			from,
+			to,
+		)
+	}
+
+	return rate, nil
 }

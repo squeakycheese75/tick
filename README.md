@@ -185,3 +185,35 @@ When prices come from an earlier day than today (before the market opens, or at 
 - `tick portfolio summary`: how you are doing against what you paid. Value, cost, PnL, and how much of the PnL is the assets and how much is FX.
 - `tick daily`: what happened today. Holdings, risk, news and anything needing attention. It saves a snapshot, so later runs can show the change since the last one.
 - `tick daily --short`: the quick look. Movers ranked by the size of the move, and news. It does not save a snapshot. `tick brief` still works as a hidden alias.
+
+## HTTP API
+
+`tick serve` exposes the same use cases the CLI runs, for scripts and other programs on your machine. It is the CLI's twin, not a separate system: both use the same database and the same rules.
+
+```bash
+export TICK_API_TOKEN=$(openssl rand -hex 32)   # or put it in ~/.tick/config.env
+tick serve                                       # listens on 127.0.0.1:8080
+```
+
+```bash
+curl -H "Authorization: Bearer $TICK_API_TOKEN" http://127.0.0.1:8080/v1/portfolios
+
+curl -H "Authorization: Bearer $TICK_API_TOKEN" -H 'Content-Type: application/json' \
+  -d '{"trades":[{"ref":"order-1","date":"2026-10-12","symbol":"MRNA","side":"buy","quantity":1,"price":200,"currency":"EUR","fee":1,"exchange":"NASDAQ","instrumentType":"equity","quoteCurrency":"USD"}]}' \
+  http://127.0.0.1:8080/v1/portfolios/trending/trades
+```
+
+| | |
+|---|---|
+| `GET /v1/portfolios`, `POST /v1/portfolios` | list, create |
+| `POST /v1/portfolios/{name}/trades` | apply buys and sells; all or nothing; safe to retry |
+| `GET /v1/portfolios/{name}/summary` | value, cost, PnL split into asset and FX |
+| `GET /v1/portfolios/{name}/daily` | holdings, risk, news, attention (`?short=true`, `?newsLimit=`) |
+| `GET /healthz` | up check, no token |
+
+Full details are in [`docs/openapi.yaml`](docs/openapi.yaml).
+
+- **Local only.** It refuses to listen on anything but loopback, rejects requests whose `Host` is not `localhost`/`127.0.0.1`/`[::1]`, and will not start without a token of at least 16 characters.
+- **Reads change nothing.** `GET .../daily` does not save a snapshot.
+- **Errors** are `{"error":{"code","message"}}`: `422` invalid, `404` not found, `409` conflict (including "data changed, send it again"), `502` a price or rate provider is down.
+- Ratios (`pnlRatio`, `weight`, `changeRatio`) are fractions: `0.25` is 25%.

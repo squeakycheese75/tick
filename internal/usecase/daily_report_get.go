@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/squeakycheese75/tick/internal/domain"
 	"github.com/squeakycheese75/tick/internal/report"
@@ -31,7 +30,7 @@ func (uc *GetDailyReportUseCase) Execute(
 	dailyReport, err := uc.reportBuilder.BuildDailyReport(ctx, report.BuildDailyReportParams{
 		PortfolioName: in.PortfolioName,
 		NewsLimit:     in.NewsLimit,
-		SaveSnapshot:  !in.Short,
+		SaveSnapshot:  !in.Short && !in.NoSnapshot,
 		Short:         in.Short,
 	})
 	if err != nil {
@@ -47,7 +46,7 @@ func (uc *GetDailyReportUseCase) Execute(
 	}
 
 	if !uc.summarizer.Enabled() {
-		return domain.GetDailyReportOutput{}, fmt.Errorf("ai not configured")
+		return domain.GetDailyReportOutput{}, domain.Invalid("ai is not configured")
 	}
 
 	summary, err := uc.summarizer.Summarize(ctx, dailyReport)

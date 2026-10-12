@@ -75,7 +75,7 @@ func TestGetDailyReport_Execute_AISummary(t *testing.T) {
 	}{
 		{name: "no AI asked for", summarizer: fakeSummarizer{enabled: true}},
 		{name: "AI summary attached", summarizer: fakeSummarizer{enabled: true}, withAI: true, wantAI: "summary"},
-		{name: "AI asked for but not configured", withAI: true, wantErr: "ai not configured"},
+		{name: "AI asked for but not configured", withAI: true, wantErr: "ai is not configured"},
 		{name: "AI failure is returned", summarizer: fakeSummarizer{enabled: true, err: boom}, withAI: true, wantErr: "boom"},
 		{name: "report failure is returned", builderErr: boom, wantErr: "boom"},
 	}

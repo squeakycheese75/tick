@@ -30,13 +30,13 @@ type ImportPositionInput struct {
 
 func (in ImportPortfolioInput) Validate() error {
 	if strings.TrimSpace(in.PortfolioName) == "" {
-		return fmt.Errorf("portfolioName is required")
+		return Invalid("portfolioName is required")
 	}
 	if strings.TrimSpace(in.BaseCurrency) == "" {
-		return fmt.Errorf("baseCurrency is required")
+		return Invalid("baseCurrency is required")
 	}
 	if len(in.Positions) == 0 {
-		return fmt.Errorf("at least one position is required")
+		return Invalid("at least one position is required")
 	}
 
 	for i, p := range in.Positions {
@@ -51,17 +51,17 @@ func (in ImportPortfolioInput) Validate() error {
 func (in ImportPositionInput) Validate() error {
 	switch {
 	case strings.TrimSpace(in.Symbol) == "":
-		return fmt.Errorf("symbol is required")
+		return Invalid("symbol is required")
 	case strings.TrimSpace(in.InstrumentType) == "":
-		return fmt.Errorf("instrumentType is required")
+		return Invalid("instrumentType is required")
 	case strings.TrimSpace(in.Exchange) == "":
-		return fmt.Errorf("exchange is required")
+		return Invalid("exchange is required")
 	case strings.TrimSpace(in.QuoteCurrency) == "":
-		return fmt.Errorf("quoteCurrency is required")
+		return Invalid("quoteCurrency is required")
 	case in.Quantity <= 0:
-		return fmt.Errorf("quantity must be greater than 0")
+		return Invalid("quantity must be greater than 0")
 	case in.AvgCost < 0:
-		return fmt.Errorf("avgCost must be greater than or equal to 0")
+		return Invalid("avgCost must be greater than or equal to 0")
 	}
 	return nil
 }
@@ -114,9 +114,9 @@ func (in CreatePortfolioUsecaseInput) Validate() error {
 
 	switch {
 	case in.PortfolioName == "":
-		return fmt.Errorf("portfolio name is required")
+		return Invalid("portfolio name is required")
 	case in.BaseCurrency == "":
-		return fmt.Errorf("base currency is required")
+		return Invalid("base currency is required")
 	}
 
 	return nil
@@ -154,19 +154,19 @@ func (i *AddPositionToPortfolioInput) ApplyDefaults() {
 
 func (i *AddPositionToPortfolioInput) ValidateBasic() error {
 	if i.PortfolioName == "" {
-		return fmt.Errorf("portfolio name is required")
+		return Invalid("portfolio name is required")
 	}
 
 	if i.Symbol == "" {
-		return fmt.Errorf("symbol is required")
+		return Invalid("symbol is required")
 	}
 
 	if i.Qty <= 0 {
-		return fmt.Errorf("qty must be greater than 0")
+		return Invalid("qty must be greater than 0")
 	}
 
 	if i.AvgCost < 0 {
-		return fmt.Errorf("avg cost must be greater than or equal to 0")
+		return Invalid("avg cost must be greater than or equal to 0")
 	}
 
 	return nil
@@ -174,7 +174,7 @@ func (i *AddPositionToPortfolioInput) ValidateBasic() error {
 
 func (i *AddPositionToPortfolioInput) ValidateResolved() error {
 	if i.QuoteCurrency == "" {
-		return fmt.Errorf("quote currency is required")
+		return Invalid("quote currency is required")
 	}
 
 	return nil
@@ -190,6 +190,8 @@ type GetDailyReportInput struct {
 	WithAI        bool
 	// Short reports movers and news only, and does not save a snapshot.
 	Short bool
+	// NoSnapshot reads the report without saving a snapshot of it, so asking has no side effects.
+	NoSnapshot bool
 }
 
 func (i *GetDailyReportInput) ApplyDefaults() {

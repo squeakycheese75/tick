@@ -21,6 +21,9 @@ type Config struct {
 	FinnhubAPIKey    string
 	NewsAPIOrgAPIKey string
 
+	// APIToken is the bearer token `tick serve` requires; the server will not start without one.
+	APIToken string
+
 	CacheEnabled  bool
 	PriceCacheTTL time.Duration
 	FXCacheTTL    time.Duration
@@ -55,6 +58,7 @@ func LoadConfig() (Config, error) {
 
 		FinnhubAPIKey:    os.Getenv("FINNHUB_API_KEY"),
 		NewsAPIOrgAPIKey: os.Getenv("NEWSAPIORG_API_KEY"),
+		APIToken:         os.Getenv("TICK_API_TOKEN"),
 		CacheEnabled:     getenvDefault("CACHE_ENABLED", "true") == "true",
 
 		LLMEnabled:  getenvDefault("LLM_ENABLED", "false") == "true",
@@ -199,6 +203,7 @@ func (c Config) String() string {
 
 		{"FINNHUB_API_KEY", mask(c.FinnhubAPIKey)},
 		{"NEWSAPIORG_API_KEY", mask(c.NewsAPIOrgAPIKey)},
+		{"TICK_API_TOKEN", mask(c.APIToken)},
 	}
 
 	// find max key length

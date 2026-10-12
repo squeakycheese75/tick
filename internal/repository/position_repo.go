@@ -14,6 +14,11 @@ type PositionRepository struct {
 	q *db.Queries
 }
 
+// withTx returns a repository that runs on tx.
+func (r *PositionRepository) withTx(tx *sql.Tx) *PositionRepository {
+	return &PositionRepository{q: r.q.WithTx(tx)}
+}
+
 func NewPositionRepository(database *db.DB) *PositionRepository {
 	return &PositionRepository{q: db.New(database.SqlDB)}
 }

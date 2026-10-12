@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"strings"
 	"testing"
 	"time"
 
@@ -16,7 +17,8 @@ import (
 
 var errBoom = errors.New("boom")
 
-// world is an in-memory fake of every dependency of the trades import use case.
+// world is an in-memory fake of every dependency of the trades import use case. It is also the
+// unit of work: Within snapshots its state and puts it back if the transaction fails.
 type world struct {
 	portfolio    repository.Portfolio
 	portfolioErr error
@@ -42,6 +44,12 @@ type world struct {
 	fxRate  float64
 	fxErr   error
 	fxCalls int
+
+	// beforeWrite runs as the write transaction starts, standing in for another writer that
+	// got in between planning and writing.
+	beforeWrite func(*world)
+	commits     int
+	rollbacks   int
 }
 
 func newWorld() *world {
@@ -56,14 +64,69 @@ func newWorld() *world {
 	}
 }
 
-func (w *world) GetByName(_ context.Context, name string) (repository.Portfolio, error) {
+type worldState struct {
+	instruments map[string]repository.Instrument
+	positions   map[int64]repository.Position
+	ledger      map[string]bool
+	trades      []repository.Trade
+	nextID      int64
+}
+
+func (w *world) snapshot() worldState {
+	st := worldState{
+		instruments: map[string]repository.Instrument{},
+		positions:   map[int64]repository.Position{},
+		ledger:      map[string]bool{},
+		trades:      append([]repository.Trade(nil), w.trades...),
+		nextID:      w.nextID,
+	}
+	for k, v := range w.instruments {
+		st.instruments[k] = v
+	}
+	for k, v := range w.positions {
+		st.positions[k] = v
+	}
+	for k, v := range w.ledger {
+		st.ledger[k] = v
+	}
+
+	return st
+}
+
+func (w *world) restore(st worldState) {
+	w.instruments, w.positions, w.ledger, w.trades, w.nextID = st.instruments, st.positions, st.ledger, st.trades, st.nextID
+}
+
+// Reader reads the world as it is.
+func (w *world) Reader() usecase.TradeStore { return w }
+
+// Within runs fn as one transaction: kept if it succeeds, undone if it fails.
+func (w *world) Within(_ context.Context, fn func(usecase.TradeStore) error) error {
+	if w.beforeWrite != nil {
+		w.beforeWrite(w)
+	}
+
+	before := w.snapshot()
+
+	if err := fn(w); err != nil {
+		w.restore(before)
+		w.rollbacks++
+		return err
+	}
+
+	w.commits++
+
+	return nil
+}
+
+func (w *world) GetPortfolio(_ context.Context, _ string) (repository.Portfolio, error) {
 	if w.portfolioErr != nil {
 		return repository.Portfolio{}, w.portfolioErr
 	}
 	return w.portfolio, nil
 }
 
-func (w *world) GetBySymbolAndExchange(_ context.Context, symbol, exchange string) (repository.Instrument, error) {
+func (w *world) GetInstrument(_ context.Context, symbol, exchange string) (repository.Instrument, error) {
 	if w.instrumentsErr != nil {
 		return repository.Instrument{}, w.instrumentsErr
 	}
@@ -74,7 +137,7 @@ func (w *world) GetBySymbolAndExchange(_ context.Context, symbol, exchange strin
 	return inst, nil
 }
 
-func (w *world) GetOrCreate(_ context.Context, in repository.Instrument) (repository.Instrument, error) {
+func (w *world) GetOrCreateInstrument(_ context.Context, in repository.Instrument) (repository.Instrument, error) {
 	if w.createInstErr != nil {
 		return repository.Instrument{}, w.createInstErr
 	}
@@ -88,7 +151,7 @@ func (w *world) GetOrCreate(_ context.Context, in repository.Instrument) (reposi
 	return in, nil
 }
 
-func (w *world) Get(_ context.Context, _, instrumentID int64) (repository.Position, error) {
+func (w *world) GetPosition(_ context.Context, _, instrumentID int64) (repository.Position, error) {
 	if w.getPosErr != nil {
 		return repository.Position{}, w.getPosErr
 	}
@@ -99,7 +162,7 @@ func (w *world) Get(_ context.Context, _, instrumentID int64) (repository.Positi
 	return pos, nil
 }
 
-func (w *world) Create(_ context.Context, p repository.CreatePositionParams) error {
+func (w *world) SavePosition(_ context.Context, p repository.CreatePositionParams) error {
 	if w.createPosErr != nil {
 		return w.createPosErr
 	}
@@ -107,7 +170,7 @@ func (w *world) Create(_ context.Context, p repository.CreatePositionParams) err
 	return nil
 }
 
-func (w *world) Delete(_ context.Context, _, instrumentID int64) error {
+func (w *world) DeletePosition(_ context.Context, _, instrumentID int64) error {
 	if w.deletePosErr != nil {
 		return w.deletePosErr
 	}
@@ -115,14 +178,14 @@ func (w *world) Delete(_ context.Context, _, instrumentID int64) error {
 	return nil
 }
 
-func (w *world) Exists(_ context.Context, _ int64, key string) (bool, error) {
+func (w *world) TradeRecorded(_ context.Context, _ int64, key string) (bool, error) {
 	if w.existsErr != nil {
 		return false, w.existsErr
 	}
 	return w.ledger[key], nil
 }
 
-func (w *world) recordTrade(_ context.Context, t repository.Trade) error {
+func (w *world) RecordTrade(_ context.Context, t repository.Trade) error {
 	if w.createTradeErr != nil {
 		return w.createTradeErr
 	}
@@ -135,7 +198,7 @@ func (w *world) Resolve(_ context.Context, _ string) (instruments.ResolvedInstru
 	return w.resolved, w.resolverErr
 }
 
-func (w *world) GetRate(_ context.Context, from, to string) (domain.FXRate, error) {
+func (w *world) GetRate(_ context.Context, _, _ string) (domain.FXRate, error) {
 	w.fxCalls++
 	if w.fxErr != nil {
 		return domain.FXRate{}, w.fxErr
@@ -143,19 +206,8 @@ func (w *world) GetRate(_ context.Context, from, to string) (domain.FXRate, erro
 	return domain.FXRate{Rate: w.fxRate}, nil
 }
 
-// ledgerFake and the positions/ledger split exist because Create is on both interfaces.
-type ledgerFake struct{ w *world }
-
-func (l ledgerFake) Exists(ctx context.Context, id int64, key string) (bool, error) {
-	return l.w.Exists(ctx, id, key)
-}
-
-func (l ledgerFake) Create(ctx context.Context, t repository.Trade) error {
-	return l.w.recordTrade(ctx, t)
-}
-
 func (w *world) useCase() *usecase.ImportTradesUseCase {
-	return usecase.NewImportTradesUseCase(w, w, w, ledgerFake{w}, w, w)
+	return usecase.NewImportTradesUseCase(w, w, w)
 }
 
 var day = func(d int) time.Time { return time.Date(2026, 10, d, 0, 0, 0, 0, time.UTC) }
@@ -414,10 +466,10 @@ func TestImportTrades_Execute_Failures(t *testing.T) {
 			"a bad row later in the file stops everything",
 			nil, input(buy(1, "AAPL", 1, 1), sell(2, "AAPL", 5, 1)), domain.ErrInsufficientQuantity, true,
 		},
-		{"instrument create fails", func(w *world) { w.createInstErr = errBoom }, input(buy(1, "AAPL", 1, 1)), errBoom, false},
-		{"position save fails", func(w *world) { w.createPosErr = errBoom }, input(buy(1, "AAPL", 1, 1)), errBoom, false},
-		{"position close fails", func(w *world) { seeded(w); w.deletePosErr = errBoom }, input(sell(1, "AAPL", 1, 1)), errBoom, false},
-		{"ledger write fails", func(w *world) { w.createTradeErr = errBoom }, input(buy(1, "AAPL", 1, 1)), errBoom, false},
+		{"instrument create fails", func(w *world) { w.createInstErr = errBoom }, input(buy(1, "AAPL", 1, 1)), errBoom, true},
+		{"position save fails", func(w *world) { w.createPosErr = errBoom }, input(buy(1, "AAPL", 1, 1)), errBoom, true},
+		{"position close fails", func(w *world) { seeded(w); w.deletePosErr = errBoom }, input(sell(1, "AAPL", 1, 1)), errBoom, true},
+		{"ledger write fails", func(w *world) { w.createTradeErr = errBoom }, input(buy(1, "AAPL", 1, 1)), errBoom, true},
 	}
 
 	for _, tt := range tests {
@@ -428,7 +480,7 @@ func TestImportTrades_Execute_Failures(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup(w)
 			}
-			positionsBefore := fmt.Sprint(w.positions)
+			before := fmt.Sprint(w.instruments, w.positions, w.ledger, w.trades)
 
 			out, err := w.useCase().Execute(context.Background(), tt.in)
 
@@ -438,8 +490,151 @@ func TestImportTrades_Execute_Failures(t *testing.T) {
 			if tt.wantErr != nil && !errors.Is(err, tt.wantErr) {
 				t.Fatalf("err = %v, want %v", err, tt.wantErr)
 			}
-			if tt.wantNoWrites && (len(w.trades) != 0 || fmt.Sprint(w.positions) != positionsBefore) {
-				t.Fatalf("nothing should be written, ledger=%v positions=%v", w.trades, w.positions)
+			if tt.wantNoWrites && fmt.Sprint(w.instruments, w.positions, w.ledger, w.trades) != before {
+				t.Fatalf("a failed import must leave nothing behind: instruments=%v positions=%v trades=%v", w.instruments, w.positions, w.trades)
+			}
+			if w.commits != 0 {
+				t.Fatalf("a failed import must not commit, got %d commits", w.commits)
+			}
+		})
+	}
+}
+
+func TestImportTrades_Execute_FailureWhileWritingIsRolledBack(t *testing.T) {
+	t.Parallel()
+
+	// The first trade writes fine; the second fails on the ledger. The first must not survive.
+	w := newWorld()
+	w.createTradeErr = errBoom
+
+	_, err := w.useCase().Execute(context.Background(), input(buy(1, "AAPL", 1, 100), buy(2, "MSFT", 1, 100)))
+
+	if !errors.Is(err, errBoom) {
+		t.Fatalf("err = %v, want %v", err, errBoom)
+	}
+	if w.rollbacks != 1 || w.commits != 0 {
+		t.Fatalf("rollbacks = %d commits = %d, want 1 and 0", w.rollbacks, w.commits)
+	}
+	if len(w.positions) != 0 || len(w.instruments) != 0 {
+		t.Fatalf("partial import survived: positions=%v instruments=%v", w.positions, w.instruments)
+	}
+}
+
+func TestImportTrades_Execute_PlansAgainstTheStateItHoldsWhenWriting(t *testing.T) {
+	t.Parallel()
+
+	// Another writer buys 10 @ 100 after the first plan but before this import's write begins.
+	// Planning from the first look would give 10 @ 100; planning inside the transaction sees
+	// the other writer's shares and averages with them.
+	w := newWorld()
+	w.beforeWrite = func(w *world) {
+		w.instruments["AAPL|NASDAQ"] = repository.Instrument{ID: 7, Symbol: "AAPL", Exchange: "NASDAQ", QuoteCurrency: "USD"}
+		w.positions[7] = repository.Position{Quantity: 10, AvgCost: 100, AvgCostBase: 80}
+	}
+
+	if _, err := w.useCase().Execute(context.Background(), input(buy(1, "AAPL", 10, 200))); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	pos := w.positions[7]
+	if pos.Quantity != 20 || pos.AvgCost != 150 {
+		t.Fatalf("position = %+v, want 20 @ 150 (the other writer's shares must not be lost)", pos)
+	}
+}
+
+func TestImportTrades_Execute_StopsWhenTheWriteNeedsARateItNeverFetched(t *testing.T) {
+	t.Parallel()
+
+	// At first AAPL is unknown and quoted in USD, so no rate is needed for a USD trade into a
+	// USD instrument... but another writer then makes it a EUR instrument, which needs USD/EUR.
+	// The transaction must not call out for it (the provider's cache needs the write lock the
+	// transaction holds), so it stops and says to run it again.
+	w := newWorld()
+	w.portfolio.BaseCurrency = "USD"
+	w.beforeWrite = func(w *world) {
+		w.instruments["AAPL|NASDAQ"] = repository.Instrument{ID: 7, Symbol: "AAPL", Exchange: "NASDAQ", QuoteCurrency: "EUR"}
+	}
+
+	callsBefore := w.fxCalls
+	_, err := w.useCase().Execute(context.Background(), input(buy(1, "AAPL", 1, 100)))
+
+	if err == nil || !strings.Contains(err.Error(), "run it again") {
+		t.Fatalf("err = %v, want a message saying to run it again", err)
+	}
+	if w.fxCalls != callsBefore {
+		t.Fatalf("the transaction called the rate provider %d times", w.fxCalls-callsBefore)
+	}
+	if w.rollbacks != 1 || len(w.trades) != 0 {
+		t.Fatalf("rollbacks = %d trades = %v", w.rollbacks, w.trades)
+	}
+}
+
+func TestImportTrades_Execute_RatesAreFetchedBeforeTheTransactionOnly(t *testing.T) {
+	t.Parallel()
+
+	w := newWorld()
+	eur := buy(1, "AAPL", 1, 100)
+	eur.Currency = "EUR"
+
+	if _, err := w.useCase().Execute(context.Background(), input(eur)); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if w.fxCalls != 1 {
+		t.Fatalf("fx calls = %d, want exactly 1 (fetched while planning, replayed while writing)", w.fxCalls)
+	}
+	if w.commits != 1 {
+		t.Fatalf("commits = %d, want 1", w.commits)
+	}
+}
+
+func TestImportTrades_Execute_ErrorsAreClassifiedForCallers(t *testing.T) {
+	t.Parallel()
+
+	eur := buy(1, "AAPL", 1, 100)
+	eur.Currency = "EUR"
+
+	tests := []struct {
+		name  string
+		setup func(*world)
+		in    domain.ImportTradesInput
+		want  domain.ErrorKind
+	}{
+		{"nothing to import", nil, domain.ImportTradesInput{PortfolioName: "trending"}, domain.KindInvalid},
+		{"portfolio does not exist", func(w *world) { w.portfolioErr = domain.ErrPortfolioNotFound }, input(buy(1, "AAPL", 1, 1)), domain.KindNotFound},
+		{"unknown instrument details", func(w *world) { w.resolverErr = errBoom }, input(buy(1, "AAPL", 1, 1)), domain.KindInvalid},
+		{"selling more than is held", nil, input(sell(1, "AAPL", 1, 1)), domain.KindInvalid},
+		{"rate provider down", func(w *world) { w.fxErr = errBoom }, input(eur), domain.KindUnavailable},
+		{"base currency rate provider down", func(w *world) { w.fxErr = errBoom }, input(buy(1, "AAPL", 1, 1)), domain.KindUnavailable},
+		{
+			"data changed between planning and writing",
+			func(w *world) {
+				w.portfolio.BaseCurrency = "USD"
+				w.beforeWrite = func(w *world) {
+					w.instruments["AAPL|NASDAQ"] = repository.Instrument{ID: 7, Symbol: "AAPL", Exchange: "NASDAQ", QuoteCurrency: "EUR"}
+				}
+			},
+			input(buy(1, "AAPL", 1, 1)),
+			domain.KindConflict,
+		},
+		{"the store failing is not the caller's fault", func(w *world) { w.existsErr = errBoom }, input(buy(1, "AAPL", 1, 1)), domain.KindInternal},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			w := newWorld()
+			if tt.setup != nil {
+				tt.setup(w)
+			}
+
+			_, err := w.useCase().Execute(context.Background(), tt.in)
+
+			if err == nil {
+				t.Fatal("expected an error")
+			}
+			if got := domain.KindOf(err); got != tt.want {
+				t.Fatalf("kind = %s, want %s (err: %v)", got, tt.want, err)
 			}
 		})
 	}

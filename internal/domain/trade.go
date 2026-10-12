@@ -62,21 +62,21 @@ func (t *TradeInput) Normalize() {
 func (t TradeInput) Validate() error {
 	switch {
 	case t.Symbol == "":
-		return fmt.Errorf("symbol is required")
+		return Invalid("symbol is required")
 	case t.Side != TradeSideBuy && t.Side != TradeSideSell:
-		return fmt.Errorf("side must be buy or sell, got %q", t.Side)
+		return Invalid("side must be buy or sell, got %q", t.Side)
 	case t.Date.IsZero():
-		return fmt.Errorf("date is required")
+		return Invalid("date is required")
 	case t.Quantity <= 0:
-		return fmt.Errorf("quantity must be greater than 0")
+		return Invalid("quantity must be greater than 0")
 	case t.Price < 0:
-		return fmt.Errorf("price must be 0 or greater")
+		return Invalid("price must be 0 or greater")
 	case t.Fee < 0:
-		return fmt.Errorf("fee must be 0 or greater")
+		return Invalid("fee must be 0 or greater")
 	case t.FXRate < 0:
-		return fmt.Errorf("fx rate must be 0 or greater")
+		return Invalid("fx rate must be 0 or greater")
 	case t.Currency == "":
-		return fmt.Errorf("currency is required")
+		return Invalid("currency is required")
 	}
 
 	return nil
@@ -85,16 +85,26 @@ func (t TradeInput) Validate() error {
 // Validate checks the whole batch, reporting the offending row.
 func (in ImportTradesInput) Validate() error {
 	if strings.TrimSpace(in.PortfolioName) == "" {
-		return fmt.Errorf("portfolioName is required")
+		return Invalid("portfolioName is required")
 	}
 	if len(in.Trades) == 0 {
-		return fmt.Errorf("at least one trade is required")
+		return Invalid("at least one trade is required")
 	}
+
+	refs := map[string]int{}
 
 	for i, t := range in.Trades {
 		if err := t.Validate(); err != nil {
 			return fmt.Errorf("trades[%d]: %w", i, err)
 		}
+
+		if t.Ref == "" {
+			continue
+		}
+		if first, dup := refs[t.Ref]; dup {
+			return Invalid("trades[%d]: ref %q is already used by trades[%d]", i, t.Ref, first)
+		}
+		refs[t.Ref] = i
 	}
 
 	return nil

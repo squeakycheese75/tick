@@ -105,6 +105,15 @@ func TestImportTradesInput_Validate(t *testing.T) {
 		{"negative fee", domain.ImportTradesInput{PortfolioName: "p", Trades: []domain.TradeInput{with(func(t *domain.TradeInput) { t.Fee = -1 })}}, true},
 		{"negative fx", domain.ImportTradesInput{PortfolioName: "p", Trades: []domain.TradeInput{with(func(t *domain.TradeInput) { t.FXRate = -1 })}}, true},
 		{"missing currency", domain.ImportTradesInput{PortfolioName: "p", Trades: []domain.TradeInput{with(func(t *domain.TradeInput) { t.Currency = "" })}}, true},
+		{"the same ref twice in one file", domain.ImportTradesInput{PortfolioName: "p", Trades: []domain.TradeInput{
+			with(func(t *domain.TradeInput) { t.Ref = "order-1" }),
+			with(func(t *domain.TradeInput) { t.Ref = "order-1" }),
+		}}, true},
+		{"different refs", domain.ImportTradesInput{PortfolioName: "p", Trades: []domain.TradeInput{
+			with(func(t *domain.TradeInput) { t.Ref = "order-1" }),
+			with(func(t *domain.TradeInput) { t.Ref = "order-2" }),
+		}}, false},
+		{"blank refs are not duplicates of each other", domain.ImportTradesInput{PortfolioName: "p", Trades: []domain.TradeInput{valid, valid}}, false},
 	}
 
 	for _, tt := range tests {

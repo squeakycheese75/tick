@@ -39,3 +39,5 @@ PLAN.md
 /dist
 docs/demo
 tick2
+portfolios/trending/init_fills.csv
+portfolios/trending/init_trades.csv

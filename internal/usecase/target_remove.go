@@ -24,7 +24,7 @@ func (uc *RemoveTargetUsecase) Execute(ctx context.Context, in domain.DeleteTarg
 	portfolio, err := uc.portfolios.GetByName(ctx, in.PortfolioName)
 	if err != nil {
 		if errors.Is(err, domain.ErrPortfolioNotFound) {
-			return fmt.Errorf("portfolio %q not found", in.PortfolioName)
+			return fmt.Errorf("%w: %q", domain.ErrPortfolioNotFound, in.PortfolioName)
 		}
 		return fmt.Errorf("get portfolio %q: %w", in.PortfolioName, err)
 	}
