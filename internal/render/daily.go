@@ -13,6 +13,15 @@ func DailyReport(w io.Writer, s domain.GetDailyReportOutput, opts DailyReportOpt
 	r := s.DailyReport
 
 	renderPortfolioSummary(out, r.Portfolio, opts.Summary)
+
+	if opts.Short {
+		renderMoversSummary(out, r.TopHoldings, r.Portfolio.BaseCurrency, opts.Holdings)
+		renderValuationIssuesSummary(out, r.ValuationIssues)
+		renderNewsSummary(out, r.News, opts.News)
+
+		return out.err
+	}
+
 	renderHoldingSummary(out, r.TopHoldings, r.Portfolio.BaseCurrency, opts.Holdings)
 	renderValuationIssuesSummary(out, r.ValuationIssues)
 	renderRiskSummary(out, r.Risk, opts.Risk)
@@ -54,6 +63,10 @@ func renderPortfolioSummary(
 	}
 
 	out.println("")
+
+	if note := pricesAsOfNote(r.PricesAsOf, opts.Now); note != "" {
+		out.println(note)
+	}
 }
 
 func renderHoldingSummary(
@@ -98,6 +111,12 @@ func renderHoldingRows(
 		return
 	}
 
+	quantities := make([]float64, 0, len(r.Holdings))
+	for _, h := range r.Holdings {
+		quantities = append(quantities, h.Quantity)
+	}
+	decimals := quantityDecimals(quantities)
+
 	for _, h := range r.Holdings {
 		absChange := ""
 		if showAbsChange {
@@ -124,7 +143,7 @@ func renderHoldingRows(
 		out.printf(
 			"%-6s %10s %7.2f%% %16s  @ %13s  %s%s%s\n",
 			h.Symbol,
-			formatQuantity(h.Quantity),
+			formatQuantityDP(h.Quantity, decimals),
 			h.Weight*100,
 			formatMoney(h.MarketValueBase, baseCurrency),
 			formatMoney(h.QuotedPrice, h.PriceCurrency),

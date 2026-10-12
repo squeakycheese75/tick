@@ -35,3 +35,11 @@ func ConfigPath() (string, error) {
 	}
 	return filepath.Join(dir, "config.env"), nil
 }
+
+func DefaultPortfolioPath() (string, error) {
+	dir, err := Dir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, "default_portfolio"), nil
+}

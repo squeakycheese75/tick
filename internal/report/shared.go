@@ -62,11 +62,8 @@ func assemblePortfolioSummary(analysis domain.PortfolioAnalysis) domain.Portfoli
 		Name:         analysis.PortfolioName,
 		BaseCurrency: analysis.BaseCurrency,
 		TotalValue:   analysis.TotalValue,
+		PricesAsOf:   analysis.PricesAsOf(),
 	}
-}
-
-func assembleGreeting() string {
-	return "Good morning"
 }
 
 func assembleRiskSummary(risk domain.PortfolioRisk) domain.RiskSummary {

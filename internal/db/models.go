@@ -87,6 +87,7 @@ type Position struct {
 	Quantity     float64      `json:"quantity"`
 	AvgCost      float64      `json:"avg_cost"`
 	Currency     string       `json:"currency"`
+	AvgCostBase  float64      `json:"avg_cost_base"`
 	CreatedAt    time.Time    `json:"created_at"`
 	UpdatedAt    time.Time    `json:"updated_at"`
 	DeletedAt    sql.NullTime `json:"deleted_at"`
@@ -102,4 +103,20 @@ type PriceCache struct {
 	ChangePercent  float64        `json:"change_percent"`
 	Source         string         `json:"source"`
 	FetchedAt      time.Time      `json:"fetched_at"`
+	AsOf           sql.NullTime   `json:"as_of"`
+}
+
+type Trade struct {
+	ID           int64     `json:"id"`
+	PortfolioID  int64     `json:"portfolio_id"`
+	InstrumentID int64     `json:"instrument_id"`
+	TradeKey     string    `json:"trade_key"`
+	Side         string    `json:"side"`
+	Quantity     float64   `json:"quantity"`
+	Price        float64   `json:"price"`
+	Currency     string    `json:"currency"`
+	Fee          float64   `json:"fee"`
+	FxRate       float64   `json:"fx_rate"`
+	TradedAt     time.Time `json:"traded_at"`
+	CreatedAt    time.Time `json:"created_at"`
 }

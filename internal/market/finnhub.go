@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/squeakycheese75/tick/internal/domain"
 )
@@ -24,6 +25,7 @@ func NewFinnhubPriceProvider(apiKey string) *FinnhubPriceProvider {
 type finnhubQuoteResponse struct {
 	C  float64 `json:"c"`  // current price
 	PC float64 `json:"pc"` // previous close
+	T  int64   `json:"t"`  // unix time of the last trade
 }
 
 func (p *FinnhubPriceProvider) GetQuote(ctx context.Context, in GetQuoteParams) (domain.Quote, error) {
@@ -62,6 +64,11 @@ func (p *FinnhubPriceProvider) GetQuote(ctx context.Context, in GetQuoteParams) 
 		changePercent = (change / data.PC) * 100
 	}
 
+	var asOf time.Time
+	if data.T > 0 {
+		asOf = time.Unix(data.T, 0).UTC()
+	}
+
 	return domain.Quote{
 		Symbol:        in.ProviderSymbol,
 		Price:         data.C,
@@ -70,5 +77,6 @@ func (p *FinnhubPriceProvider) GetQuote(ctx context.Context, in GetQuoteParams) 
 		Change:        change,
 		ChangePercent: changePercent,
 		Source:        "finnhub",
+		AsOf:          asOf,
 	}, nil
 }

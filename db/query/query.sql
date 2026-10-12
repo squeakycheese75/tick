@@ -6,6 +6,7 @@ SELECT
     p.quantity,
     p.avg_cost,
     p.currency,
+    p.avg_cost_base,
     i.asset_type,
     i.exchange,
     i.quote_currency
@@ -21,14 +22,16 @@ INSERT INTO positions (
   portfolio_id,
   quantity,
   avg_cost,
-  currency
+  currency,
+  avg_cost_base
 ) VALUES (
-  ?, ?, ?, ?, ?
+  ?, ?, ?, ?, ?, ?
 )
 ON CONFLICT(portfolio_id, instrument_id) DO UPDATE SET
     quantity = excluded.quantity,
     avg_cost = excluded.avg_cost,
-    currency = excluded.currency;
+    currency = excluded.currency,
+    avg_cost_base = excluded.avg_cost_base;
 ;
 
 -- name: GetPortfolioByName :one
@@ -68,7 +71,8 @@ SELECT
     change,
     change_percent,
     source,
-    fetched_at
+    fetched_at,
+    as_of
 FROM price_cache
 WHERE symbol = ?;
 
@@ -82,8 +86,9 @@ INSERT INTO price_cache (
     change,
     change_percent,
     source,
-    fetched_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    fetched_at,
+    as_of
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(symbol) DO UPDATE SET
     price = excluded.price,
     price_currency = excluded.price_currency,
@@ -92,7 +97,8 @@ ON CONFLICT(symbol) DO UPDATE SET
     change_percent = excluded.change_percent,
     source = excluded.source,
     provider_symbol = excluded.provider_symbol,
-    fetched_at = excluded.fetched_at;
+    fetched_at = excluded.fetched_at,
+    as_of = excluded.as_of;
 
 -- name: GetFXCacheByPair :one
 SELECT
@@ -210,3 +216,43 @@ ON CONFLICT(symbol, source, as_of)
 DO UPDATE SET
     price = excluded.price,
     currency = excluded.currency;
+
+-- name: GetPosition :one
+SELECT quantity, avg_cost, currency, avg_cost_base
+FROM positions
+WHERE portfolio_id = ? AND instrument_id = ?;
+
+-- name: DeletePosition :exec
+DELETE FROM positions
+WHERE portfolio_id = ? AND instrument_id = ?;
+
+-- name: CreateTrade :exec
+INSERT INTO trades (
+    portfolio_id,
+    instrument_id,
+    trade_key,
+    side,
+    quantity,
+    price,
+    currency,
+    fee,
+    fx_rate,
+    traded_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- name: CountTradesByKey :one
+SELECT COUNT(*)
+FROM trades
+WHERE portfolio_id = ? AND trade_key = ?;
+
+-- name: ListPortfoliosWithPositionCount :many
+SELECT
+    pf.id,
+    pf.name,
+    pf.base_currency,
+    COUNT(p.id) AS position_count
+FROM portfolios AS pf
+LEFT JOIN positions AS p ON p.portfolio_id = pf.id
+WHERE pf.deleted_at IS NULL
+GROUP BY pf.id, pf.name, pf.base_currency
+ORDER BY pf.name ASC;

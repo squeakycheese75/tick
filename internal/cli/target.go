@@ -70,7 +70,7 @@ func newTargetSetCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&portfolioName, "portfolio", "main", "Portfolio name")
+	addPortfolioFlag(cmd, &portfolioName)
 	cmd.Flags().Float64Var(&takeProfit, "take-profit", 0, "Take-profit price")
 	cmd.Flags().Float64Var(&stopLoss, "stop-loss", 0, "Stop-loss price")
 	cmd.Flags().StringVar(&quoteCurrency, "currency", "USD", "Quote currency")
@@ -101,7 +101,7 @@ func newTargetListCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&portfolioName, "portfolio", "main", "Portfolio name")
+	addPortfolioFlag(cmd, &portfolioName)
 
 	return cmd
 }
@@ -137,7 +137,7 @@ func newTargetDeleteCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&portfolioName, "portfolio", "main", "Portfolio name")
+	addPortfolioFlag(cmd, &portfolioName)
 
 	return cmd
 }

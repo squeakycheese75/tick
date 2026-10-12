@@ -74,7 +74,7 @@ func newAddPositionCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 	cmd.Flags().StringVar(&quoteCurrency, "quote-currency", "", "Override quote currency, e.g. USD")
 	cmd.Flags().StringVar(&instrumentType, "asset-type", "", "Override asset type, e.g. equity, etf, crypto")
 	cmd.Flags().StringVar(&exchange, "exchange", "", "Override exchange, e.g. NASDAQ")
-	cmd.Flags().StringVar(&portfolioName, "portfolio", "main", "Portfolio name")
+	addPortfolioFlag(cmd, &portfolioName)
 
 	return cmd
 }

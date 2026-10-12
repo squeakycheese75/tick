@@ -77,7 +77,12 @@ type PortfoloSummaryReport struct {
 	TotalCost     float64
 	TotalPnL      float64
 	TotalPnLPct   float64
-	Positions     []SummaryPosition
+	// TotalAssetPnL and TotalFXPnL split TotalPnL for the positions whose purchase FX rate is known.
+	TotalAssetPnL float64
+	TotalFXPnL    float64
+	// PricesAsOf is the oldest quote time behind the values; zero when no provider reported one.
+	PricesAsOf time.Time
+	Positions  []SummaryPosition
 }
 
 type GetPortfolioSummaryUsecaseOutput struct {
@@ -183,6 +188,8 @@ type GetDailyReportInput struct {
 	PortfolioName string
 	NewsLimit     int
 	WithAI        bool
+	// Short reports movers and news only, and does not save a snapshot.
+	Short bool
 }
 
 func (i *GetDailyReportInput) ApplyDefaults() {
@@ -198,21 +205,6 @@ func (i *GetDailyReportInput) ApplyDefaults() {
 type GetDailyReportOutput struct {
 	DailyReport DailyReport
 	AISummary   string
-}
-
-type GetMorningBriefUsecaseInput struct {
-	PortfolioName string
-	NewsLimit     int
-}
-
-func (i *GetMorningBriefUsecaseInput) ApplyDefaults() {
-	if i.PortfolioName == "" {
-		i.PortfolioName = "main"
-	}
-}
-
-type GetMorningBriefUsecaseOutput struct {
-	Report BriefReport
 }
 
 type SetTargetUseCaseInput struct {

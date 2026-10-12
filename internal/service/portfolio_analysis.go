@@ -59,8 +59,9 @@ func (s *PortfolioAnalysisSvc) GetAnalysis(ctx context.Context, portfolioName st
 				QuoteCurrency:  p.Instrument.QuoteCurrency,
 				Exchange:       p.Instrument.ProviderSymbol,
 			},
-			Quantity: p.Quantity,
-			AvgCost:  p.AvgCost,
+			Quantity:    p.Quantity,
+			AvgCost:     p.AvgCost,
+			AvgCostBase: p.AvgCostBase,
 		})
 	}
 

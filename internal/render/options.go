@@ -2,11 +2,14 @@ package render
 
 import (
 	"os"
+	"time"
 
 	"github.com/mattn/go-isatty"
 )
 
 type DailyReportOptions struct {
+	// Short shows movers and news only.
+	Short         bool
 	ShowAttention bool
 	Summary       SummaryOptions
 	Holdings      HoldingsOptions
@@ -17,6 +20,8 @@ type DailyReportOptions struct {
 type SummaryOptions struct {
 	ShowSnapshotDelta bool
 	HideZeroDelta     bool
+	// Now is the time prices are judged against when deciding whether to say they are old.
+	Now time.Time
 }
 
 type HoldingsOptions struct {
@@ -49,12 +54,13 @@ func DefaultDailyReportOptions() DailyReportOptions {
 		Summary: SummaryOptions{
 			ShowSnapshotDelta: true,
 			HideZeroDelta:     true,
+			Now:               time.Now(),
 		},
 		Holdings: HoldingsOptions{
 			Title:             "Holdings",
 			ShowSnapshotDelta: true,
 			HideZeroDelta:     true,
-			Color:             true,
+			Color:             isatty.IsTerminal(os.Stdout.Fd()),
 		},
 		Risk: RiskOptions{
 			Compact:          true,
@@ -77,7 +83,9 @@ type PortfolioSummaryOptions struct {
 	ShowHeader    bool
 	ShowTotals    bool
 	ShowPositions bool
+	ShowPrices    bool
 	Color         bool
+	Now           time.Time
 }
 
 func DefaultPortfolioSummaryOptions() PortfolioSummaryOptions {
@@ -86,6 +94,7 @@ func DefaultPortfolioSummaryOptions() PortfolioSummaryOptions {
 		ShowTotals:    true,
 		ShowPositions: true,
 		Color:         isatty.IsTerminal(os.Stdout.Fd()),
+		Now:           time.Now(),
 	}
 }
 
@@ -99,31 +108,12 @@ func DefaultPortfolioRiskOptions() PortfolioRiskOptions {
 	}
 }
 
-type BriefReportOptions struct {
-	Summary  SummaryOptions
-	Holdings HoldingsOptions
-	News     NewsOptions
-}
+// ShortDailyReportOptions is the quick look: movers and news, without the snapshot comparison.
+func ShortDailyReportOptions() DailyReportOptions {
+	opts := DefaultDailyReportOptions()
+	opts.Short = true
+	opts.Summary.ShowSnapshotDelta = false
+	opts.Holdings.Title = "Movers"
 
-func DefaultBriefReportOptions() BriefReportOptions {
-	color := isatty.IsTerminal(os.Stdout.Fd())
-
-	return BriefReportOptions{
-		Summary: SummaryOptions{
-			ShowSnapshotDelta: false,
-			HideZeroDelta:     true,
-		},
-		Holdings: HoldingsOptions{
-			Title:             "Movers",
-			ShowSnapshotDelta: true,
-			HideZeroDelta:     true,
-			Color:             color,
-		},
-		News: NewsOptions{
-			MaxHeadlines:   1,
-			ShowLinks:      false,
-			TruncateTitles: true,
-			HeadlineMaxLen: 100,
-		},
-	}
+	return opts
 }

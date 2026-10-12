@@ -19,8 +19,9 @@ type Runtime struct {
 	GetPortfolioRisk    *usecase.GetPortfolioRiskUseCase
 	GetDailyReport      *usecase.GetDailyReportUseCase
 	ImportPortfolio     *usecase.ImportPortfolioUseCase
+	ImportTrades        *usecase.ImportTradesUseCase
+	ListPortfolios      *usecase.ListPortfoliosUseCase
 	GetTickerNews       *usecase.GetTickerNewsUseCase
-	GetMorningBrief     *usecase.GetMorningBriefUsecase
 	SetTarget           *usecase.SetTargetUseCase
 	ListTargets         *usecase.ListTargetsUseCase
 	RemoveTarget        *usecase.RemoveTargetUsecase
@@ -47,6 +48,7 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 	instrumentRepo := repository.NewInstrumentRepository(database)
 	snapshotRepo := repository.NewSnapshotRepository(database)
 	targetRepo := repository.NewTargetRepository(database)
+	tradeRepo := repository.NewTradeRepository(database)
 	internalPricesRepo := repository.NewConsumedPriceRepository(database)
 
 	// Caching
@@ -134,8 +136,9 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 		),
 		GetDailyReport:  usecase.NewGetDailyReportUseCase(reportingBuilder, summarizer, snapshotRepo),
 		ImportPortfolio: usecase.NewImportPortfolioUseCase(positionRepo, portfolioRepo, instrumentRepo),
+		ImportTrades:    usecase.NewImportTradesUseCase(portfolioRepo, instrumentRepo, positionRepo, tradeRepo, instrumentResolver, fxProvider),
+		ListPortfolios:  usecase.NewListPortfoliosUseCase(portfolioRepo),
 		GetTickerNews:   usecase.NewGetTickerNewsUseCase(newsSvc),
-		GetMorningBrief: usecase.NewGetMorningBriefUsecase(reportingBuilder),
 		SetTarget:       usecase.NewSetTargetUseCase(portfolioRepo, targetRepo),
 		ListTargets:     usecase.NewListTargetsUseCase(portfolioRepo, targetRepo),
 		RemoveTarget:    usecase.NewRemoveTargetUsecase(portfolioRepo, targetRepo),

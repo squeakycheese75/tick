@@ -22,6 +22,8 @@ func newPortfolioCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 		newPortfolioSummaryCmd(runtimeBuilder),
 		newPortfolioRiskCmd(runtimeBuilder),
 		newPortfolioImportCmd(runtimeBuilder),
+		newPortfolioListCmd(runtimeBuilder),
+		newPortfolioUseCmd(runtimeBuilder),
 	)
 
 	return portfolioCmd
@@ -29,6 +31,7 @@ func newPortfolioCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 
 func newPortfolioSummaryCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 	var portfolioName string
+	var showPrices bool
 
 	cmd := &cobra.Command{
 		Use:   "summary",
@@ -49,11 +52,15 @@ func newPortfolioSummaryCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 				return err
 			}
 
-			return render.RenderPortfolioSummary(cmd.OutOrStdout(), out.Report, render.DefaultPortfolioSummaryOptions())
+			opts := render.DefaultPortfolioSummaryOptions()
+			opts.ShowPrices = showPrices
+
+			return render.RenderPortfolioSummary(cmd.OutOrStdout(), out.Report, opts)
 		},
 	}
 
-	cmd.Flags().StringVar(&portfolioName, "portfolio", "main", "Portfolio name")
+	addPortfolioFlag(cmd, &portfolioName)
+	cmd.Flags().BoolVar(&showPrices, "prices", false, "Also show each position's quoted price")
 	return cmd
 }
 
@@ -131,7 +138,7 @@ func newPortfolioRiskCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&portfolioName, "portfolio", "main", "Portfolio name")
+	addPortfolioFlag(cmd, &portfolioName)
 	return cmd
 }
 
@@ -175,4 +182,72 @@ func newPortfolioImportCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 	_ = cmd.MarkFlagRequired("file")
 
 	return cmd
+}
+
+func newPortfolioListCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
+	return &cobra.Command{
+		Use:   "list",
+		Short: "List portfolios",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			app, err := runtimeBuilder()
+			if err != nil {
+				return err
+			}
+
+			out, err := app.ListPortfolios.Execute(cmd.Context())
+			if err != nil {
+				return err
+			}
+
+			return render.PortfolioList(cmd.OutOrStdout(), out, resolvePortfolio(""))
+		},
+	}
+}
+
+func newPortfolioUseCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
+	return &cobra.Command{
+		Use:   "use <name>",
+		Short: "Set the default portfolio for commands that take --portfolio",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			name := strings.TrimSpace(args[0])
+
+			app, err := runtimeBuilder()
+			if err != nil {
+				return err
+			}
+
+			out, err := app.ListPortfolios.Execute(cmd.Context())
+			if err != nil {
+				return err
+			}
+
+			if err := requirePortfolio(out, name); err != nil {
+				return err
+			}
+
+			if err := writeDefaultPortfolio(name); err != nil {
+				return err
+			}
+
+			return render.DefaultPortfolioSet(cmd.OutOrStdout(), name)
+		},
+	}
+}
+
+// requirePortfolio fails with the names that do exist, so a typo is easy to fix.
+func requirePortfolio(out domain.ListPortfoliosOutput, name string) error {
+	names := make([]string, 0, len(out.Portfolios))
+	for _, p := range out.Portfolios {
+		if p.Name == name {
+			return nil
+		}
+		names = append(names, p.Name)
+	}
+
+	if len(names) == 0 {
+		return fmt.Errorf("portfolio %q not found; there are no portfolios yet (create one with: tick portfolio create %s)", name, name)
+	}
+
+	return fmt.Errorf("portfolio %q not found; choose one of: %s", name, strings.Join(names, ", "))
 }

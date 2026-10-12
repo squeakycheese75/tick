@@ -31,7 +31,8 @@ func (uc *GetDailyReportUseCase) Execute(
 	dailyReport, err := uc.reportBuilder.BuildDailyReport(ctx, report.BuildDailyReportParams{
 		PortfolioName: in.PortfolioName,
 		NewsLimit:     in.NewsLimit,
-		SaveSnapshot:  true,
+		SaveSnapshot:  !in.Short,
+		Short:         in.Short,
 	})
 	if err != nil {
 		return domain.GetDailyReportOutput{}, err

@@ -1,5 +1,7 @@
 package render
 
+import "time"
+
 import "math"
 
 func isEffectivelyZero(v float64) bool {
@@ -37,4 +39,19 @@ func colorize(v float64, s string) string {
 	default:
 		return s
 	}
+}
+
+// pricesAsOfNote says when prices are from an earlier day than now, such as before the market
+// opens or at a weekend, so a last-session move is not mistaken for today's. Empty otherwise.
+func pricesAsOfNote(asOf, now time.Time) string {
+	if asOf.IsZero() || now.IsZero() {
+		return ""
+	}
+
+	local := asOf.In(now.Location())
+	if !local.Before(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())) {
+		return ""
+	}
+
+	return "Prices as of " + local.Format("Mon 2 Jan")
 }
