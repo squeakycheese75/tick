@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/squeakycheese75/tick/internal/domain"
 	"github.com/squeakycheese75/tick/internal/report"
@@ -51,7 +52,7 @@ func (uc *GetDailyReportUseCase) Execute(
 
 	summary, err := uc.summarizer.Summarize(ctx, dailyReport)
 	if err != nil {
-		return domain.GetDailyReportOutput{}, err
+		return domain.GetDailyReportOutput{}, fmt.Errorf("%w: ai summary: %w", domain.ErrUpstream, err)
 	}
 
 	out.AISummary = summary

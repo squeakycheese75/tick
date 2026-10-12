@@ -49,15 +49,18 @@ func LoadConfig() (Config, error) {
 	}
 
 	cfg := Config{
-		EquityPriceProviders:    splitEnvDefault("EQUITY_PRICE_PROVIDERS", "static"),
-		CryptoPriceProviders:    splitEnvDefault("CRYPTO_PRICE_PROVIDERS", "static"),
-		CommodityPriceProviders: splitEnvDefault("COMMODITY_PRICE_PROVIDERS", "static"),
-		FXProviders:             splitEnvDefault("FX_PROVIDERS", "static"),
-		NewsProviders:           splitEnvDefault("NEWS_PROVIDERS", "static"),
-		FundPriceProviders:      splitEnvDefault("FUND_PRICES_PROVIDERS", "static"),
+		EquityPriceProviders:    splitList(firstEnv("static", "EQUITY_PRICE_PROVIDERS", "EQUITY_PRICE_PROVIDER")),
+		CryptoPriceProviders:    splitList(firstEnv("static", "CRYPTO_PRICE_PROVIDERS", "CRYPTO_PRICE_PROVIDER")),
+		CommodityPriceProviders: splitList(firstEnv("static", "COMMODITY_PRICE_PROVIDERS", "COMMODITY_PRICE_PROVIDER")),
+		FXProviders:             splitList(firstEnv("static", "FX_PROVIDERS", "FX_PROVIDER")),
+		NewsProviders:           splitList(firstEnv("static", "NEWS_PROVIDERS", "NEWS_PROVIDER")),
+		// Funds are priced from prices you record yourself, which are always available,
+		// so this works without any configuration. There is no "static" fund provider.
+		FundPriceProviders: splitList(firstEnv("consumed", "FUND_PRICES_PROVIDERS", "FUND_PRICE_PROVIDERS", "FUND_PRICE_PROVIDER")),
 
-		FinnhubAPIKey:    os.Getenv("FINNHUB_API_KEY"),
-		NewsAPIOrgAPIKey: os.Getenv("NEWSAPIORG_API_KEY"),
+		FinnhubAPIKey: os.Getenv("FINNHUB_API_KEY"),
+		// NEWSAPIORG_API_KET is the misspelling `tick config init` used to write.
+		NewsAPIOrgAPIKey: firstEnv("", "NEWSAPIORG_API_KEY", "NEWSAPIORG_API_KET"),
 		APIToken:         os.Getenv("TICK_API_TOKEN"),
 		CacheEnabled:     getenvDefault("CACHE_ENABLED", "true") == "true",
 
@@ -90,11 +93,11 @@ func (c Config) Validate() error {
 		switch provider {
 		case "static", "finnhub", "yahoo":
 		default:
-			return fmt.Errorf("unsupported EQUITY_PRICE_PROVIDER %q", provider)
+			return fmt.Errorf("unsupported EQUITY_PRICE_PROVIDERS %q", provider)
 		}
 
 		if provider == "finnhub" && c.FinnhubAPIKey == "" {
-			return fmt.Errorf("FINNHUB_API_KEY is required when EQUITY_PRICE_PROVIDER includes finnhub")
+			return fmt.Errorf("FINNHUB_API_KEY is required when EQUITY_PRICE_PROVIDERS includes finnhub")
 		}
 	}
 
@@ -102,7 +105,7 @@ func (c Config) Validate() error {
 		switch provider {
 		case "static", "coingecko", "yahoo":
 		default:
-			return fmt.Errorf("unsupported CRYPTO_PRICE_PROVIDER %q", provider)
+			return fmt.Errorf("unsupported CRYPTO_PRICE_PROVIDERS %q", provider)
 		}
 	}
 
@@ -110,7 +113,7 @@ func (c Config) Validate() error {
 		switch provider {
 		case "static", "frankfurter":
 		default:
-			return fmt.Errorf("unsupported FX_PROVIDER %q", provider)
+			return fmt.Errorf("unsupported FX_PROVIDERS %q", provider)
 		}
 	}
 
@@ -124,9 +127,9 @@ func (c Config) Validate() error {
 
 	for _, provider := range c.FundPriceProviders {
 		switch provider {
-		case "static", "consumed":
+		case "consumed":
 		default:
-			return fmt.Errorf("unsupported FUND_PRICE_PROVIDERS %q", provider)
+			return fmt.Errorf("unsupported FUND_PRICES_PROVIDERS %q (the only fund provider is \"consumed\")", provider)
 		}
 	}
 
@@ -134,11 +137,11 @@ func (c Config) Validate() error {
 		switch provider {
 		case "static", "newsapiorg":
 		default:
-			return fmt.Errorf("unsupported NEWS_PROVIDER %q", provider)
+			return fmt.Errorf("unsupported NEWS_PROVIDERS %q", provider)
 		}
 
 		if provider == "newsapiorg" && c.NewsAPIOrgAPIKey == "" {
-			return fmt.Errorf("NEWSAPIORG_API_KEY is required when NEWS_PROVIDER includes newsapiorg")
+			return fmt.Errorf("NEWSAPIORG_API_KEY is required when NEWS_PROVIDERS includes newsapiorg")
 		}
 	}
 
@@ -157,6 +160,34 @@ func (c Config) Validate() error {
 	}
 
 	return nil
+}
+
+// firstEnv returns the first of keys that is set to something, or fallback. The plural names
+// are the real ones; the singular ones are what older config files, and the template
+// `tick config init` wrote, use, so those files keep working.
+func firstEnv(fallback string, keys ...string) string {
+	for _, key := range keys {
+		if v := strings.TrimSpace(os.Getenv(key)); v != "" {
+			return v
+		}
+	}
+
+	return fallback
+}
+
+// KnownConfigKeys lists every environment variable the configuration reads, aliases included.
+func KnownConfigKeys() []string {
+	return []string{
+		"EQUITY_PRICE_PROVIDERS", "EQUITY_PRICE_PROVIDER",
+		"CRYPTO_PRICE_PROVIDERS", "CRYPTO_PRICE_PROVIDER",
+		"COMMODITY_PRICE_PROVIDERS", "COMMODITY_PRICE_PROVIDER",
+		"FX_PROVIDERS", "FX_PROVIDER",
+		"NEWS_PROVIDERS", "NEWS_PROVIDER",
+		"FUND_PRICES_PROVIDERS", "FUND_PRICE_PROVIDERS", "FUND_PRICE_PROVIDER",
+		"FINNHUB_API_KEY", "NEWSAPIORG_API_KEY", "NEWSAPIORG_API_KET", "TICK_API_TOKEN",
+		"CACHE_ENABLED", "CACHE_PRICE_TTL", "CACHE_FX_TTL", "CONSUMED_PRICE_MAX_AGE",
+		"LLM_ENABLED", "LLM_PROVIDER", "LLM_BASE_URL", "LLM_MODEL",
+	}
 }
 
 func getenvDefault(key, fallback string) string {
@@ -239,9 +270,8 @@ func mask(s string) string {
 	return s[:4] + "****"
 }
 
-func splitEnvDefault(key, fallback string) []string {
-	v := getenvDefault(key, fallback)
-
+// splitList splits a comma separated list, dropping blanks.
+func splitList(v string) []string {
 	parts := strings.Split(v, ",")
 	out := make([]string, 0, len(parts))
 
