@@ -10,6 +10,8 @@ type Position struct {
 	Instrument    Instrument
 	Quantity      float64
 	AvgCost       float64
+	// AvgCostBase is the average cost per unit in the portfolio base currency at purchase; 0 when unknown.
+	AvgCostBase float64
 }
 
 type SummaryPosition struct {
@@ -24,7 +26,13 @@ type SummaryPosition struct {
 	AvgCost            float64
 	CostBasisBase      float64
 	UnrealizedPnL      float64
-	UnrealizedPnLPct   float64
+	// AssetPnL is the part of UnrealizedPnL from the price moving, valued at today's FX rate.
+	AssetPnL float64
+	// FXPnL is the part of UnrealizedPnL from the FX rate moving since purchase. Only meaningful when FXKnown.
+	FXPnL float64
+	// FXKnown is false when the purchase FX rate was not recorded, so no split is possible.
+	FXKnown          bool
+	UnrealizedPnLPct float64
 }
 
 type Summary struct {
@@ -57,3 +65,15 @@ const (
 	InstrumentTypeCommodity InstrumentType = "commodity"
 	InstrumentTypeFund      InstrumentType = "fund"
 )
+
+// PortfolioListItem is one row of the portfolio list.
+type PortfolioListItem struct {
+	Name          string
+	BaseCurrency  string
+	PositionCount int
+}
+
+// ListPortfoliosOutput is every portfolio, ordered by name.
+type ListPortfoliosOutput struct {
+	Portfolios []PortfolioListItem
+}

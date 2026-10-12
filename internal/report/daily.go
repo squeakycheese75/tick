@@ -11,6 +11,8 @@ type BuildDailyReportParams struct {
 	PortfolioName string
 	NewsLimit     int
 	SaveSnapshot  bool
+	// Short skips risk, targets and snapshots: movers and news only.
+	Short bool
 }
 
 func (s *ReportBuilder) BuildDailyReport(
@@ -20,6 +22,10 @@ func (s *ReportBuilder) BuildDailyReport(
 	analysis, err := s.analysisSvc.GetAnalysis(ctx, in.PortfolioName)
 	if err != nil {
 		return domain.DailyReport{}, fmt.Errorf("get portfolio analysis: %w", err)
+	}
+
+	if in.Short {
+		return s.buildShortReport(ctx, analysis, in.NewsLimit)
 	}
 
 	risk, err := s.riskSvc.GetRisk(ctx, analysis)
@@ -66,4 +72,27 @@ func (s *ReportBuilder) buildDailyReportFromAnalysis(
 		Attention:       s.insights.AttentionSignals(analysis, risk),
 		ValuationIssues: analysis.ValuationIssues,
 	}
+}
+
+// buildShortReport is the quick look: every holding by size of today's move, and the news.
+func (s *ReportBuilder) buildShortReport(
+	ctx context.Context,
+	analysis domain.PortfolioAnalysis,
+	newsLimit int,
+) (domain.DailyReport, error) {
+	report := domain.DailyReport{
+		Portfolio:       assemblePortfolioSummary(analysis),
+		TopHoldings:     assembleHoldingSummary(analysis.AnalyzedPositions),
+		ValuationIssues: analysis.ValuationIssues,
+	}
+
+	sortHoldingsByAbsValueChange(report.TopHoldings.Holdings)
+
+	news, err := s.getNewsSummaries(ctx, report.TopHoldings, newsLimit)
+	if err != nil {
+		return domain.DailyReport{}, fmt.Errorf("get news summaries: %w", err)
+	}
+	report.News = news
+
+	return report, nil
 }

@@ -32,14 +32,28 @@ func formatSignedMoney(v float64, ccy string) string {
 }
 
 func formatQuantity(q float64) string {
-	switch {
-	case q >= 100:
-		return fmt.Sprintf("%.0f", q)
-	case q >= 1:
-		return fmt.Sprintf("%.4f", q)
-	default:
-		return fmt.Sprintf("%.6f", q)
+	return formatQuantityDP(q, quantityDecimals([]float64{q}))
+}
+
+func formatQuantityDP(q float64, decimals int) string {
+	return fmt.Sprintf("%.*f", decimals, q)
+}
+
+// quantityDecimals picks one number of decimals for a whole column, enough for its smallest
+// quantity, so the decimal points line up when the column is right-aligned.
+func quantityDecimals(quantities []float64) int {
+	decimals := 0
+
+	for _, q := range quantities {
+		switch {
+		case q < 1 && q != 0:
+			decimals = max(decimals, 6)
+		case q < 100:
+			decimals = max(decimals, 4)
+		}
 	}
+
+	return decimals
 }
 
 // func formatPercentFromRatio(v float64) string {

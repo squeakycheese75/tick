@@ -16,3 +16,5 @@ var (
 	ErrTargetNotFound            = errors.New("target not found")
 	ErrFXRateNotFound            = errors.New("fx rate not found")
 )
+
+var ErrInsufficientQuantity = errors.New("insufficient quantity")

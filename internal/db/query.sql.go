@@ -11,6 +11,24 @@ import (
 	"time"
 )
 
+const countTradesByKey = `-- name: CountTradesByKey :one
+SELECT COUNT(*)
+FROM trades
+WHERE portfolio_id = ? AND trade_key = ?
+`
+
+type CountTradesByKeyParams struct {
+	PortfolioID int64  `json:"portfolio_id"`
+	TradeKey    string `json:"trade_key"`
+}
+
+func (q *Queries) CountTradesByKey(ctx context.Context, arg CountTradesByKeyParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countTradesByKey, arg.PortfolioID, arg.TradeKey)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createInstrument = `-- name: CreateInstrument :one
 INSERT INTO instruments (
   symbol,
@@ -152,14 +170,16 @@ INSERT INTO positions (
   portfolio_id,
   quantity,
   avg_cost,
-  currency
+  currency,
+  avg_cost_base
 ) VALUES (
-  ?, ?, ?, ?, ?
+  ?, ?, ?, ?, ?, ?
 )
 ON CONFLICT(portfolio_id, instrument_id) DO UPDATE SET
     quantity = excluded.quantity,
     avg_cost = excluded.avg_cost,
-    currency = excluded.currency
+    currency = excluded.currency,
+    avg_cost_base = excluded.avg_cost_base
 `
 
 type CreatePositionParams struct {
@@ -168,6 +188,7 @@ type CreatePositionParams struct {
 	Quantity     float64 `json:"quantity"`
 	AvgCost      float64 `json:"avg_cost"`
 	Currency     string  `json:"currency"`
+	AvgCostBase  float64 `json:"avg_cost_base"`
 }
 
 func (q *Queries) CreatePosition(ctx context.Context, arg CreatePositionParams) error {
@@ -177,6 +198,7 @@ func (q *Queries) CreatePosition(ctx context.Context, arg CreatePositionParams) 
 		arg.Quantity,
 		arg.AvgCost,
 		arg.Currency,
+		arg.AvgCostBase,
 	)
 	return err
 }
@@ -211,6 +233,65 @@ func (q *Queries) CreateTarget(ctx context.Context, arg CreateTargetParams) (int
 	var id int64
 	err := row.Scan(&id)
 	return id, err
+}
+
+const createTrade = `-- name: CreateTrade :exec
+INSERT INTO trades (
+    portfolio_id,
+    instrument_id,
+    trade_key,
+    side,
+    quantity,
+    price,
+    currency,
+    fee,
+    fx_rate,
+    traded_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+`
+
+type CreateTradeParams struct {
+	PortfolioID  int64     `json:"portfolio_id"`
+	InstrumentID int64     `json:"instrument_id"`
+	TradeKey     string    `json:"trade_key"`
+	Side         string    `json:"side"`
+	Quantity     float64   `json:"quantity"`
+	Price        float64   `json:"price"`
+	Currency     string    `json:"currency"`
+	Fee          float64   `json:"fee"`
+	FxRate       float64   `json:"fx_rate"`
+	TradedAt     time.Time `json:"traded_at"`
+}
+
+func (q *Queries) CreateTrade(ctx context.Context, arg CreateTradeParams) error {
+	_, err := q.db.ExecContext(ctx, createTrade,
+		arg.PortfolioID,
+		arg.InstrumentID,
+		arg.TradeKey,
+		arg.Side,
+		arg.Quantity,
+		arg.Price,
+		arg.Currency,
+		arg.Fee,
+		arg.FxRate,
+		arg.TradedAt,
+	)
+	return err
+}
+
+const deletePosition = `-- name: DeletePosition :exec
+DELETE FROM positions
+WHERE portfolio_id = ? AND instrument_id = ?
+`
+
+type DeletePositionParams struct {
+	PortfolioID  int64 `json:"portfolio_id"`
+	InstrumentID int64 `json:"instrument_id"`
+}
+
+func (q *Queries) DeletePosition(ctx context.Context, arg DeletePositionParams) error {
+	_, err := q.db.ExecContext(ctx, deletePosition, arg.PortfolioID, arg.InstrumentID)
+	return err
 }
 
 const deleteTarget = `-- name: DeleteTarget :execresult
@@ -393,6 +474,36 @@ func (q *Queries) GetPortfolioByName(ctx context.Context, name string) (GetPortf
 	return i, err
 }
 
+const getPosition = `-- name: GetPosition :one
+SELECT quantity, avg_cost, currency, avg_cost_base
+FROM positions
+WHERE portfolio_id = ? AND instrument_id = ?
+`
+
+type GetPositionParams struct {
+	PortfolioID  int64 `json:"portfolio_id"`
+	InstrumentID int64 `json:"instrument_id"`
+}
+
+type GetPositionRow struct {
+	Quantity    float64 `json:"quantity"`
+	AvgCost     float64 `json:"avg_cost"`
+	Currency    string  `json:"currency"`
+	AvgCostBase float64 `json:"avg_cost_base"`
+}
+
+func (q *Queries) GetPosition(ctx context.Context, arg GetPositionParams) (GetPositionRow, error) {
+	row := q.db.QueryRowContext(ctx, getPosition, arg.PortfolioID, arg.InstrumentID)
+	var i GetPositionRow
+	err := row.Scan(
+		&i.Quantity,
+		&i.AvgCost,
+		&i.Currency,
+		&i.AvgCostBase,
+	)
+	return i, err
+}
+
 const getPriceCacheByTicker = `-- name: GetPriceCacheByTicker :one
 SELECT
     symbol,
@@ -403,7 +514,8 @@ SELECT
     change,
     change_percent,
     source,
-    fetched_at
+    fetched_at,
+    as_of
 FROM price_cache
 WHERE symbol = ?
 `
@@ -421,6 +533,7 @@ func (q *Queries) GetPriceCacheByTicker(ctx context.Context, symbol string) (Pri
 		&i.ChangePercent,
 		&i.Source,
 		&i.FetchedAt,
+		&i.AsOf,
 	)
 	return i, err
 }
@@ -466,6 +579,54 @@ func (q *Queries) ListPortfolioSnapshotPositionsBySnapshotID(ctx context.Context
 	return items, nil
 }
 
+const listPortfoliosWithPositionCount = `-- name: ListPortfoliosWithPositionCount :many
+SELECT
+    pf.id,
+    pf.name,
+    pf.base_currency,
+    COUNT(p.id) AS position_count
+FROM portfolios AS pf
+LEFT JOIN positions AS p ON p.portfolio_id = pf.id
+WHERE pf.deleted_at IS NULL
+GROUP BY pf.id, pf.name, pf.base_currency
+ORDER BY pf.name ASC
+`
+
+type ListPortfoliosWithPositionCountRow struct {
+	ID            int64  `json:"id"`
+	Name          string `json:"name"`
+	BaseCurrency  string `json:"base_currency"`
+	PositionCount int64  `json:"position_count"`
+}
+
+func (q *Queries) ListPortfoliosWithPositionCount(ctx context.Context) ([]ListPortfoliosWithPositionCountRow, error) {
+	rows, err := q.db.QueryContext(ctx, listPortfoliosWithPositionCount)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListPortfoliosWithPositionCountRow
+	for rows.Next() {
+		var i ListPortfoliosWithPositionCountRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.BaseCurrency,
+			&i.PositionCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listPositionsByPortfolio = `-- name: ListPositionsByPortfolio :many
 SELECT
     p.instrument_id,
@@ -474,6 +635,7 @@ SELECT
     p.quantity,
     p.avg_cost,
     p.currency,
+    p.avg_cost_base,
     i.asset_type,
     i.exchange,
     i.quote_currency
@@ -491,6 +653,7 @@ type ListPositionsByPortfolioRow struct {
 	Quantity      float64        `json:"quantity"`
 	AvgCost       float64        `json:"avg_cost"`
 	Currency      string         `json:"currency"`
+	AvgCostBase   float64        `json:"avg_cost_base"`
 	AssetType     string         `json:"asset_type"`
 	Exchange      sql.NullString `json:"exchange"`
 	QuoteCurrency string         `json:"quote_currency"`
@@ -512,6 +675,7 @@ func (q *Queries) ListPositionsByPortfolio(ctx context.Context, portfolioID int6
 			&i.Quantity,
 			&i.AvgCost,
 			&i.Currency,
+			&i.AvgCostBase,
 			&i.AssetType,
 			&i.Exchange,
 			&i.QuoteCurrency,
@@ -659,8 +823,9 @@ INSERT INTO price_cache (
     change,
     change_percent,
     source,
-    fetched_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    fetched_at,
+    as_of
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(symbol) DO UPDATE SET
     price = excluded.price,
     price_currency = excluded.price_currency,
@@ -669,7 +834,8 @@ ON CONFLICT(symbol) DO UPDATE SET
     change_percent = excluded.change_percent,
     source = excluded.source,
     provider_symbol = excluded.provider_symbol,
-    fetched_at = excluded.fetched_at
+    fetched_at = excluded.fetched_at,
+    as_of = excluded.as_of
 `
 
 type UpsertPriceCacheParams struct {
@@ -682,6 +848,7 @@ type UpsertPriceCacheParams struct {
 	ChangePercent  float64        `json:"change_percent"`
 	Source         string         `json:"source"`
 	FetchedAt      time.Time      `json:"fetched_at"`
+	AsOf           sql.NullTime   `json:"as_of"`
 }
 
 func (q *Queries) UpsertPriceCache(ctx context.Context, arg UpsertPriceCacheParams) error {
@@ -695,6 +862,7 @@ func (q *Queries) UpsertPriceCache(ctx context.Context, arg UpsertPriceCachePara
 		arg.ChangePercent,
 		arg.Source,
 		arg.FetchedAt,
+		arg.AsOf,
 	)
 	return err
 }

@@ -12,7 +12,7 @@ A simple CLI to track your portfolio from the terminal.
 - ⚡ Daily snapshot view (value, holdings, risk, news)
 - ⚠️ Risk insights (concentration, largest positions)
 - 📰 Headline-based market news per asset
-- 🧾 Import support (CSV / external sources – WIP)
+- 🧾 Import positions from JSON and weekly trades from CSV (`tick trades import`)
 
 ---
 
@@ -144,3 +144,44 @@ Tick is under active development.
 ## 📄 License
 
 MIT
+
+## Importing trades
+
+Apply buys and sells from a CSV file to a portfolio's positions:
+
+```bash
+tick trades import --file trades.csv --portfolio trending
+```
+
+```csv
+date,symbol,side,quantity,price,currency,fee,exchange,instrument_type,quote_currency
+2026-10-12,MRNA,buy,1,200,EUR,1,NASDAQ,equity,USD
+2026-10-14,DELL,sell,0.5,520,USD,0,NASDAQ,equity,USD
+```
+
+- Required columns: `date`, `symbol`, `side` (`buy`/`sell`), `quantity`, `price`, `currency`.
+- Optional columns: `fee`, `fx_rate`, `ref`, `exchange`, `instrument_type`, `quote_currency`. Missing instrument details are looked up, as with `tick add`.
+- Prices are converted from the trade `currency` to the instrument's quote currency. Set `fx_rate` to use your actual rate; otherwise the current rate is used.
+- Buys update the average cost (fees included). Sells reduce the quantity and keep the average cost. Selling everything closes the position.
+- The whole file is checked before anything is written, so a bad row (or a sell larger than the holding) imports nothing.
+- Re-importing a file is safe: trades already recorded are skipped. Give each trade a `ref` (such as a broker order id) for a reliable identity.
+- The portfolio summary splits PnL into "from assets" (the price moving) and "from FX" (the currency rate moving since you bought). This needs the purchase cost in your base currency, which trade import records. Positions without it (added with `tick add`, or imported from JSON) show `-` and no FX split.
+
+## Working with several portfolios
+
+```bash
+tick portfolio list              # every portfolio, with its position count; the default is starred
+tick portfolio use trending      # make `trending` the default for every command
+tick portfolio summary           # now reports on `trending`
+tick daily --portfolio main      # a flag still wins for a single command
+```
+
+Commands that take `--portfolio` choose in this order: the flag, the `TICK_PORTFOLIO` environment variable, the default set with `tick portfolio use` (stored in `~/.tick/default_portfolio`), then `main`.
+
+When prices come from an earlier day than today (before the market opens, or at a weekend), `summary` and `daily` say so with a line such as `Prices as of Fri 9 Oct`. The day-change percentages in that case are that earlier session's move, not today's.
+
+## Which command?
+
+- `tick portfolio summary`: how you are doing against what you paid. Value, cost, PnL, and how much of the PnL is the assets and how much is FX.
+- `tick daily`: what happened today. Holdings, risk, news and anything needing attention. It saves a snapshot, so later runs can show the change since the last one.
+- `tick daily --short`: the quick look. Movers ranked by the size of the move, and news. It does not save a snapshot. `tick brief` still works as a hidden alias.

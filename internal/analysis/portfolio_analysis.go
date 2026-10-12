@@ -52,6 +52,8 @@ func (a *PortfolioAnalyzer) Analyze(ctx context.Context, in AnalyzePortfolioInpu
 			Symbol:             pos.Instrument.Symbol,
 			Quantity:           pos.Quantity,
 			AvgCost:            pos.AvgCost,
+			AvgCostBase:        pos.AvgCostBase,
+			QuoteAsOf:          valuationQuote.Quote.AsOf,
 			InstrumentCurrency: pos.Instrument.QuoteCurrency,
 			QuotedPrice:        valuationQuote.Quote.Price,
 			QuotedChange:       valuationQuote.Quote.Change,

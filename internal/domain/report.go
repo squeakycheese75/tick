@@ -87,27 +87,13 @@ type TargetStatus struct {
 	DistancePct  float64
 }
 
-type BriefReport struct {
-	Greeting  string
-	Portfolio PortfolioSummary
-	Movers    HoldingSummary
-	Markets   []MarketSummary
-	News      []NewsSummary
-}
-
 type PortfolioSummary struct {
 	Name         string
 	BaseCurrency string
 	TotalValue   float64
 	Change       *ValueChangeSummary
-}
-
-type MarketSummary struct {
-	Symbol        string
-	Price         float64
-	Change        float64
-	ChangePercent float64
-	Currency      string
+	// PricesAsOf is the oldest quote time behind TotalValue; zero when no provider reported one.
+	PricesAsOf time.Time
 }
 
 type NewsSummary struct {
@@ -155,9 +141,12 @@ type DailyReportResult struct {
 }
 
 type AnalyzedPosition struct {
-	Symbol             string
-	Quantity           float64
-	AvgCost            float64
+	Symbol      string
+	Quantity    float64
+	AvgCost     float64
+	AvgCostBase float64
+	// QuoteAsOf is when the price last traded; zero when the provider does not say.
+	QuoteAsOf          time.Time
 	InstrumentCurrency string
 	QuotedPrice        float64
 	QuotedChange       float64

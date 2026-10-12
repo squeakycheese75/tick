@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS positions (
     quantity REAL NOT NULL,
     avg_cost REAL NOT NULL,
     currency TEXT NOT NULL,
+    avg_cost_base REAL NOT NULL DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP,
@@ -49,7 +50,8 @@ CREATE TABLE IF NOT EXISTS price_cache (
     change REAL NOT NULL,
     change_percent REAL NOT NULL,
     source TEXT NOT NULL,
-    fetched_at TIMESTAMP NOT NULL
+    fetched_at TIMESTAMP NOT NULL,
+    as_of TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS fx_cache (
@@ -116,3 +118,24 @@ CREATE TABLE consumed_prices (
 
     UNIQUE(symbol, source, as_of)
 );
+
+CREATE TABLE IF NOT EXISTS trades (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    portfolio_id  INTEGER NOT NULL,
+    instrument_id INTEGER NOT NULL,
+    trade_key     TEXT NOT NULL,
+    side          TEXT NOT NULL,
+    quantity      REAL NOT NULL,
+    price         REAL NOT NULL,
+    currency      TEXT NOT NULL,
+    fee           REAL NOT NULL DEFAULT 0,
+    fx_rate       REAL NOT NULL DEFAULT 1,
+    traded_at     TIMESTAMP NOT NULL,
+    created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (portfolio_id) REFERENCES portfolios(id),
+    FOREIGN KEY (instrument_id) REFERENCES instruments(id),
+    UNIQUE (portfolio_id, trade_key)
+);
+
+CREATE INDEX IF NOT EXISTS idx_trades_portfolio_traded_at
+ON trades(portfolio_id, traded_at);

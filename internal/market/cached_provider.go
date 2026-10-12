@@ -41,7 +41,7 @@ func (p *CachedFXProvider) GetRate(ctx context.Context, baseCurrency, quoteCurre
 			return toDomainFXRate(cached), nil
 		}
 
-	case !errors.Is(err, domain.ErrFXRateNotFound):
+	case !errors.Is(err, domain.ErrFXCacheNotFound):
 		return domain.FXRate{}, fmt.Errorf("get cached fx rate for %s/%s: %w", base, quote, err)
 	}
 
@@ -132,6 +132,7 @@ func toDomainQuote(c repository.CachedPriceQuote) domain.Quote {
 		Change:        c.PriceQuote.Change,
 		ChangePercent: c.PriceQuote.ChangePercent,
 		Source:        c.PriceQuote.Source,
+		AsOf:          c.PriceQuote.AsOf,
 	}
 }
 
@@ -145,5 +146,6 @@ func toRepositoryQuote(q domain.Quote, in GetQuoteParams) repository.PriceQuote 
 		Change:        q.Change,
 		ChangePercent: q.ChangePercent,
 		Source:        q.Source,
+		AsOf:          q.AsOf,
 	}
 }

@@ -39,6 +39,7 @@ func (r *PriceCacheRepository) Get(ctx context.Context, ticker string) (CachedPr
 			Change:        row.Change,
 			ChangePercent: row.ChangePercent,
 			Source:        row.Source,
+			AsOf:          row.AsOf.Time,
 		},
 		FetchedAt: row.FetchedAt,
 	}, nil
@@ -58,6 +59,7 @@ func (r *PriceCacheRepository) Upsert(ctx context.Context, quote PriceQuote, fet
 		ChangePercent: quote.ChangePercent,
 		Source:        quote.Source,
 		FetchedAt:     fetchedAt,
+		AsOf:          sql.NullTime{Time: quote.AsOf, Valid: !quote.AsOf.IsZero()},
 	})
 	if err != nil {
 		return fmt.Errorf("upsert price cache for %q: %w", quote.Symbol, err)

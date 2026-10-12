@@ -46,3 +46,22 @@ func (r *PortfolioRepository) Create(ctx context.Context, p Portfolio) error {
 
 	return nil
 }
+
+// List returns every portfolio with its position count, ordered by name.
+func (r *PortfolioRepository) List(ctx context.Context) ([]PortfolioOverview, error) {
+	rows, err := r.q.ListPortfoliosWithPositionCount(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list portfolios: %w", err)
+	}
+
+	portfolios := make([]PortfolioOverview, 0, len(rows))
+	for _, row := range rows {
+		portfolios = append(portfolios, PortfolioOverview{
+			Name:          row.Name,
+			BaseCurrency:  row.BaseCurrency,
+			PositionCount: int(row.PositionCount),
+		})
+	}
+
+	return portfolios, nil
+}

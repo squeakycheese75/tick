@@ -20,6 +20,7 @@ func NewRootCmd(runtimeBuilder RuntimeBuilder) *cobra.Command {
 	rootCmd.AddCommand(newBriefCmd(runtimeBuilder))
 	rootCmd.AddCommand(newPortfolioCmd(runtimeBuilder))
 	rootCmd.AddCommand(newAddPositionCmd(runtimeBuilder))
+	rootCmd.AddCommand(newTradesCmd(runtimeBuilder))
 	rootCmd.AddCommand(newInfoCmd())
 	rootCmd.AddCommand(newNewsCmd(runtimeBuilder))
 	rootCmd.AddCommand(newConfigCmd())

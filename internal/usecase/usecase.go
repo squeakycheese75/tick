@@ -61,7 +61,6 @@ type (
 	}
 	ReportBuilder interface {
 		BuildDailyReport(ctx context.Context, in report.BuildDailyReportParams) (domain.DailyReport, error)
-		BuildMorningBriefReport(ctx context.Context, in report.BuildMorningBriefReportParams) (domain.BriefReport, error)
 	}
 	PricingSvc interface {
 		GetValuationQuote(ctx context.Context, symbol string, targetCurrency string, instrumentCurrency string, instrumentType string) (domain.ValuationQuote, error)

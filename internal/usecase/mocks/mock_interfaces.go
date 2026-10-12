@@ -580,21 +580,6 @@ func (mr *MockReportBuilderMockRecorder) BuildDailyReport(ctx, in any) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BuildDailyReport", reflect.TypeOf((*MockReportBuilder)(nil).BuildDailyReport), ctx, in)
 }
 
-// BuildMorningBriefReport mocks base method.
-func (m *MockReportBuilder) BuildMorningBriefReport(ctx context.Context, in report.BuildMorningBriefReportParams) (domain.BriefReport, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BuildMorningBriefReport", ctx, in)
-	ret0, _ := ret[0].(domain.BriefReport)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// BuildMorningBriefReport indicates an expected call of BuildMorningBriefReport.
-func (mr *MockReportBuilderMockRecorder) BuildMorningBriefReport(ctx, in any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BuildMorningBriefReport", reflect.TypeOf((*MockReportBuilder)(nil).BuildMorningBriefReport), ctx, in)
-}
-
 // MockPricingSvc is a mock of PricingSvc interface.
 type MockPricingSvc struct {
 	ctrl     *gomock.Controller
