@@ -190,6 +190,8 @@ type GetDailyReportInput struct {
 	WithAI        bool
 	// Short reports movers and news only, and does not save a snapshot.
 	Short bool
+	// NoSnapshot reads the report without saving a snapshot of it, so asking has no side effects.
+	NoSnapshot bool
 }
 
 func (i *GetDailyReportInput) ApplyDefaults() {

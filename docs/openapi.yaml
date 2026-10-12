@@ -1,0 +1,315 @@
+openapi: 3.0.3
+info:
+  title: tick API
+  version: "1.0.0"
+  description: |
+    The tick use cases over HTTP, served by `tick serve`.
+
+    - Listens on loopback only. Requests must be made to `localhost`, `127.0.0.1` or `[::1]`.
+    - Every route except `/healthz` needs `Authorization: Bearer <token>`, where the token is
+      `TICK_API_TOKEN` from the server's configuration.
+    - Ratios (`pnlRatio`, `weight`, `changeRatio`) are fractions: `0.25` is 25%.
+    - Reads never change anything. `GET .../daily` does not save a snapshot.
+    - Importing trades is safe to retry: a trade already recorded is skipped, so repeating a
+      request cannot apply it twice. Give each trade a `ref` (a broker order id) to make its
+      identity explicit.
+servers:
+  - url: http://127.0.0.1:8080
+security:
+  - bearer: []
+paths:
+  /healthz:
+    get:
+      summary: Is the server up
+      security: []
+      responses:
+        "200":
+          description: Up
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }
+  /v1/portfolios:
+    get:
+      summary: List portfolios
+      responses:
+        "200":
+          description: Every portfolio, ordered by name
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [portfolios]
+                properties:
+                  portfolios:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name: { type: string }
+                        baseCurrency: { type: string, example: EUR }
+                        positionCount: { type: integer }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      summary: Create a portfolio
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, baseCurrency]
+              properties:
+                name: { type: string, example: trending }
+                baseCurrency: { type: string, example: EUR }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name: { type: string }
+                  baseCurrency: { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /v1/portfolios/{name}/trades:
+    post:
+      summary: Apply trades to a portfolio
+      description: |
+        Applies buys and sells in date order, updating positions and the trade ledger. The whole
+        request is applied or none of it: a bad row, or a sell larger than the holding, changes
+        nothing. At most 1000 trades and 1 MiB per request.
+      parameters:
+        - $ref: "#/components/parameters/name"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [trades]
+              properties:
+                trades:
+                  type: array
+                  items: { $ref: "#/components/schemas/Trade" }
+      responses:
+        "200":
+          description: Applied
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  portfolio: { type: string }
+                  applied: { type: integer, description: Trades newly recorded }
+                  skipped: { type: integer, description: Trades already recorded earlier }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: The data changed while the request was handled; send it again
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "422": { $ref: "#/components/responses/Invalid" }
+        "502":
+          description: An exchange rate provider is unavailable; try again shortly
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /v1/portfolios/{name}/summary:
+    get:
+      summary: Value, cost and PnL, split into asset and FX
+      parameters:
+        - $ref: "#/components/parameters/name"
+      responses:
+        "200":
+          description: The summary
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Summary" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /v1/portfolios/{name}/daily:
+    get:
+      summary: Holdings, risk, news and anything needing attention
+      description: |
+        Does not save a snapshot, so repeating it changes nothing. `changeRatio` is the price
+        move since the previous close; before the market opens that is the last session's move
+        (see `portfolio.pricesAsOf`).
+      parameters:
+        - $ref: "#/components/parameters/name"
+        - name: short
+          in: query
+          schema: { type: boolean, default: false }
+          description: Movers and news only, ranked by the size of the move
+        - name: newsLimit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 10, default: 2 }
+      responses:
+        "200":
+          description: The report
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Daily" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+  parameters:
+    name:
+      name: name
+      in: path
+      required: true
+      schema: { type: string }
+  responses:
+    Unauthorized:
+      description: Missing or wrong bearer token
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: The portfolio does not exist
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Conflict:
+      description: Already exists
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Invalid:
+      description: The request is well formed but cannot be applied
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              enum: [bad_request, unauthorized, forbidden, invalid, not_found, conflict, unavailable, internal, too_large, unsupported_media_type]
+            message: { type: string }
+    Trade:
+      type: object
+      required: [date, symbol, side, quantity, price, currency]
+      properties:
+        ref: { type: string, description: Your own identifier; unique within one request }
+        date: { type: string, example: "2026-10-12", description: YYYY-MM-DD or RFC 3339 }
+        symbol: { type: string, example: MRNA }
+        side: { type: string, enum: [buy, sell] }
+        quantity: { type: number }
+        price: { type: number, description: Per unit, in `currency` }
+        currency: { type: string, description: The currency the price and fee are in, example: EUR }
+        fee: { type: number, description: In `currency`; counts towards the cost of a buy }
+        fxRate: { type: number, description: "`currency` to the instrument's currency; the current rate when omitted" }
+        exchange: { type: string, example: NASDAQ }
+        instrumentType: { type: string, example: equity }
+        quoteCurrency: { type: string, description: The instrument's currency, example: USD }
+    Summary:
+      type: object
+      properties:
+        portfolio: { type: string }
+        baseCurrency: { type: string }
+        pricesAsOf: { type: string, format: date-time, description: Present when the provider says when prices last traded }
+        totalValue: { type: number }
+        totalCost: { type: number }
+        totalPnL: { type: number }
+        totalPnLRatio: { type: number }
+        totalAssetPnL: { type: number }
+        totalFXPnL: { type: number }
+        positions:
+          type: array
+          items:
+            type: object
+            properties:
+              symbol: { type: string }
+              quantity: { type: number }
+              price: { type: number }
+              priceCurrency: { type: string }
+              value: { type: number }
+              cost: { type: number }
+              pnl: { type: number }
+              pnlRatio: { type: number }
+              assetPnL: { type: number, nullable: true, description: Null when the purchase FX rate was not recorded }
+              fxPnL: { type: number, nullable: true }
+              weight: { type: number }
+    Daily:
+      type: object
+      properties:
+        portfolio:
+          type: object
+          properties:
+            name: { type: string }
+            baseCurrency: { type: string }
+            totalValue: { type: number }
+            pricesAsOf: { type: string, format: date-time }
+        holdings:
+          type: array
+          items:
+            type: object
+            properties:
+              symbol: { type: string }
+              quantity: { type: number }
+              weight: { type: number }
+              value: { type: number }
+              price: { type: number }
+              priceCurrency: { type: string }
+              changeRatio: { type: number }
+              changeValue: { type: number }
+        risk:
+          type: object
+          properties:
+            largestPosition: { type: string }
+            largestWeight: { type: number }
+            top3Concentration: { type: number }
+            observations: { type: array, items: { type: string } }
+        news:
+          type: array
+          items:
+            type: object
+            properties:
+              ticker: { type: string }
+              headlines:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    title: { type: string }
+                    url: { type: string }
+        attention: { type: array, items: { type: string } }
+        targets:
+          type: array
+          items:
+            type: object
+            properties:
+              symbol: { type: string }
+              type: { type: string, enum: [take-profit, stop-loss] }
+              currentPrice: { type: number }
+              targetPrice: { type: number }
+              currency: { type: string }
+              hit: { type: boolean }
+              distanceRatio: { type: number }
+        valuationIssues:
+          type: array
+          items:
+            type: object
+            properties:
+              symbol: { type: string }
+              type: { type: string }
+              message: { type: string }
+              hint: { type: string }
+              quantity: { type: number }
+        aiSummary: { type: string }
