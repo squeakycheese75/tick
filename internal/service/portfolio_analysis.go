@@ -34,11 +34,7 @@ func (s *PortfolioAnalysisSvc) GetAnalysis(ctx context.Context, portfolioName st
 	pf, err := s.portfolios.GetByName(ctx, portfolioName)
 	if err != nil {
 		if errors.Is(err, domain.ErrPortfolioNotFound) {
-			return domain.PortfolioAnalysis{}, fmt.Errorf(
-				"portfolio %q not found. Create it with:\n  tick portfolio create %s --base-currency EUR",
-				portfolioName,
-				portfolioName,
-			)
+			return domain.PortfolioAnalysis{}, fmt.Errorf("%w: %q", domain.ErrPortfolioNotFound, portfolioName)
 		}
 		return domain.PortfolioAnalysis{}, fmt.Errorf("get portfolio: %w", err)
 	}

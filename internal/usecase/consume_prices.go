@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
@@ -29,16 +28,16 @@ func (u *ConsumePriceUsecase) Execute(
 	source := strings.TrimSpace(in.Source)
 
 	if symbol == "" {
-		return fmt.Errorf("symbol is required")
+		return domain.Invalid("symbol is required")
 	}
 	if currency == "" {
-		return fmt.Errorf("currency is required")
+		return domain.Invalid("currency is required")
 	}
 	if source == "" {
 		source = "manual"
 	}
 	if in.Price <= 0 {
-		return fmt.Errorf("price must be positive")
+		return domain.Invalid("price must be positive")
 	}
 	if in.AsOf.IsZero() {
 		in.AsOf = time.Now()

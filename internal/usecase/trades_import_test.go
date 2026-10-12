@@ -586,3 +586,56 @@ func TestImportTrades_Execute_RatesAreFetchedBeforeTheTransactionOnly(t *testing
 		t.Fatalf("commits = %d, want 1", w.commits)
 	}
 }
+
+func TestImportTrades_Execute_ErrorsAreClassifiedForCallers(t *testing.T) {
+	t.Parallel()
+
+	eur := buy(1, "AAPL", 1, 100)
+	eur.Currency = "EUR"
+
+	tests := []struct {
+		name  string
+		setup func(*world)
+		in    domain.ImportTradesInput
+		want  domain.ErrorKind
+	}{
+		{"nothing to import", nil, domain.ImportTradesInput{PortfolioName: "trending"}, domain.KindInvalid},
+		{"portfolio does not exist", func(w *world) { w.portfolioErr = domain.ErrPortfolioNotFound }, input(buy(1, "AAPL", 1, 1)), domain.KindNotFound},
+		{"unknown instrument details", func(w *world) { w.resolverErr = errBoom }, input(buy(1, "AAPL", 1, 1)), domain.KindInvalid},
+		{"selling more than is held", nil, input(sell(1, "AAPL", 1, 1)), domain.KindInvalid},
+		{"rate provider down", func(w *world) { w.fxErr = errBoom }, input(eur), domain.KindUnavailable},
+		{"base currency rate provider down", func(w *world) { w.fxErr = errBoom }, input(buy(1, "AAPL", 1, 1)), domain.KindUnavailable},
+		{
+			"data changed between planning and writing",
+			func(w *world) {
+				w.portfolio.BaseCurrency = "USD"
+				w.beforeWrite = func(w *world) {
+					w.instruments["AAPL|NASDAQ"] = repository.Instrument{ID: 7, Symbol: "AAPL", Exchange: "NASDAQ", QuoteCurrency: "EUR"}
+				}
+			},
+			input(buy(1, "AAPL", 1, 1)),
+			domain.KindConflict,
+		},
+		{"the store failing is not the caller's fault", func(w *world) { w.existsErr = errBoom }, input(buy(1, "AAPL", 1, 1)), domain.KindInternal},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			w := newWorld()
+			if tt.setup != nil {
+				tt.setup(w)
+			}
+
+			_, err := w.useCase().Execute(context.Background(), tt.in)
+
+			if err == nil {
+				t.Fatal("expected an error")
+			}
+			if got := domain.KindOf(err); got != tt.want {
+				t.Fatalf("kind = %s, want %s (err: %v)", got, tt.want, err)
+			}
+		})
+	}
+}

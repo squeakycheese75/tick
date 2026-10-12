@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/squeakycheese75/tick/internal/domain"
 )
@@ -22,7 +21,7 @@ func (uc *GetTickerNewsUseCase) Execute(
 ) (domain.NewsSummary, error) {
 
 	if ticker == "" {
-		return domain.NewsSummary{}, fmt.Errorf("ticker required")
+		return domain.NewsSummary{}, domain.Invalid("ticker is required")
 	}
 
 	if limit <= 0 {

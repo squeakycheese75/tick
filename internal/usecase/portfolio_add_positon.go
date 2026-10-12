@@ -67,7 +67,7 @@ func (uc *AddPositionToPortfolioUseCase) Execute(
 	portfolio, err := uc.portfolios.GetByName(ctx, in.PortfolioName)
 	if err != nil {
 		if errors.Is(err, domain.ErrPortfolioNotFound) {
-			return nil, fmt.Errorf("portfolio %q not found", in.PortfolioName)
+			return nil, fmt.Errorf("%w: %q", domain.ErrPortfolioNotFound, in.PortfolioName)
 		}
 		return nil, fmt.Errorf("get portfolio %q: %w", in.PortfolioName, err)
 	}

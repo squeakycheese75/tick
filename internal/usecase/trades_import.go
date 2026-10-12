@@ -249,7 +249,7 @@ func tradeToBaseRate(
 
 	rate, err := rates.GetRate(ctx, t.Currency, baseCurrency)
 	if err != nil {
-		return 0, fmt.Errorf("fx rate %s to %s: %w", t.Currency, baseCurrency, err)
+		return 0, fmt.Errorf("%w: fx rate %s to %s: %w", domain.ErrUpstream, t.Currency, baseCurrency, err)
 	}
 
 	return rate.Rate, nil
@@ -303,8 +303,8 @@ func (uc *ImportTradesUseCase) resolveMetadata(
 
 	resolved, err := uc.resolver.Resolve(ctx, t.Symbol)
 	if err != nil {
-		return t, fmt.Errorf(
-			"could not resolve instrument metadata for %q; add instrument_type, exchange and quote_currency columns",
+		return t, domain.Invalid(
+			"could not resolve instrument metadata for %q; give its instrument_type, exchange and quote_currency",
 			t.Symbol,
 		)
 	}
@@ -334,7 +334,7 @@ func tradeToQuoteRate(ctx context.Context, rates tradeFXRates, t domain.TradeInp
 
 	rate, err := rates.GetRate(ctx, t.Currency, t.QuoteCurrency)
 	if err != nil {
-		return 0, fmt.Errorf("fx rate %s to %s: %w", t.Currency, t.QuoteCurrency, err)
+		return 0, fmt.Errorf("%w: fx rate %s to %s: %w", domain.ErrUpstream, t.Currency, t.QuoteCurrency, err)
 	}
 
 	return rate.Rate, nil
@@ -461,7 +461,8 @@ func (p replayingRates) GetRate(_ context.Context, from, to string) (domain.FXRa
 	rate, ok := p.r.seen[from+"/"+to]
 	if !ok {
 		return domain.FXRate{}, fmt.Errorf(
-			"exchange rate %s to %s was not fetched before writing; the data changed while importing, so run it again",
+			"%w: exchange rate %s to %s was not fetched before writing, so run it again",
+			domain.ErrConcurrentChange,
 			from,
 			to,
 		)
