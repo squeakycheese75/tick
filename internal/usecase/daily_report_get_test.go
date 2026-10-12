@@ -72,11 +72,13 @@ func TestGetDailyReport_Execute_AISummary(t *testing.T) {
 		withAI     bool
 		wantAI     string
 		wantErr    string
+		// wantUnavailable: a model that cannot be reached is a provider failure, not a bug.
+		wantUnavailable bool
 	}{
 		{name: "no AI asked for", summarizer: fakeSummarizer{enabled: true}},
 		{name: "AI summary attached", summarizer: fakeSummarizer{enabled: true}, withAI: true, wantAI: "summary"},
 		{name: "AI asked for but not configured", withAI: true, wantErr: "ai is not configured"},
-		{name: "AI failure is returned", summarizer: fakeSummarizer{enabled: true, err: boom}, withAI: true, wantErr: "boom"},
+		{name: "AI failure is returned", summarizer: fakeSummarizer{enabled: true, err: boom}, withAI: true, wantErr: "boom", wantUnavailable: true},
 		{name: "report failure is returned", builderErr: boom, wantErr: "boom"},
 	}
 
@@ -91,6 +93,9 @@ func TestGetDailyReport_Execute_AISummary(t *testing.T) {
 			if tt.wantErr != "" {
 				if err == nil || err.Error() != tt.wantErr && !errors.Is(err, boom) {
 					t.Fatalf("err = %v, want %q", err, tt.wantErr)
+				}
+				if tt.wantUnavailable && domain.KindOf(err) != domain.KindUnavailable {
+					t.Fatalf("kind = %s, want unavailable: a model that cannot be reached is not a bug", domain.KindOf(err))
 				}
 				return
 			}

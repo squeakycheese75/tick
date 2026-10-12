@@ -184,12 +184,8 @@ func BuildLLMClient(cfg Config) (LLMProvider, error) {
 			return nil, fmt.Errorf("unsupported LLM_PROVIDER %q", cfg.LLMProvider)
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-		defer cancel()
-
-		if err := llmClient.Ping(ctx); err != nil {
-			return nil, fmt.Errorf("llm not ready: %w", err)
-		}
+		// The model is not contacted here. Only an AI summary needs it, and every command builds
+		// the runtime, so checking now would make each of them fail whenever it is switched off.
 	}
 
 	return llmClient, nil
@@ -304,10 +300,7 @@ func buildSingleFundPriceProvider(
 			cfg.ConsumedPriceMaxAge,
 		), nil
 
-	// case "static":
-	// 	return market.NewStaticFundPriceProvider(), nil
-
 	default:
-		return nil, fmt.Errorf("unsupported FUND_PRICE_PROVIDER %q", name)
+		return nil, fmt.Errorf("unsupported FUND_PRICES_PROVIDERS %q", name)
 	}
 }
