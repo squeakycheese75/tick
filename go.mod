@@ -1,6 +1,6 @@
 module github.com/squeakycheese75/tick
 
-go 1.26.2
+go 1.27.2
 
 require (
 	github.com/chzyer/readline v1.5.1
