@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
 	"github.com/squeakycheese75/tick/internal/db"
@@ -9,6 +10,11 @@ import (
 
 type TradeRepository struct {
 	q *db.Queries
+}
+
+// withTx returns a repository that runs on tx.
+func (r *TradeRepository) withTx(tx *sql.Tx) *TradeRepository {
+	return &TradeRepository{q: r.q.WithTx(tx)}
 }
 
 func NewTradeRepository(database *db.DB) *TradeRepository {

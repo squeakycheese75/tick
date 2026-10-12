@@ -14,6 +14,11 @@ type InstrumentRepository struct {
 	q *db.Queries
 }
 
+// withTx returns a repository that runs on tx.
+func (r *InstrumentRepository) withTx(tx *sql.Tx) *InstrumentRepository {
+	return &InstrumentRepository{q: r.q.WithTx(tx)}
+}
+
 func NewInstrumentRepository(database *db.DB) *InstrumentRepository {
 	return &InstrumentRepository{q: db.New(database.SqlDB)}
 }

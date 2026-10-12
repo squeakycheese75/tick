@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/fs"
 	"log"
+	"strings"
 
 	"github.com/pressly/goose/v3"
 
@@ -18,7 +19,16 @@ type DB struct {
 	SqlDB *sql.DB
 }
 
+// connectionDefaults make concurrent use safe: a write transaction takes the write lock when it
+// starts (so two cannot plan from the same state), waiting up to ten seconds for another to
+// finish instead of failing, and WAL lets readers carry on while a write is in progress.
+const connectionDefaults = "?_txlock=immediate&_pragma=busy_timeout(10000)&_pragma=journal_mode(WAL)"
+
 func OpenAndMigrateSqlite(dsn string) (*DB, error) {
+	if !strings.Contains(dsn, "?") {
+		dsn += connectionDefaults
+	}
+
 	sqlDB, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return nil, err

@@ -48,7 +48,7 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 	instrumentRepo := repository.NewInstrumentRepository(database)
 	snapshotRepo := repository.NewSnapshotRepository(database)
 	targetRepo := repository.NewTargetRepository(database)
-	tradeRepo := repository.NewTradeRepository(database)
+	tradeUOW := newTradeUnitOfWork(repository.NewTradeUnitOfWork(database))
 	internalPricesRepo := repository.NewConsumedPriceRepository(database)
 
 	// Caching
@@ -136,7 +136,7 @@ func BuildRuntime(dbPath string) (*Runtime, error) {
 		),
 		GetDailyReport:  usecase.NewGetDailyReportUseCase(reportingBuilder, summarizer, snapshotRepo),
 		ImportPortfolio: usecase.NewImportPortfolioUseCase(positionRepo, portfolioRepo, instrumentRepo),
-		ImportTrades:    usecase.NewImportTradesUseCase(portfolioRepo, instrumentRepo, positionRepo, tradeRepo, instrumentResolver, fxProvider),
+		ImportTrades:    usecase.NewImportTradesUseCase(tradeUOW, instrumentResolver, fxProvider),
 		ListPortfolios:  usecase.NewListPortfoliosUseCase(portfolioRepo),
 		GetTickerNews:   usecase.NewGetTickerNewsUseCase(newsSvc),
 		SetTarget:       usecase.NewSetTargetUseCase(portfolioRepo, targetRepo),

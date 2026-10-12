@@ -14,6 +14,11 @@ type PortfolioRepository struct {
 	q *db.Queries
 }
 
+// withTx returns a repository that runs on tx.
+func (r *PortfolioRepository) withTx(tx *sql.Tx) *PortfolioRepository {
+	return &PortfolioRepository{q: r.q.WithTx(tx)}
+}
+
 func NewPortfolioRepository(database *db.DB) *PortfolioRepository {
 	return &PortfolioRepository{q: db.New(database.SqlDB)}
 }
